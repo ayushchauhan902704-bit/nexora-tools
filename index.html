@@ -1,1 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>NEXORA — Free Online Tools</title>
+
+  <meta
+    name="description"
+    content="NEXORA provides fast, simple and free online tools for calculators, converters, images, PDF, text and everyday tasks."
+  >
+
+  <meta name="theme-color" content="#6c5ce7">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f7f8fc;
+      color: #171725;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 32px));
+      margin: auto;
+    }
+
+    /* HEADER */
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid #e8e8ef;
+    }
+
+    .nav {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: #6c5ce7;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #555566;
+    }
+
+    .nav-links a:hover {
+      color: #6c5ce7;
+    }
+
+    .theme-btn {
+      border: 0;
+      background: #f0efff;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    /* HERO */
+
+    .hero {
+      padding: 78px 0 55px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: #eeecff;
+      color: #5b4bd8;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 72px);
+      line-height: 1.02;
+      letter-spacing: -3px;
+      max-width: 850px;
+      margin: auto;
+    }
+
+    .hero h1 span {
+      color: #6c5ce7;
+    }
+
+    .hero p {
+      max-width: 650px;
+      margin: 20px auto 28px;
+      color: #676778;
+      font-size: 17px;
+    }
+
+    /* SEARCH */
+
+    .search-box {
+      max-width: 680px;
+      margin: auto;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 58px;
+      border: 1px solid #dedee8;
+      border-radius: 17px;
+      padding: 0 22px 0 52px;
+      font-size: 15px;
+      outline: none;
+      background: white;
+      box-shadow: 0 12px 35px rgba(30,30,70,0.07);
+    }
+
+    .search-box input:focus {
+      border-color: #8c80ed;
+      box-shadow: 0 0 0 4px rgba(108,92,231,0.10);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 20px;
+      top: 18px;
+      font-size: 20px;
+      color: #777;
+    }
+
+    /* SECTION */
+
+    section {
+      padding: 35px 0 65px;
+    }
+
+    .section-head {
+      margin-bottom: 22px;
+    }
+
+    .section-head h2 {
+      font-size: 28px;
+      letter-spacing: -0.7px;
+    }
+
+    .section-head p {
+      color: #747486;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    /* CATEGORIES */
+
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .category {
+      background: white;
+      border: 1px solid #e8e8ef;
+      border-radius: 18px;
+      padding: 22px;
+      transition: 0.2s ease;
+    }
+
+    .category:hover {
+      transform: translateY(-3px);
+      border-color: #c9c3ff;
+      box-shadow: 0 12px 30px rgba(30,30,70,0.07);
+    }
+
+    .category-icon {
+      font-size: 27px;
+      margin-bottom: 12px;
+    }
+
+    .category h3 {
+      font-size: 16px;
+    }
+
+    .category p {
+      font-size: 13px;
+      color: #777787;
+      margin-top: 5px;
+    }
+
+    /* TOOLS */
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .tool {
+      background: white;
+      border: 1px solid #e8e8ef;
+      border-radius: 18px;
+      padding: 22px;
+      transition: 0.2s ease;
+    }
+
+    .tool:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 35px rgba(30,30,70,0.08);
+      border-color: #cbc6ff;
+    }
+
+    .tool-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: #f0efff;
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+
+    .tool h3 {
+      font-size: 17px;
+    }
+
+    .tool p {
+      color: #777787;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .tool-btn {
+      display: inline-block;
+      margin-top: 15px;
+      color: #6354df;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    /* FOOTER */
+
+    footer {
+      border-top: 1px solid #e8e8ef;
+      padding: 35px 0;
+      background: white;
+      color: #747486;
+      font-size: 13px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-brand {
+      color: #171725;
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 800px) {
+      .nav-links {
+        display: none;
+      }
+
+      .categories {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tools {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 55px;
+      }
+
+      .hero h1 {
+        letter-spacing: -2px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        width: min(100% - 22px, 1120px);
+      }
+
+      .categories {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .category {
+        padding: 17px;
+      }
+
+      .hero p {
+        font-size: 15px;
+      }
+    }
+
+    /* DARK MODE */
+
+    body.dark {
+      background: #101014;
+      color: #f5f5fa;
+    }
+
+    body.dark header,
+    body.dark footer,
+    body.dark .category,
+    body.dark .tool,
+    body.dark .search-box input {
+      background: #18181e;
+      border-color: #292931;
+    }
+
+    body.dark .nav-links,
+    body.dark .hero p,
+    body.dark .section-head p,
+    body.dark .category p,
+    body.dark .tool p,
+    body.dark footer {
+      color: #a7a7b4;
+    }
+
+    body.dark .theme-btn,
+    body.dark .tool-icon {
+      background: #25242f;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="container nav">
+
+    <a href="#" class="logo">
+      NEX<span>ORA</span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#tools">Tools</a>
+      <a href="#categories">Categories</a>
+      <a href="#about">About</a>
+    </nav>
+
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">
+      🌙
+    </button>
+
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+
+    <div class="container">
+
+      <div class="badge">
+        ⚡ Free • Fast • Simple
+      </div>
+
+      <h1>
+        Powerful tools for
+        <span>everyday tasks.</span>
+      </h1>
+
+      <p>
+        NEXORA brings together simple, fast and free online tools
+        for calculations, images, documents, text and more.
+      </p>
+
+      <div class="search-box">
+
+        <span class="search-icon">⌕</span>
+
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Search for a tool..."
+          autocomplete="off"
+        >
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section id="categories">
+
+    <div class="container">
+
+      <div class="section-head">
+        <h2>Explore categories</h2>
+        <p>Find the right tool for your task.</p>
+      </div>
+
+      <div class="categories">
+
+        <div class="category">
+          <div class="category-icon">🧮</div>
+          <h3>Calculators</h3>
+          <p>Everyday calculations made simple.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">📄</div>
+          <h3>PDF Tools</h3>
+          <p>Work with documents quickly.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">🖼️</div>
+          <h3>Image Tools</h3>
+          <p>Resize, compress and convert images.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">✍️</div>
+          <h3>Text Tools</h3>
+          <p>Count, convert and clean text.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">🔄</div>
+          <h3>Converters</h3>
+          <p>Convert units and file formats.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">🔐</div>
+          <h3>Security</h3>
+          <p>Useful privacy and security utilities.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">🔗</div>
+          <h3>Everyday Tools</h3>
+          <p>Simple tools for daily needs.</p>
+        </div>
+
+        <div class="category">
+          <div class="category-icon">💻</div>
+          <h3>Developer Tools</h3>
+          <p>Helpful utilities for developers.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section id="tools">
+
+    <div class="container">
+
+      <div class="section-head">
+        <h2>Popular tools</h2>
+        <p>More powerful tools are coming soon.</p>
+      </div>
+
+      <div class="tools">
+
+        <div class="tool" data-name="age calculator">
+
+          <div class="tool-icon">🎂</div>
+
+          <h3>Age Calculator</h3>
+
+          <p>
+            Calculate your exact age quickly and easily.
+          </p>
+
+          <span class="tool-btn">
+            Coming soon →
+          </span>
+
+        </div>
+
+        <div class="tool" data-name="percentage calculator">
+
+          <div class="tool-icon">％</div>
+
+          <h3>Percentage Calculator</h3>
+
+          <p>
+            Calculate percentages and percentage changes.
+          </p>
+
+          <span class="tool-btn">
+            Coming soon →
+          </span>
+
+        </div>
+
+        <div class="tool" data-name="bmi calculator">
+
+          <div class="tool-icon">⚖️</div>
+
+          <h3>BMI Calculator</h3>
+
+          <p>
+            Calculate BMI quickly using height and weight.
+          </p>
+
+          <span class="tool-btn">
+            Coming soon →
+          </span>
+
+        </div>
+
+        <div class="tool" data-name="discount calculator">
+
+          <div class="tool-icon">🏷️</div>
+
+          <h3>Discount Calculator</h3>
+
+          <p>
+            Quickly calculate discounts and final prices.
+          </p>
+
+          <span class="tool-btn">
+            Coming soon →
+          </span>
+
+        </div>
+
+        <div class="tool" data-name="unit converter">
+
+          <div class="tool-icon">🔄</div>
+
+          <h3>Unit Converter</h3>
+
+          <p>
+            Convert common units quickly and accurately.
+          </p>
+
+          <span class="tool-btn">
+            Coming soon →
+          </span>
+
+        </div>
+
+        <div class="tool" data-name="qr code generator">
+
+          <div class="tool-icon">▦</div>
+
+          <h3>QR Code Generator</h3>
+
+          <p>
+            Create QR codes for links and text.
+          </p>
+
+          <span class="tool-btn">
+            Coming soon →
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section id="about">
+
+    <div class="container">
+
+      <div class="section-head">
+        <h2>About NEXORA</h2>
+
+        <p>
+          NEXORA is being built to make useful online tools
+          simple, fast and accessible to everyone.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+
+  <div class="container footer-inner">
+
+    <div>
+      <div class="footer-brand">NEXORA</div>
+      <div>Free tools. Simple solutions.</div>
+    </div>
+
+    <div>
+      © 2026 NEXORA
+    </div>
+
+  </div>
+
+</footer>
+
+<script>
+
+  const themeBtn = document.getElementById("themeBtn");
+
+  themeBtn.addEventListener("click", () => {
+
+    document.body.classList.toggle("dark");
+
+    themeBtn.textContent =
+      document.body.classList.contains("dark")
+        ? "☀️"
+        : "🌙";
+
+  });
+
+
+  const searchInput = document.getElementById("searchInput");
+
+  const tools = document.querySelectorAll(".tool");
+
+  searchInput.addEventListener("input", () => {
+
+    const query = searchInput.value.toLowerCase().trim();
+
+    tools.forEach(tool => {
+
+      const name = tool.dataset.name;
+
+      tool.style.display =
+        !query || name.includes(query)
+          ? ""
+          : "none";
+
+    });
+
+  });
+
+</script>
+
+</body>
+</html>
