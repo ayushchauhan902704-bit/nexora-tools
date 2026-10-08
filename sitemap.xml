@@ -60,6 +60,11 @@
     <loc>https://nexora-tools-drab.vercel.app/password-generator.html</loc>
     <lastmod>2026-10-08</lastmod>
     <priority>0.8</priority>
+  </url> 
+    <url>
+    <loc>https://nexora-tools-drab.vercel.app/date-difference-calculator.html</loc>
+    <lastmod>2026-10-08</lastmod>
+    <priority>0.8</priority>
   </url>
 
 </urlset>
