@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>BMI Calculator - Calculate Your Body Mass Index | NEXORA</title>
+  <meta name="description" content="Use NEXORA's free BMI Calculator to calculate your Body Mass Index, understand your BMI category, and check your healthy weight range.">
+  <meta name="robots" content="index, follow">
+
+  <style>
+    :root{
+      --bg:#f7f8fc;
+      --card:#ffffff;
+      --text:#151823;
+      --muted:#687080;
+      --primary:#6c5ce7;
+      --primary2:#8b7cf6;
+      --border:#e5e7ef;
+      --soft:#f0efff;
+      --shadow:0 12px 35px rgba(20,25,50,.08);
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html{
+      scroll-behavior:smooth;
+    }
+
+    body{
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.6;
+    }
+
+    body.dark{
+      --bg:#101116;
+      --card:#181a22;
+      --text:#f4f5f8;
+      --muted:#a9adba;
+      --border:#2b2e39;
+      --soft:#242331;
+      --shadow:0 12px 35px rgba(0,0,0,.28);
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:100;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border);
+    }
+
+    body.dark header{
+      background:rgba(16,17,22,.92);
+    }
+
+    .nav{
+      max-width:1100px;
+      margin:auto;
+      padding:16px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:15px;
+    }
+
+    .logo{
+      text-decoration:none;
+      color:var(--text);
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:-.5px;
+    }
+
+    .logo span{
+      color:var(--primary);
+    }
+
+    .nav-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .nav-btn{
+      border:1px solid var(--border);
+      background:var(--card);
+      color:var(--text);
+      border-radius:10px;
+      padding:9px 12px;
+      cursor:pointer;
+      font-size:14px;
+      text-decoration:none;
+    }
+
+    .hero{
+      max-width:850px;
+      margin:0 auto;
+      padding:55px 20px 30px;
+      text-align:center;
+    }
+
+    .badge{
+      display:inline-block;
+      background:var(--soft);
+      color:var(--primary);
+      padding:6px 12px;
+      border-radius:30px;
+      font-size:13px;
+      font-weight:700;
+      margin-bottom:14px;
+    }
+
+    h1{
+      font-size:clamp(30px,6vw,48px);
+      line-height:1.12;
+      letter-spacing:-1.5px;
+      margin-bottom:14px;
+    }
+
+    .hero p{
+      max-width:650px;
+      margin:auto;
+      color:var(--muted);
+      font-size:16px;
+    }
+
+    .container{
+      max-width:850px;
+      margin:auto;
+      padding:20px;
+    }
+
+    .calculator{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:25px;
+      box-shadow:var(--shadow);
+    }
+
+    .unit-switch{
+      display:flex;
+      gap:8px;
+      background:var(--soft);
+      padding:5px;
+      border-radius:12px;
+      margin-bottom:24px;
+    }
+
+    .unit-switch button{
+      flex:1;
+      border:0;
+      background:transparent;
+      color:var(--text);
+      padding:11px;
+      border-radius:9px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .unit-switch button.active{
+      background:var(--primary);
+      color:white;
+    }
+
+    .field{
+      margin-bottom:18px;
+    }
+
+    label{
+      display:block;
+      font-weight:700;
+      margin-bottom:7px;
+      font-size:14px;
+    }
+
+    input{
+      width:100%;
+      padding:14px 15px;
+      border:1px solid var(--border);
+      background:var(--bg);
+      color:var(--text);
+      border-radius:11px;
+      outline:none;
+      font-size:16px;
+    }
+
+    input:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(108,92,231,.12);
+    }
+
+    .unit-label{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:5px;
+    }
+
+    .buttons{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .btn{
+      flex:1;
+      border:0;
+      border-radius:11px;
+      padding:14px;
+      font-size:15px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .calculate{
+      background:var(--primary);
+      color:white;
+    }
+
+    .calculate:hover{
+      background:var(--primary2);
+    }
+
+    .reset{
+      background:var(--soft);
+      color:var(--text);
+    }
+
+    .result{
+      display:none;
+      margin-top:25px;
+      padding:24px;
+      border-radius:18px;
+      background:var(--soft);
+      text-align:center;
+    }
+
+    .result.show{
+      display:block;
+    }
+
+    .result-title{
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:5px;
+    }
+
+    .bmi-number{
+      font-size:48px;
+      font-weight:900;
+      line-height:1.1;
+      color:var(--primary);
+    }
+
+    .category{
+      display:inline-block;
+      margin-top:10px;
+      padding:7px 15px;
+      border-radius:30px;
+      background:var(--card);
+      font-weight:800;
+    }
+
+    .info-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      margin-top:18px;
+      text-align:left;
+    }
+
+    .info-box{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:13px;
+    }
+
+    .info-box small{
+      color:var(--muted);
+      display:block;
+      margin-bottom:3px;
+    }
+
+    .info-box strong{
+      font-size:15px;
+    }
+
+    .content{
+      max-width:850px;
+      margin:30px auto 60px;
+      padding:0 20px;
+    }
+
+    .section{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:24px;
+      margin-bottom:18px;
+    }
+
+    .section h2{
+      font-size:23px;
+      margin-bottom:12px;
+    }
+
+    .section h3{
+      font-size:18px;
+      margin:18px 0 8px;
+    }
+
+    .section p{
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+
+    .formula{
+      background:var(--soft);
+      border-radius:12px;
+      padding:15px;
+      font-weight:700;
+      margin:12px 0;
+    }
+
+    .table-wrap{
+      overflow-x:auto;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+    }
+
+    th,td{
+      border-bottom:1px solid var(--border);
+      padding:11px;
+      text-align:left;
+    }
+
+    th{
+      font-size:14px;
+    }
+
+    td{
+      color:var(--muted);
+    }
+
+    footer{
+      text-align:center;
+      padding:30px 20px;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .back{
+      color:var(--primary);
+      text-decoration:none;
+      font-weight:700;
+    }
+
+    @media(max-width:600px){
+      .calculator{
+        padding:18px;
+      }
+
+      .buttons{
+        flex-direction:column;
+      }
+
+      .info-grid{
+        grid-template-columns:1fr;
+      }
+
+      .hero{
+        padding-top:40px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <nav class="nav">
+    <a href="index.html" class="logo">NEX<span>ORA</span></a>
+
+    <div class="nav-actions">
+      <a href="index.html" class="nav-btn">← All Tools</a>
+      <button class="nav-btn" onclick="toggleDark()">🌙</button>
+    </div>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero">
+    <span class="badge">FREE ONLINE TOOL</span>
+
+    <h1>BMI Calculator</h1>
+
+    <p>
+      Calculate your Body Mass Index quickly and understand your BMI category
+      using NEXORA's free BMI Calculator.
+    </p>
+  </section>
+
+  <div class="container">
+
+    <div class="calculator">
+
+      <div class="unit-switch">
+        <button id="metricBtn" class="active" onclick="setUnit('metric')">
+          Metric
+        </button>
+
+        <button id="usBtn" onclick="setUnit('us')">
+          US Units
+        </button>
+      </div>
+
+      <div class="field">
+        <label for="height">Height</label>
+
+        <input
+          type="number"
+          id="height"
+          placeholder="Enter your height"
+          min="1"
+          step="0.1"
+        >
+
+        <div class="unit-label" id="heightUnit">
+          Centimeters (cm)
+        </div>
+      </div>
+
+      <div class="field" id="weightField">
+        <label for="weight">Weight</label>
+
+        <input
+          type="number"
+          id="weight"
+          placeholder="Enter your weight"
+          min="1"
+          step="0.1"
+        >
+
+        <div class="unit-label" id="weightUnit">
+          Kilograms (kg)
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="btn calculate" onclick="calculateBMI()">
+          Calculate BMI
+        </button>
+
+        <button class="btn reset" onclick="resetCalculator()">
+          Reset
+        </button>
+      </div>
+
+      <div class="result" id="result">
+
+        <div class="result-title">Your BMI</div>
+
+        <div class="bmi-number" id="bmiValue">0</div>
+
+        <div class="category" id="bmiCategory">
+          -
+        </div>
+
+        <div class="info-grid">
+
+          <div class="info-box">
+            <small>BMI Range</small>
+            <strong id="rangeText">-</strong>
+          </div>
+
+          <div class="info-box">
+            <small>Healthy BMI</small>
+            <strong>18.5 – 24.9</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <section class="content">
+
+    <div class="section">
+
+      <h2>What is BMI?</h2>
+
+      <p>
+        BMI stands for Body Mass Index. It is a commonly used measurement
+        calculated from a person's height and weight to provide an estimate
+        of whether their weight falls within a particular range.
+      </p>
+
+      <div class="formula">
+        BMI = Weight (kg) ÷ Height² (m²)
+      </div>
+
+      <p>
+        BMI is a general screening measurement and does not directly measure
+        body fat or account for every individual health factor.
+      </p>
+
+    </div>
+
+    <div class="section">
+
+      <h2>BMI Categories</h2>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>BMI</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>Below 18.5</td>
+              <td>Underweight</td>
+            </tr>
+
+            <tr>
+              <td>18.5 – 24.9</td>
+              <td>Normal weight</td>
+            </tr>
+
+            <tr>
+              <td>25.0 – 29.9</td>
+              <td>Overweight</td>
+            </tr>
+
+            <tr>
+              <td>30.0 or higher</td>
+              <td>Obesity</td>
+            </tr>
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+    <div class="section">
+
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>What is a healthy BMI?</h3>
+
+      <p>
+        For many adults, a BMI between 18.5 and 24.9 is generally classified
+        as the normal or healthy range.
+      </p>
+
+      <h3>Is BMI accurate for everyone?</h3>
+
+      <p>
+        BMI is a screening tool rather than a complete health assessment.
+        It may not accurately represent body composition for athletes,
+        children, older adults, or some other groups.
+      </p>
+
+      <h3>How is BMI calculated?</h3>
+
+      <p>
+        BMI is calculated by dividing weight in kilograms by height in meters
+        squared.
+      </p>
+
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+
+  <p>© 2026 NEXORA. Free tools. Simple solutions.</p>
+
+  <p style="margin-top:8px;">
+    <a href="index.html" class="back">← Back to NEXORA</a>
+  </p>
+
+</footer>
+
+<script>
+
+  let currentUnit = "metric";
+
+  function setUnit(unit){
+
+    currentUnit = unit;
+
+    const metricBtn = document.getElementById("metricBtn");
+    const usBtn = document.getElementById("usBtn");
+    const heightUnit = document.getElementById("heightUnit");
+    const weightUnit = document.getElementById("weightUnit");
+    const heightInput = document.getElementById("height");
+
+    if(unit === "metric"){
+
+      metricBtn.classList.add("active");
+      usBtn.classList.remove("active");
+
+      heightUnit.textContent = "Centimeters (cm)";
+      weightUnit.textContent = "Kilograms (kg)";
+
+      heightInput.placeholder = "e.g. 175";
+
+    }else{
+
+      usBtn.classList.add("active");
+      metricBtn.classList.remove("active");
+
+      heightUnit.textContent = "Inches (in)";
+      weightUnit.textContent = "Pounds (lb)";
+
+      heightInput.placeholder = "e.g. 69";
+
+    }
+
+    resetCalculator();
+
+  }
+
+  function calculateBMI(){
+
+    const height = parseFloat(
+      document.getElementById("height").value
+    );
+
+    const weight = parseFloat(
+      document.getElementById("weight").value
+    );
+
+    if(!height || !weight || height <= 0 || weight <= 0){
+
+      alert("Please enter a valid height and weight.");
+
+      return;
+    }
+
+    let bmi;
+
+    if(currentUnit === "metric"){
+
+      const heightMeters = height / 100;
+
+      bmi = weight / (heightMeters * heightMeters);
+
+    }else{
+
+      bmi = (weight / (height * height)) * 703;
+
+    }
+
+    bmi = Math.round(bmi * 10) / 10;
+
+    let category;
+    let range;
+
+    if(bmi < 18.5){
+
+      category = "Underweight";
+      range = "Below 18.5";
+
+    }else if(bmi < 25){
+
+      category = "Normal weight";
+      range = "18.5 – 24.9";
+
+    }else if(bmi < 30){
+
+      category = "Overweight";
+      range = "25.0 – 29.9";
+
+    }else{
+
+      category = "Obesity";
+      range = "30.0 or higher";
+
+    }
+
+    document.getElementById("bmiValue").textContent = bmi;
+
+    document.getElementById("bmiCategory").textContent = category;
+
+    document.getElementById("rangeText").textContent = range;
+
+    document.getElementById("result").classList.add("show");
+
+    document.getElementById("result").scrollIntoView({
+      behavior:"smooth",
+      block:"nearest"
+    });
+
+  }
+
+  function resetCalculator(){
+
+    document.getElementById("height").value = "";
+
+    document.getElementById("weight").value = "";
+
+    document.getElementById("result").classList.remove("show");
+
+  }
+
+  function toggleDark(){
+
+    document.body.classList.toggle("dark");
+
+    localStorage.setItem(
+      "nexoraDark",
+      document.body.classList.contains("dark")
+    );
+
+  }
+
+  if(localStorage.getItem("nexoraDark") === "true"){
+
+    document.body.classList.add("dark");
+
+  }
+
+</script>
+
+</body>
+</html>
