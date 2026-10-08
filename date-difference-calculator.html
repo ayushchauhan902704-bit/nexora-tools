@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Date Difference Calculator – Calculate Days Between Dates | NEXORA</title>
+
+  <meta name="description" content="Free Date Difference Calculator to calculate the exact difference between two dates in years, months, days, weeks, hours and minutes. Fast, simple and private.">
+
+  <meta name="robots" content="index, follow">
+
+  <link rel="canonical" href="https://nexora-tools-drab.vercel.app/date-difference-calculator.html">
+
+  <meta name="google-site-verification" content="zqASoTyCvuvQ5i316eF2-OKYLmt7vsrr7zVDET5CslY">
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-61NV39S2VE');
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f6f8fb;
+      color: #172033;
+      line-height: 1.6;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav {
+      max-width: 1100px;
+      margin: auto;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .logo {
+      text-decoration: none;
+      font-size: 25px;
+      font-weight: 800;
+      color: #6d28d9;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: #374151;
+      font-weight: 600;
+    }
+
+    .theme-btn {
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: #374151;
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 55px 20px 70px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .hero h1 {
+      font-size: 38px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      max-width: 680px;
+      margin: auto;
+      color: #667085;
+      font-size: 17px;
+    }
+
+    .calculator {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 35px rgba(15, 23, 42, 0.07);
+    }
+
+    .date-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 16px;
+      background: #ffffff;
+      color: #172033;
+      outline: none;
+    }
+
+    input[type="date"]:focus {
+      border-color: #6d28d9;
+      box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.12);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .calculate-btn {
+      flex: 1;
+      background: #6d28d9;
+      color: #ffffff;
+    }
+
+    .reset-btn {
+      background: #eef0f4;
+      color: #374151;
+    }
+
+    .error {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #fff1f2;
+      color: #be123c;
+      font-weight: 600;
+    }
+
+    .result {
+      display: none;
+      margin-top: 25px;
+    }
+
+    .result h2 {
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+
+    .main-result {
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .main-result strong {
+      display: block;
+      font-size: 28px;
+      color: #6d28d9;
+      margin-bottom: 5px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 17px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+
+    .stat span {
+      display: block;
+      color: #667085;
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .stat strong {
+      font-size: 19px;
+    }
+
+    .content {
+      margin-top: 45px;
+    }
+
+    .content section {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 18px;
+    }
+
+    .content h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .content h3 {
+      margin-top: 18px;
+      margin-bottom: 7px;
+    }
+
+    .content p {
+      color: #4b5563;
+      margin-bottom: 10px;
+    }
+
+    .faq {
+      margin-top: 12px;
+    }
+
+    .faq strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    footer {
+      background: #111827;
+      color: #d1d5db;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .footer-links {
+      margin-bottom: 12px;
+    }
+
+    .footer-links a {
+      color: #ffffff;
+      text-decoration: none;
+      margin: 0 7px;
+      font-size: 14px;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    body.dark {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    body.dark header,
+    body.dark .calculator,
+    body.dark .content section {
+      background: #111827;
+      border-color: #273449;
+    }
+
+    body.dark .nav-link,
+    body.dark .theme-btn {
+      color: #e5e7eb;
+    }
+
+    body.dark .theme-btn {
+      background: #111827;
+      border-color: #374151;
+    }
+
+    body.dark .hero p,
+    body.dark .content p,
+    body.dark .stat span {
+      color: #aab4c3;
+    }
+
+    body.dark input[type="date"] {
+      background: #0f172a;
+      color: #f8fafc;
+      border-color: #374151;
+    }
+
+    body.dark .reset-btn {
+      background: #273449;
+      color: #f3f4f6;
+    }
+
+    body.dark .main-result {
+      background: #211b35;
+      border-color: #4c3c73;
+    }
+
+    body.dark .stat {
+      background: #0f172a;
+      border-color: #273449;
+    }
+
+    @media (max-width: 650px) {
+      .nav {
+        padding: 14px 15px;
+      }
+
+      .nav-link {
+        display: none;
+      }
+
+      main {
+        padding: 38px 15px 55px;
+      }
+
+      .hero h1 {
+        font-size: 30px;
+      }
+
+      .hero p {
+        font-size: 15px;
+      }
+
+      .calculator {
+        padding: 20px;
+      }
+
+      .date-grid,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .buttons {
+        flex-direction: column;
+      }
+
+      .content section {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="nav">
+
+      <a href="https://nexora-tools-drab.vercel.app/" class="logo">
+        NEXORA
+      </a>
+
+      <div class="nav-right">
+        <a href="https://nexora-tools-drab.vercel.app/" class="nav-link">
+          All Tools
+        </a>
+
+        <button class="theme-btn" id="themeBtn">
+          🌙 Dark
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main>
+
+    <div class="hero">
+      <h1>Date Difference Calculator</h1>
+
+      <p>
+        Calculate the exact difference between two dates in years, months,
+        days, weeks, hours and minutes.
+      </p>
+    </div>
+
+    <div class="calculator">
+
+      <div class="date-grid">
+
+        <div class="field">
+          <label for="startDate">Start Date</label>
+          <input type="date" id="startDate">
+        </div>
+
+        <div class="field">
+          <label for="endDate">End Date</label>
+          <input type="date" id="endDate">
+        </div>
+
+      </div>
+
+      <div class="buttons">
+
+        <button class="calculate-btn" id="calculateBtn">
+          Calculate Difference
+        </button>
+
+        <button class="reset-btn" id="resetBtn">
+          Reset
+        </button>
+
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="result" id="result">
+
+        <h2>Result</h2>
+
+        <div class="main-result">
+          <strong id="ymdResult">0 years, 0 months, 0 days</strong>
+          <span>Exact calendar difference</span>
+        </div>
+
+        <div class="stats">
+
+          <div class="stat">
+            <span>Total Days</span>
+            <strong id="daysResult">0</strong>
+          </div>
+
+          <div class="stat">
+            <span>Total Weeks</span>
+            <strong id="weeksResult">0</strong>
+          </div>
+
+          <div class="stat">
+            <span>Total Hours</span>
+            <strong id="hoursResult">0</strong>
+          </div>
+
+          <div class="stat">
+            <span>Total Minutes</span>
+            <strong id="minutesResult">0</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      <section>
+        <h2>What is a Date Difference Calculator?</h2>
+
+        <p>
+          A Date Difference Calculator helps you find the amount of time
+          between two calendar dates. It can be useful for calculating
+          project durations, age-related periods, deadlines, anniversaries,
+          contracts and other date-based periods.
+        </p>
+
+        <p>
+          Enter a start date and an end date above to instantly calculate
+          the difference.
+        </p>
+      </section>
+
+      <section>
+        <h2>How to Calculate the Difference Between Two Dates</h2>
+
+        <p>
+          Select the starting date and ending date, then click
+          <strong>Calculate Difference</strong>.
+        </p>
+
+        <p>
+          The calculator shows the calendar difference in years, months and
+          days, along with the total number of days, weeks, hours and minutes.
+        </p>
+      </section>
+
+      <section>
+        <h2>Common Uses</h2>
+
+        <h3>Project Planning</h3>
+        <p>
+          Find the duration between a project start date and its deadline.
+        </p>
+
+        <h3>Events and Anniversaries</h3>
+        <p>
+          Calculate how much time has passed between important dates.
+        </p>
+
+        <h3>Work and Contracts</h3>
+        <p>
+          Quickly determine the number of days between employment or contract
+          dates.
+        </p>
+      </section>
+
+      <section>
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq">
+          <strong>Does this calculator work with leap years?</strong>
+          <p>
+            Yes. The calendar calculation accounts for different month
+            lengths and leap years.
+          </p>
+        </div>
+
+        <div class="faq">
+          <strong>Can I calculate the difference between past dates?</strong>
+          <p>
+            Yes. You can enter any two valid calendar dates.
+          </p>
+        </div>
+
+        <div class="faq">
+          <strong>Is my date information stored?</strong>
+          <p>
+            No. The calculation is performed directly in your browser.
+          </p>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <footer>
+
+    <div class="footer-links">
+      <a href="https://nexora-tools-drab.vercel.app/">Home</a>
+      <a href="https://nexora-tools-drab.vercel.app/About.html">About</a>
+      <a href="https://nexora-tools-drab.vercel.app/Contact.html">Contact</a>
+      <a href="https://nexora-tools-drab.vercel.app/Privacy.html">Privacy</a>
+      <a href="https://nexora-tools-drab.vercel.app/Terms.html">Terms</a>
+      <a href="https://nexora-tools-drab.vercel.app/Disclaimer.html">Disclaimer</a>
+    </div>
+
+    <p>
+      © 2026 NEXORA. Free, fast and simple online tools.
+    </p>
+
+  </footer>
+
+  <script>
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    const calculateBtn = document.getElementById("calculateBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const error = document.getElementById("error");
+    const result = document.getElementById("result");
+
+    const ymdResult = document.getElementById("ymdResult");
+    const daysResult = document.getElementById("daysResult");
+    const weeksResult = document.getElementById("weeksResult");
+    const hoursResult = document.getElementById("hoursResult");
+    const minutesResult = document.getElementById("minutesResult");
+
+    function parseDate(value) {
+      const parts = value.split("-").map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function formatNumber(value) {
+      return value.toLocaleString("en-US");
+    }
+
+    function calculateCalendarDifference(start, end) {
+      let years = end.getFullYear() - start.getFullYear();
+      let months = end.getMonth() - start.getMonth();
+      let days = end.getDate() - start.getDate();
+
+      if (days < 0) {
+        months--;
+
+        const previousMonth = new Date(
+          end.getFullYear(),
+          end.getMonth(),
+          0
+        );
+
+        days += previousMonth.getDate();
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      return { years, months, days };
+    }
+
+    calculateBtn.addEventListener("click", function () {
+
+      error.style.display = "none";
+      result.style.display = "none";
+
+      if (!startDate.value || !endDate.value) {
+        error.textContent = "Please select both dates.";
+        error.style.display = "block";
+        return;
+      }
+
+      const start = parseDate(startDate.value);
+      const end = parseDate(endDate.value);
+
+      if (start > end) {
+        error.textContent = "Start Date must be before or equal to End Date.";
+        error.style.display = "block";
+        return;
+      }
+
+      const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+      const totalMilliseconds = end.getTime() - start.getTime();
+      const totalDays = Math.round(
+        totalMilliseconds / millisecondsPerDay
+      );
+
+      const totalWeeks = totalDays / 7;
+      const totalHours = totalDays * 24;
+      const totalMinutes = totalDays * 24 * 60;
+
+      const difference = calculateCalendarDifference(start, end);
+
+      ymdResult.textContent =
+        `${difference.years} years, ${difference.months} months, ${difference.days} days`;
+
+      daysResult.textContent = formatNumber(totalDays);
+
+      weeksResult.textContent = totalWeeks.toLocaleString("en-US", {
+        maximumFractionDigits: 2
+      });
+
+      hoursResult.textContent = formatNumber(totalHours);
+
+      minutesResult.textContent = formatNumber(totalMinutes);
+
+      result.style.display = "block";
+    });
+
+    resetBtn.addEventListener("click", function () {
+
+      startDate.value = "";
+      endDate.value = "";
+
+      error.style.display = "none";
+      result.style.display = "none";
+
+    });
+
+    const themeBtn = document.getElementById("themeBtn");
+
+    themeBtn.addEventListener("click", function () {
+
+      document.body.classList.toggle("dark");
+
+      if (document.body.classList.contains("dark")) {
+        themeBtn.textContent = "☀️ Light";
+      } else {
+        themeBtn.textContent = "🌙 Dark";
+      }
+
+    });
+  </script>
+
+</body>
+</html>
