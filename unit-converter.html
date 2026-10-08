@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Unit Converter - Length, Weight, Temperature & More | NEXORA</title>
+
+  <meta name="description" content="Free online unit converter by NEXORA. Convert length, weight, temperature, area, volume, speed, time and digital data units quickly and accurately.">
+
+  <meta name="robots" content="index, follow">
+
+  <link rel="canonical" href="https://nexora-tools-drab.vercel.app/unit-converter.html">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-61NV39S2VE');
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f6f7fb;
+      color: #202124;
+      line-height: 1.6;
+      transition: 0.3s;
+    }
+
+    body.dark {
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    body.dark header {
+      background: #1f2937;
+      border-color: #374151;
+    }
+
+    .nav {
+      max-width: 1100px;
+      margin: auto;
+      padding: 17px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .logo {
+      text-decoration: none;
+      color: #111827;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: .5px;
+    }
+
+    .logo span {
+      color: #6366f1;
+    }
+
+    body.dark .logo {
+      color: #ffffff;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-btn,
+    .theme-btn {
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 10px;
+    }
+
+    .home-btn {
+      color: #ffffff;
+      background: #6366f1;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .theme-btn {
+      background: #eef0ff;
+      color: #4f46e5;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+
+    body.dark .theme-btn {
+      background: #374151;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 45px auto;
+      padding: 0 18px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .hero h1 {
+      font-size: 38px;
+      color: #111827;
+      margin-bottom: 10px;
+    }
+
+    body.dark .hero h1 {
+      color: #ffffff;
+    }
+
+    .hero p {
+      color: #6b7280;
+      max-width: 700px;
+      margin: auto;
+    }
+
+    body.dark .hero p {
+      color: #d1d5db;
+    }
+
+    .converter {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 35px rgba(0,0,0,.07);
+    }
+
+    body.dark .converter {
+      background: #1f2937;
+      box-shadow: none;
+    }
+
+    .category-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 25px;
+    }
+
+    .category-tabs button {
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #374151;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: .2s;
+    }
+
+    .category-tabs button:hover,
+    .category-tabs button.active {
+      background: #6366f1;
+      color: #ffffff;
+      border-color: #6366f1;
+    }
+
+    body.dark .category-tabs button {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f3f4f6;
+    }
+
+    body.dark .category-tabs button.active {
+      background: #6366f1;
+      border-color: #6366f1;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 7px;
+      color: #374151;
+    }
+
+    body.dark label {
+      color: #e5e7eb;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #111827;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+
+    body.dark input,
+    body.dark select {
+      background: #111827;
+      color: #ffffff;
+      border-color: #4b5563;
+    }
+
+    .conversion-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .swap-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: #eef0ff;
+      color: #4f46e5;
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 1px;
+    }
+
+    body.dark .swap-btn {
+      background: #374151;
+      color: #ffffff;
+    }
+
+    .result {
+      margin-top: 25px;
+      padding: 22px;
+      background: #f3f4ff;
+      border-radius: 14px;
+      text-align: center;
+      display: none;
+    }
+
+    body.dark .result {
+      background: #293247;
+    }
+
+    .result-label {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    body.dark .result-label {
+      color: #d1d5db;
+    }
+
+    .result-value {
+      color: #4f46e5;
+      font-size: 30px;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .calculate-btn,
+    .reset-btn {
+      flex: 1;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .calculate-btn {
+      background: #6366f1;
+      color: #ffffff;
+    }
+
+    .reset-btn {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    body.dark .reset-btn {
+      background: #374151;
+      color: #ffffff;
+    }
+
+    .info {
+      background: #ffffff;
+      margin-top: 30px;
+      padding: 30px;
+      border-radius: 18px;
+      box-shadow: 0 6px 25px rgba(0,0,0,.05);
+    }
+
+    body.dark .info {
+      background: #1f2937;
+    }
+
+    .info h2 {
+      color: #111827;
+      margin-bottom: 12px;
+      margin-top: 25px;
+    }
+
+    .info h2:first-child {
+      margin-top: 0;
+    }
+
+    body.dark .info h2 {
+      color: #ffffff;
+    }
+
+    .info p,
+    .info li {
+      color: #5f6368;
+    }
+
+    body.dark .info p,
+    body.dark .info li {
+      color: #d1d5db;
+    }
+
+    .info ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .faq {
+      margin-top: 30px;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 0;
+    }
+
+    body.dark .faq-item {
+      border-color: #374151;
+    }
+
+    .faq-item h3 {
+      font-size: 17px;
+      margin-bottom: 6px;
+      color: #111827;
+    }
+
+    body.dark .faq-item h3 {
+      color: #ffffff;
+    }
+
+    .faq-item p {
+      margin: 0;
+    }
+
+    footer {
+      margin-top: 45px;
+      background: #111827;
+      color: #d1d5db;
+      padding: 35px 20px;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: auto;
+      text-align: center;
+    }
+
+    .footer-logo {
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 15px;
+    }
+
+    .footer-logo span {
+      color: #818cf8;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin: 18px 0;
+    }
+
+    .footer-links a {
+      color: #d1d5db;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .copyright {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 700px) {
+      .hero h1 {
+        font-size: 30px;
+      }
+
+      .converter {
+        padding: 20px;
+      }
+
+      .conversion-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .swap-btn {
+        transform: rotate(90deg);
+        margin: 0 auto;
+      }
+
+      .buttons {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .nav {
+        padding: 14px;
+      }
+
+      .logo {
+        font-size: 23px;
+      }
+
+      .home-btn {
+        padding: 9px 12px;
+      }
+
+      .container {
+        margin: 28px auto;
+      }
+
+      .category-tabs button {
+        flex: 1 1 auto;
+      }
+
+      .info {
+        padding: 22px 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="nav">
+
+    <a href="index.html" class="logo">
+      NEX<span>ORA</span>
+    </a>
+
+    <div class="nav-right">
+
+      <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle dark mode">
+        🌙
+      </button>
+
+      <a href="index.html" class="home-btn">
+        Home
+      </a>
+
+    </div>
+  </div>
+</header>
+
+
+<main class="container">
+
+  <section class="hero">
+
+    <h1>Unit Converter</h1>
+
+    <p>
+      Convert length, weight, temperature, area, volume, speed,
+      time and digital data units quickly and easily.
+    </p>
+
+  </section>
+
+
+  <section class="converter">
+
+    <div class="category-tabs">
+
+      <button class="active" onclick="setCategory('length', this)">
+        Length
+      </button>
+
+      <button onclick="setCategory('weight', this)">
+        Weight
+      </button>
+
+      <button onclick="setCategory('temperature', this)">
+        Temperature
+      </button>
+
+      <button onclick="setCategory('area', this)">
+        Area
+      </button>
+
+      <button onclick="setCategory('volume', this)">
+        Volume
+      </button>
+
+      <button onclick="setCategory('speed', this)">
+        Speed
+      </button>
+
+      <button onclick="setCategory('time', this)">
+        Time
+      </button>
+
+      <button onclick="setCategory('data', this)">
+        Data
+      </button>
+
+    </div>
+
+
+    <div class="input-group">
+
+      <label for="value">
+        Enter Value
+      </label>
+
+      <input
+        type="number"
+        id="value"
+        placeholder="Enter a value"
+        step="any"
+      >
+
+    </div>
+
+
+    <div class="conversion-grid">
+
+      <div class="input-group">
+
+        <label for="fromUnit">
+          From
+        </label>
+
+        <select id="fromUnit"></select>
+
+      </div>
+
+
+      <button class="swap-btn" onclick="swapUnits()" title="Swap units">
+        ⇄
+      </button>
+
+
+      <div class="input-group">
+
+        <label for="toUnit">
+          To
+        </label>
+
+        <select id="toUnit"></select>
+
+      </div>
+
+    </div>
+
+
+    <div class="buttons">
+
+      <button class="calculate-btn" onclick="convert()">
+        Convert
+      </button>
+
+      <button class="reset-btn" onclick="resetTool()">
+        Reset
+      </button>
+
+    </div>
+
+
+    <div class="result" id="result">
+
+      <div class="result-label">
+        Converted Result
+      </div>
+
+      <div class="result-value" id="resultValue">
+        —
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="info">
+
+    <h2>What is a Unit Converter?</h2>
+
+    <p>
+      A unit converter helps you convert measurements from one
+      unit to another. NEXORA's free unit converter supports
+      commonly used units across several categories.
+    </p>
+
+
+    <h2>Supported Conversions</h2>
+
+    <ul>
+
+      <li>Length — meters, kilometers, centimeters, miles, feet, inches and more.</li>
+
+      <li>Weight — kilograms, grams, pounds, ounces and more.</li>
+
+      <li>Temperature — Celsius, Fahrenheit and Kelvin.</li>
+
+      <li>Area — square meters, square kilometers, acres and more.</li>
+
+      <li>Volume — liters, milliliters, gallons, cubic meters and more.</li>
+
+      <li>Speed — km/h, mph, m/s and knots.</li>
+
+      <li>Time — seconds, minutes, hours, days and weeks.</li>
+
+      <li>Data — bytes, KB, MB, GB and TB.</li>
+
+    </ul>
+
+
+    <h2>Why Use NEXORA Unit Converter?</h2>
+
+    <p>
+      NEXORA provides a simple, fast and mobile-friendly way to
+      perform everyday unit conversions without installing an app.
+    </p>
+
+
+    <div class="faq">
+
+      <h2>Frequently Asked Questions</h2>
+
+
+      <div class="faq-item">
+
+        <h3>Is the NEXORA Unit Converter free?</h3>
+
+        <p>
+          Yes. The NEXORA Unit Converter is free to use.
+        </p>
+
+      </div>
+
+
+      <div class="faq-item">
+
+        <h3>Which units can I convert?</h3>
+
+        <p>
+          You can convert length, weight, temperature, area,
+          volume, speed, time and digital data units.
+        </p>
+
+      </div>
+
+
+      <div class="faq-item">
+
+        <h3>Does it work on mobile phones?</h3>
+
+        <p>
+          Yes. The converter is designed to work on smartphones,
+          tablets and desktop devices.
+        </p>
+
+      </div>
+
+
+      <div class="faq-item">
+
+        <h3>Do I need to install anything?</h3>
+
+        <p>
+          No. The converter works directly in your web browser.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<footer>
+
+  <div class="footer-inner">
+
+    <div class="footer-logo">
+      NEX<span>ORA</span>
+    </div>
+
+    <div class="footer-links">
+
+      <a href="index.html">Home</a>
+
+      <a href="about.html">About</a>
+
+      <a href="contact.html">Contact</a>
+
+      <a href="privacy.html">Privacy</a>
+
+      <a href="terms.html">Terms</a>
+
+      <a href="disclaimer.html">Disclaimer</a>
+
+    </div>
+
+    <div class="copyright">
+      © 2026 NEXORA. All rights reserved.
+    </div>
+
+  </div>
+
+</footer>
+
+
+<script>
+
+  const units = {
+
+    length: {
+      "Meter (m)": 1,
+      "Kilometer (km)": 1000,
+      "Centimeter (cm)": 0.01,
+      "Millimeter (mm)": 0.001,
+      "Mile (mi)": 1609.344,
+      "Yard (yd)": 0.9144,
+      "Foot (ft)": 0.3048,
+      "Inch (in)": 0.0254
+    },
+
+    weight: {
+      "Kilogram (kg)": 1,
+      "Gram (g)": 0.001,
+      "Milligram (mg)": 0.000001,
+      "Pound (lb)": 0.45359237,
+      "Ounce (oz)": 0.028349523125,
+      "Stone (st)": 6.35029318
+    },
+
+    temperature: [
+      "Celsius (°C)",
+      "Fahrenheit (°F)",
+      "Kelvin (K)"
+    ],
+
+    area: {
+      "Square Meter (m²)": 1,
+      "Square Kilometer (km²)": 1000000,
+      "Square Centimeter (cm²)": 0.0001,
+      "Square Foot (ft²)": 0.09290304,
+      "Square Yard (yd²)": 0.83612736,
+      "Acre": 4046.8564224,
+      "Hectare": 10000
+    },
+
+    volume: {
+      "Liter (L)": 1,
+      "Milliliter (mL)": 0.001,
+      "Cubic Meter (m³)": 1000,
+      "Cubic Centimeter (cm³)": 0.001,
+      "US Gallon": 3.785411784,
+      "US Quart": 0.946352946,
+      "US Pint": 0.473176473,
+      "US Cup": 0.2365882365
+    },
+
+    speed: {
+      "Kilometer per Hour (km/h)": 1,
+      "Meter per Second (m/s)": 3.6,
+      "Mile per Hour (mph)": 1.609344,
+      "Knot (kn)": 1.852
+    },
+
+    time: {
+      "Second (s)": 1,
+      "Minute (min)": 60,
+      "Hour (h)": 3600,
+      "Day": 86400,
+      "Week": 604800
+    },
+
+    data: {
+      "Byte (B)": 1,
+      "Kilobyte (KB)": 1024,
+      "Megabyte (MB)": 1024 ** 2,
+      "Gigabyte (GB)": 1024 ** 3,
+      "Terabyte (TB)": 1024 ** 4
+    }
+
+  };
+
+
+  let currentCategory = "length";
+
+
+  function setCategory(category, button) {
+
+    currentCategory = category;
+
+    document
+      .querySelectorAll(".category-tabs button")
+      .forEach(btn => btn.classList.remove("active"));
+
+    button.classList.add("active");
+
+    loadUnits();
+
+    document.getElementById("result").style.display = "none";
+
+  }
+
+
+  function loadUnits() {
+
+    const from = document.getElementById("fromUnit");
+    const to = document.getElementById("toUnit");
+
+    from.innerHTML = "";
+    to.innerHTML = "";
+
+    let list;
+
+    if (currentCategory === "temperature") {
+
+      list = units.temperature;
+
+    } else {
+
+      list = Object.keys(units[currentCategory]);
+
+    }
+
+    list.forEach((unit, index) => {
+
+      const option1 = document.createElement("option");
+      option1.value = unit;
+      option1.textContent = unit;
+
+      const option2 = document.createElement("option");
+      option2.value = unit;
+      option2.textContent = unit;
+
+      from.appendChild(option1);
+      to.appendChild(option2);
+
+    });
+
+    if (list.length > 1) {
+      to.selectedIndex = 1;
+    }
+
+  }
+
+
+  function convert() {
+
+    const value = parseFloat(
+      document.getElementById("value").value
+    );
+
+    const from = document.getElementById("fromUnit").value;
+    const to = document.getElementById("toUnit").value;
+
+    if (isNaN(value)) {
+
+      alert("Please enter a value.");
+
+      return;
+
+    }
+
+    let result;
+
+
+    if (currentCategory === "temperature") {
+
+      result = convertTemperature(value, from, to);
+
+    } else {
+
+      const fromFactor = units[currentCategory][from];
+      const toFactor = units[currentCategory][to];
+
+      result = value * fromFactor / toFactor;
+
+    }
+
+
+    const formatted = Number(result.toFixed(10));
+
+    document.getElementById("resultValue").textContent =
+      formatted + " " + to;
+
+    document.getElementById("result").style.display = "block";
+
+  }
+
+
+  function convertTemperature(value, from, to) {
+
+    let celsius;
+
+    if (from === "Celsius (°C)") {
+
+      celsius = value;
+
+    } else if (from === "Fahrenheit (°F)") {
+
+      celsius = (value - 32) * 5 / 9;
+
+    } else {
+
+      celsius = value - 273.15;
+
+    }
+
+
+    if (to === "Celsius (°C)") {
+
+      return celsius;
+
+    }
+
+    if (to === "Fahrenheit (°F)") {
+
+      return celsius * 9 / 5 + 32;
+
+    }
+
+    return celsius + 273.15;
+
+  }
+
+
+  function swapUnits() {
+
+    const from = document.getElementById("fromUnit");
+    const to = document.getElementById("toUnit");
+
+    const temp = from.value;
+
+    from.value = to.value;
+
+    to.value = temp;
+
+  }
+
+
+  function resetTool() {
+
+    document.getElementById("value").value = "";
+
+    document.getElementById("result").style.display = "none";
+
+    loadUnits();
+
+  }
+
+
+  function toggleTheme() {
+
+    document.body.classList.toggle("dark");
+
+    const button = document.querySelector(".theme-btn");
+
+    button.textContent =
+      document.body.classList.contains("dark") ? "☀️" : "🌙";
+
+  }
+
+
+  loadUnits();
+
+</script>
+
+</body>
+</html>
