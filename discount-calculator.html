@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Discount Calculator - Calculate Sale Price & Savings | NEXORA</title>
+
+  <meta name="description" content="Use NEXORA's free Discount Calculator to calculate sale price, discount amount and total savings quickly and easily.">
+
+  <meta name="robots" content="index, follow">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f6f7fb;
+      color: #171717;
+      line-height: 1.6;
+      transition: 0.3s;
+    }
+
+    body.dark {
+      background: #101114;
+      color: #f5f5f5;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    body.dark header {
+      background: rgba(16,17,20,0.95);
+      border-color: #292b31;
+    }
+
+    .nav {
+      max-width: 1100px;
+      margin: auto;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      color: #111827;
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: #6c4cff;
+    }
+
+    body.dark .logo {
+      color: white;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      border: 1px solid #ddd;
+      background: white;
+      color: #222;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    body.dark .nav-btn {
+      background: #1b1d22;
+      color: white;
+      border-color: #33363e;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 45px 18px 70px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #eeeaff;
+      color: #5a3ee8;
+      padding: 7px 12px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    body.dark .badge {
+      background: #252039;
+      color: #b9aaff;
+    }
+
+    h1 {
+      font-size: clamp(32px, 6vw, 50px);
+      line-height: 1.1;
+      margin-bottom: 15px;
+    }
+
+    .hero p {
+      max-width: 650px;
+      margin: auto;
+      color: #626775;
+      font-size: 17px;
+    }
+
+    body.dark .hero p {
+      color: #b5b8c0;
+    }
+
+    .calculator {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      padding: 25px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.07);
+    }
+
+    body.dark .calculator {
+      background: #181a1f;
+      border-color: #2c2f37;
+      box-shadow: none;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 15px;
+      border: 1px solid #d7dae0;
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+      background: white;
+      color: #171717;
+    }
+
+    input:focus {
+      border-color: #6c4cff;
+      box-shadow: 0 0 0 3px rgba(108,76,255,0.12);
+    }
+
+    body.dark input {
+      background: #101114;
+      color: white;
+      border-color: #3a3d46;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 5px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .calculate {
+      flex: 1;
+      background: #6c4cff;
+      color: white;
+    }
+
+    .calculate:hover {
+      opacity: 0.9;
+    }
+
+    .reset {
+      background: #eceef2;
+      color: #222;
+    }
+
+    body.dark .reset {
+      background: #292c33;
+      color: white;
+    }
+
+    .result {
+      display: none;
+      margin-top: 25px;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .result-card {
+      background: #f6f7fb;
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    body.dark .result-card {
+      background: #22252b;
+    }
+
+    .result-card span {
+      display: block;
+      color: #686d78;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    body.dark .result-card span {
+      color: #aeb2bb;
+    }
+
+    .result-card strong {
+      font-size: 22px;
+    }
+
+    .saving {
+      margin-top: 15px;
+      background: #eefbf3;
+      color: #16753b;
+      padding: 15px;
+      border-radius: 14px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    body.dark .saving {
+      background: #17291e;
+      color: #72d99a;
+    }
+
+    .content {
+      margin-top: 45px;
+    }
+
+    .content section {
+      margin-bottom: 35px;
+    }
+
+    .content h2 {
+      font-size: 26px;
+      margin-bottom: 12px;
+    }
+
+    .content p {
+      color: #5e6470;
+      margin-bottom: 12px;
+    }
+
+    body.dark .content p {
+      color: #b7bac2;
+    }
+
+    .formula {
+      background: white;
+      border: 1px solid #e5e7eb;
+      padding: 18px;
+      border-radius: 14px;
+      margin-top: 15px;
+      font-weight: 700;
+    }
+
+    body.dark .formula {
+      background: #181a1f;
+      border-color: #2c2f37;
+    }
+
+    .faq {
+      border-top: 1px solid #e1e3e8;
+      padding: 18px 0;
+    }
+
+    body.dark .faq {
+      border-color: #30333a;
+    }
+
+    .faq h3 {
+      font-size: 17px;
+      margin-bottom: 7px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px 15px;
+      border-top: 1px solid #e5e7eb;
+      color: #777;
+      font-size: 14px;
+    }
+
+    body.dark footer {
+      border-color: #292b31;
+      color: #999;
+    }
+
+    @media (max-width: 650px) {
+      .input-grid,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calculator {
+        padding: 18px;
+      }
+
+      .button-row {
+        flex-direction: column;
+      }
+
+      main {
+        padding-top: 30px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="nav">
+
+    <a href="index.html" class="logo">
+      NEX<span>ORA</span>
+    </a>
+
+    <div class="nav-right">
+      <a href="index.html" class="nav-btn">← All Tools</a>
+      <button class="nav-btn" onclick="toggleDark()">🌙</button>
+    </div>
+
+  </div>
+</header>
+
+<main>
+
+  <div class="hero">
+
+    <div class="badge">Free Online Calculator</div>
+
+    <h1>Discount Calculator</h1>
+
+    <p>
+      Calculate discount amount, final sale price and how much money you save.
+      Fast, simple and completely free.
+    </p>
+
+  </div>
+
+
+  <div class="calculator">
+
+    <div class="input-grid">
+
+      <div class="field">
+        <label for="price">Original Price</label>
+        <input
+          type="number"
+          id="price"
+          placeholder="e.g. 1000"
+          min="0"
+          step="0.01"
+        >
+      </div>
+
+      <div class="field">
+        <label for="discount">Discount Percentage (%)</label>
+        <input
+          type="number"
+          id="discount"
+          placeholder="e.g. 20"
+          min="0"
+          max="100"
+          step="0.01"
+        >
+      </div>
+
+    </div>
+
+
+    <div class="button-row">
+
+      <button class="calculate" onclick="calculateDiscount()">
+        Calculate Discount
+      </button>
+
+      <button class="reset" onclick="resetCalculator()">
+        Reset
+      </button>
+
+    </div>
+
+
+    <div class="result" id="result">
+
+      <div class="result-title">
+        Your Result
+      </div>
+
+      <div class="result-grid">
+
+        <div class="result-card">
+          <span>Discount Amount</span>
+          <strong id="discountAmount">0</strong>
+        </div>
+
+        <div class="result-card">
+          <span>Final Price</span>
+          <strong id="finalPrice">0</strong>
+        </div>
+
+        <div class="result-card">
+          <span>Original Price</span>
+          <strong id="originalPrice">0</strong>
+        </div>
+
+      </div>
+
+      <div class="saving" id="savingText">
+        You save 0
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="content">
+
+    <section>
+
+      <h2>What is a Discount Calculator?</h2>
+
+      <p>
+        A discount calculator helps you quickly find the amount you save
+        when a percentage discount is applied to an original price.
+      </p>
+
+      <p>
+        It also calculates the final price you need to pay after the
+        discount is applied.
+      </p>
+
+    </section>
+
+
+    <section>
+
+      <h2>How to Calculate a Discount</h2>
+
+      <p>
+        Enter the original price of the product and the discount percentage.
+        Then click the Calculate Discount button.
+      </p>
+
+      <div class="formula">
+
+        Discount Amount = Original Price × Discount % ÷ 100
+
+        <br><br>
+
+        Final Price = Original Price − Discount Amount
+
+      </div>
+
+    </section>
+
+
+    <section>
+
+      <h2>Example</h2>
+
+      <p>
+        If a product costs $1,000 and has a 20% discount:
+      </p>
+
+      <div class="formula">
+
+        Discount = $1,000 × 20 ÷ 100 = $200
+
+        <br><br>
+
+        Final Price = $1,000 − $200 = $800
+
+      </div>
+
+    </section>
+
+
+    <section>
+
+      <h2>Frequently Asked Questions</h2>
+
+      <div class="faq">
+
+        <h3>How do I calculate 20% off a price?</h3>
+
+        <p>
+          Multiply the original price by 20 and divide the result by 100.
+          Then subtract the discount amount from the original price.
+        </p>
+
+      </div>
+
+      <div class="faq">
+
+        <h3>How much is 10% off $100?</h3>
+
+        <p>
+          A 10% discount on $100 is $10, so the final price is $90.
+        </p>
+
+      </div>
+
+      <div class="faq">
+
+        <h3>Can I use this calculator for any currency?</h3>
+
+        <p>
+          Yes. The calculator works with any currency because it calculates
+          using numbers and percentages.
+        </p>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</main>
+
+
+<footer>
+  © 2026 NEXORA — Free, fast and simple online tools.
+</footer>
+
+
+<script>
+
+function calculateDiscount() {
+
+  const price = parseFloat(document.getElementById("price").value);
+  const discount = parseFloat(document.getElementById("discount").value);
+
+  if (
+    isNaN(price) ||
+    isNaN(discount) ||
+    price < 0 ||
+    discount < 0 ||
+    discount > 100
+  ) {
+    alert("Please enter a valid price and discount percentage.");
+    return;
+  }
+
+  const discountAmount = price * discount / 100;
+  const finalPrice = price - discountAmount;
+
+  document.getElementById("discountAmount").textContent =
+    formatNumber(discountAmount);
+
+  document.getElementById("finalPrice").textContent =
+    formatNumber(finalPrice);
+
+  document.getElementById("originalPrice").textContent =
+    formatNumber(price);
+
+  document.getElementById("savingText").textContent =
+    "You save " + formatNumber(discountAmount);
+
+  document.getElementById("result").classList.add("show");
+
+}
+
+
+function formatNumber(number) {
+
+  return number.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+}
+
+
+function resetCalculator() {
+
+  document.getElementById("price").value = "";
+  document.getElementById("discount").value = "";
+
+  document.getElementById("result").classList.remove("show");
+
+}
+
+
+function toggleDark() {
+
+  document.body.classList.toggle("dark");
+
+}
+
+</script>
+
+</body>
+</html>
