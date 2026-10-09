@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan EMI Calculator - Nexora Tools</title>
+<meta name="description" content="Free Loan EMI Calculator. Calculate monthly EMI, total interest and total payment.">
+<style>
+body{font-family:Arial,sans-serif;background:#f6f7fb;margin:0;padding:0}
+.container{max-width:600px;margin:30px auto;background:#fff;padding:25px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+h1{text-align:center;color:#111}
+label{display:block;margin-top:15px;font-weight:bold}
+input{width:100%;padding:12px;margin-top:5px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box}
+button{width:100%;padding:14px;margin-top:20px;background:#111;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer}
+.result{margin-top:20px;background:#f0f4ff;padding:15px;border-radius:8px;text-align:center}
+.result b{font-size:18px;color:#111}
+a.back{display:block;text-align:center;margin-top:20px;color:#555;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Loan EMI Calculator</h1>
+<label>Loan Amount (₹)</label>
+<input type="number" id="amount" placeholder="Ex: 500000">
+<label>Interest Rate (% per year)</label>
+<input type="number" id="rate" placeholder="Ex: 10.5">
+<label>Loan Tenure (Years)</label>
+<input type="number" id="years" placeholder="Ex: 5">
+<button onclick="calculate()">Calculate EMI</button>
+<div class="result" id="result">Result yahan ayega</div>
+<a href="/" class="back">← Back to Home</a>
+</div>
+<script>
+function calculate(){
+let P=parseFloat(document.getElementById('amount').value);
+let R=parseFloat(document.getElementById('rate').value)/12/100;
+let N=parseFloat(document.getElementById('years').value)*12;
+if(!P||!R||!N){document.getElementById('result').innerHTML="Saare fields bharo";return;}
+let EMI=P*R*Math.pow(1+R,N)/(Math.pow(1+R,N)-1);
+let total=N*EMI;
+let interest=total-P;
+document.getElementById('result').innerHTML=`<b>Monthly EMI: ₹${EMI.toFixed(0)}</b><br>Total Interest: ₹${interest.toFixed(0)}<br>Total Payment: ₹${total.toFixed(0)}`;
+}
+</script>
+</body>
+</html>
