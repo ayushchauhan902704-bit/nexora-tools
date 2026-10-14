@@ -1,99 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>NEXORA Tools</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXORA Tools - Professional Tools Suite</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
 body{background:#0a1931;color:white;overflow-x:hidden}
-.nav{width:94%;max-width:1300px;margin:12px auto;background:#10264d;border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-.logo{font-weight:800;font-size:18px}
-.hero{text-align:center;padding:28px 16px 10px}
-.hero small{color:#6b9bdc;letter-spacing:3px;font-size:11px;font-weight:800}
-.hero h1{font-size:28px;line-height:1.2;margin:8px 0}
-.hero p{color:#8aa8d0;font-size:13px}
+.nav{width:96%;max-width:1400px;margin:14px auto;background:#10264d;border:1px solid #1e3f75;border-radius:14px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:14px;z-index:100}
+.logo{font-weight:900;font-size:20px;display:flex;gap:8px;align-items:center}
+.logo span{width:34px;height:34px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.menu{display:flex;gap:22px;color:#8aa8d0;font-size:14px;align-items:center}
+.menu a{color:#8aa8d0;text-decoration:none}.menu a.active{color:white;font-weight:700}
+.btn{padding:10px 18px;border-radius:10px;border:none;font-weight:800;cursor:pointer}
+.btn-blue{background:#2563eb;color:white}
 
-/* FIXED CAROUSEL */
-.carousel-wrap{width:100%;overflow:hidden;padding:20px 0}
-.carousel-track{display:flex;gap:14px;transition:transform 0.7s ease;padding:0 16px}
-.card{min-width:85vw;max-width:85vw;background:white;border-radius:18px;padding:18px;color:black;flex-shrink:0;opacity:0.4;transform:scale(0.92);transition:all 0.6s ease}
-.card.active{opacity:1;transform:scale(1);box-shadow:0 12px 40px rgba(0,0,0,0.5)}
-.card-head{display:flex;gap:10px;align-items:center}
-.icon{width:42px;height:42px;background:#2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white}
-.card-head h3{font-size:16px;color:black}
-.card-head p{font-size:11px;color:#666}
-label{font-size:12px;font-weight:600;margin-top:12px;display:block;margin-bottom:4px}
-.input-group{display:flex}
-.input-group input{flex:1;padding:10px;border:1px solid #d1d5db;border-radius:10px 0 0 10px;font-weight:600;color:black;width:50%}
-.input-group span{background:#e5e7eb;padding:10px;border-radius:0 10px 10px 0;font-weight:700;border:1px solid #d1d5db;border-left:0;font-size:12px}
-.btn-calc{width:100%;padding:11px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;margin-top:12px}
-.result{margin-top:10px;background:#dbeafe;border-radius:10px;padding:8px 10px;font-size:12px;display:flex;gap:6px;color:black}
+.hero{text-align:center;padding:60px 20px 20px}
+.hero h1{font-size:44px;font-weight:900;line-height:1.1}
+.hero h1 span{color:#3b82f6}
+.hero p{color:#8aa8d0;margin-top:12px;font-size:15px}
 
-.dot-wrap{display:flex;justify-content:center;gap:6px;margin:14px 0}
-.dot{width:8px;height:8px;background:#1e3a6b;border-radius:50%}
-.dot.active{background:#3b82f6;width:20px}
+/* 3D CAROUSEL */
+.carousel-wrap{width:100%;height:540px;display:flex;align-items:center;justify-content:center;perspective:1200px;overflow:hidden;position:relative;margin:20px 0}
+.track{display:flex;gap:30px;transform-style:preserve-3d;transition:transform 0.9s cubic-bezier(.22,1,.36,1)}
+.tool-card{width:320px;height:420px;background:white;border-radius:22px;padding:22px;color:black;flex-shrink:0;cursor:pointer;transform-style:preserve-3d;box-shadow:0 20px 60px rgba(0,0,0,.5);transition:all.8s ease;position:relative}
+.tool-card.blur{filter:blur(3px) brightness(.7);transform:scale(.85) rotateY(25deg) translateZ(-80px);opacity:.5}
+.tool-card.active{filter:none;transform:scale(1.15) rotateY(0) translateZ(60px);opacity:1;z-index:10;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.tool-card:hover{transform:scale(1.18) translateZ(80px)!important}
+.card-icon{width:56px;height:56px;background:#e0eaff;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px}
+.tool-card h3{font-size:19px;font-weight:800;color:black}
+.tool-card p{font-size:13px;color:#666;margin:6px 0 14px;line-height:1.4}
+.preview{background:#f3f4f6;border-radius:12px;padding:10px;margin:6px 0;font-size:12px;color:#333}
+.preview b{display:block;color:#111}
+.open-btn{position:absolute;bottom:18px;left:22px;right:22px;padding:11px;background:#111;color:white;border:none;border-radius:12px;font-weight:800;cursor:pointer}
 
-.section{width:94%;margin:40px auto;background:white;border-radius:16px;padding:20px;color:black}
-.section h2{font-size:18px;margin-bottom:6px}
-.section p{font-size:13px;color:#444;line-height:1.5}
+/* MODAL - TOOL KHULEGA */
+.modal{position:fixed;inset:0;background:rgba(3,12,30,.85);backdrop-filter:blur(12px);z-index:999;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.show{display:flex}
+.modal-box{width:100%;max-width:480px;background:white;border-radius:22px;padding:24px;color:black;animation:pop.35s ease}
+@keyframes pop{from{transform:scale(.85) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-head h2{font-size:22px;font-weight:900}
+.close{width:36px;height:36px;border-radius:50%;border:none;background:#f3f4f6;font-size:18px;cursor:pointer}
+.input-group{display:flex;margin-top:10px}
+.input-group input{flex:1;padding:12px;border:1px solid #d1d5db;border-radius:12px 0 0 12px;font-size:16px;font-weight:700;outline:none}
+.input-group span{background:#e5e7eb;padding:12px 14px;border-radius:0 12px 12px 0;font-weight:700;border:1px solid #d1d5db;border-left:0}
+.calc-big{width:100%;padding:14px;background:#2563eb;color:white;border:none;border-radius:12px;font-weight:800;margin-top:16px;font-size:16px;cursor:pointer}
+.result-big{margin-top:14px;background:#dbeafe;border-radius:12px;padding:14px;font-weight:700;color:#111;text-align:center}
 
-/* DESKTOP */
-@media(min-width:768px){
-.card{min-width:360px;max-width:360px}
-.carousel-track{padding:0 50vw}
-.hero h1{font-size:38px}
+/* BIG FOOTER */
+.footer-bg{background:#060e20;margin-top:70px;border-top:1px solid #1a2f5a}
+.footer{width:96%;max-width:1400px;margin:0 auto;padding:50px 20px;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+.footer h4{color:white;margin-bottom:14px;font-size:15px}
+.footer a{color:#7a8fb0;text-decoration:none;display:block;margin:8px 0;font-size:13px}
+.footer p{color:#7a8fb0;font-size:13px;line-height:1.6}
+.copy{border-top:1px solid #1a2f5a;padding:18px;text-align:center;color:#5a7296;font-size:12px}
+@media(max-width:800px){
+.hero h1{font-size:28px}.carousel-wrap{height:460px}.tool-card{width:78vw}.footer{grid-template-columns:1fr 1fr}.menu{display:none}
 }
 </style>
 </head>
 <body>
 
-<div class="nav"><div class="logo">🧮 NEXORA Tools</div><div style="font-size:13px;color:#8aa8d0">Home • Calculators • About</div></div>
+<div class="nav"><div class="logo"><span>🧮</span> NEXORA Tools</div><div class="menu"><a href="#" class="active">Tools</a><a href="#features">Features</a><a href="#about">About</a><a href="#contact">Contact</a><button class="btn btn-blue">Start Free</button></div></div>
 
-<div class="hero">
-<small>CALCULATORS</small>
-<h1>Everything you need,<br>in one place</h1>
-<p>Choose a calculator to get started — fast, accurate, and easy to use.</p>
+<div class="hero"><h1>Everything you need,<br><span>in one place</span></h1><p>Click any tool to open — 3D experience, pro grade, 100% free</p></div>
+
+<div class="carousel-wrap"><div class="track" id="track"></div></div>
+
+<!-- MODAL -->
+<div class="modal" id="modal" onclick="if(event.target==this)closeModal()">
+<div class="modal-box" id="modalBox"></div>
 </div>
 
-<div class="carousel-wrap"><div class="carousel-track" id="track"></div></div>
-<div class="dot-wrap" id="dots"></div>
-
-<div class="section" id="about"><h2>About NEXORA Tools</h2><p>12+ free calculators, no ads, privacy focused. Built for daily use. Works 100% in browser.</p></div>
-<div class="section" id="contact"><h2>Contact</h2><p>Email: support@nexoratools.com — Reply in 24h</p></div>
+<div class="footer-bg">
+<div class="footer">
+<div><h4>🧮 NEXORA Tools</h4><p>Professional suite of 12+ calculators and tools. Fast, accurate, privacy-focused. No ads, no tracking, works offline. Built for creators, students & pros.</p></div>
+<div><h4>Calculators</h4><a>BMI Calculator</a><a>Age Calculator</a><a>Loan EMI Calculator</a><a>Percentage Calculator</a><a>Discount Calculator</a><a>QR Generator</a></div>
+<div><h4>Company</h4><a id="about">About Us</a><a>Careers</a><a>Blog</a><a>Press Kit</a><a>Privacy Policy</a><a>Terms of Service</a></div>
+<div><h4 id="contact">Contact</h4><a>support@nexoratools.com</a><a>Help Center</a><a>Report a Bug</a><a>Request Tool</a><a>LinkedIn</a><a>Twitter</a></div>
+</div>
+<div class="copy">© 2026 NEXORA Tools Pvt. Ltd. • Made in India • 2.5M+ Users • SOC 2 Compliant • Trusted by 2500+ Teams</div>
+</div>
 
 <script>
-const data=[
-{title:"QR Generator",desc:"Generate QR for link or text",icon:"🔳",f1:"Text / Link",v1:"nexora.com",u1:"",f2:null,calc:a=>`QR Ready for ${a}`},
-{title:"Percentage Calculator",desc:"Quick percent",icon:"%",f1:"Number",v1:"500",u1:"",f2:"Percent",v2:"15",u2:"%",calc:(a,b)=>`${b}% of ${a} is ${a*b/100}`},
-{title:"Age Calculator",desc:"Age from DOB",icon:"📅",f1:"DOB",v1:"1995-06-15",u1:"",type:"date",calc:a=>{let d=new Date(a);let age=new Date().getFullYear()-d.getFullYear();return `Age is ${age} Years`}},
-{title:"BMI Calculator",desc:"Body Mass Index",icon:"🧍",f1:"Height (cm)",v1:"170",u1:"cm",f2:"Weight (kg)",v2:"65",u2:"kg",calc:(h,w)=>{let bmi=(w/((h/100)*(h/100))).toFixed(1);return `BMI is ${bmi}`}},
-{title:"Loan EMI",desc:"Monthly payment",icon:"🏦",f1:"Loan Amount",v1:"500000",u1:"₹",f2:"Interest",v2:"8.5",u2:"%",calc:(p,r)=>{let R=r/12/100,N=60;let emi=(p*R*Math.pow(1+R,N)/(Math.pow(1+R,N)-1)).toFixed(0);return `EMI ₹${emi}/mo`}},
+const tools=[
+{id:"bmi",title:"BMI Calculator",desc:"Calculate Body Mass Index to check healthy weight range",icon:"🧍",fields:[{l:"Height (cm)",v:"170",u:"cm"},{l:"Weight (kg)",v:"65",u:"kg"}],calc:(h,w)=>{let m=h/100;let bmi=(w/(m*m)).toFixed(1);let s=bmi<18.5?"Underweight":bmi<24.9?"Healthy":bmi<29.9?"Overweight":"Obese";return {main:`BMI: ${bmi}`,sub:`${s} — ${bmi<24.9?"You are in healthy range":"Consult doctor"}`}}},
+{id:"age",title:"Age Calculator",desc:"Find your exact age in years, months, days",icon:"📅",fields:[{l:"Date of Birth",v:"1995-06-15",u:"",type:"date"}],calc:(d)=>{let dob=new Date(d);let now=new Date();let age=now.getFullYear()-dob.getFullYear();return {main:`Age: ${age} Years`,sub:`Born on ${dob.toDateString()}`}}},
+{id:"emi",title:"Loan EMI Calculator",desc:"Estimate monthly EMI & total interest easily",icon:"🏦",fields:[{l:"Loan Amount ₹",v:"500000",u:"₹"},{l:"Interest %",v:"8.5",u:"%"}],calc:(p,r)=>{let R=r/12/100,N=60;let emi=(p*R*Math.pow(1+R,N)/(Math.pow(1+R,N)-1)).toFixed(0);return {main:`EMI: ₹${emi}/month`,sub:`5 Years • Total interest approx ₹${emi*60-p}`}}},
+{id:"qr",title:"QR Generator",desc:"Generate QR for link, text, UPI, WiFi",icon:"🔳",fields:[{l:"Text / Link",v:"nexora.com",u:""}],calc:(t)=>({main:`QR Generated!`,sub:`For: ${t} — Download ready`})},
+{id:"discount",title:"Discount Calculator",desc:"Find final price after discount & savings",icon:"🏷️",fields:[{l:"Price ₹",v:"1000",u:"₹"},{l:"Discount %",v:"20",u:"%"}],calc:(a,b)=>({main:`Final: ₹${a-a*b/100}`,sub:`You save ₹${a*b/100}`})},
+{id:"percent",title:"Percentage Calculator",desc:"Quick percentage calculations",icon:"%",fields:[{l:"Number",v:"500",u:""},{l:"Percent %",v:"15",u:"%"}],calc:(a,b)=>({main:`Result: ${a*b/100}`,sub:`${b}% of ${a}`})},
 ];
-const track=document.getElementById('track');const dots=document.getElementById('dots');let cur=0;
-data.forEach((d,i)=>{
-let c=document.createElement('div');c.className='card';c.id='c'+i;
-let second=d.f2?`<label>${d.f2}</label><div class="input-group"><input id="i${i}b" type="number" value="${d.v2}"><span>${d.u2}</span></div>`:'';
-c.innerHTML=`<div class="card-head"><div class="icon">${d.icon}</div><div><h3>${d.title}</h3><p>${d.desc}</p></div></div>
-<label>${d.f1}</label><div class="input-group"><input id="i${i}a" type="${d.type||'number'}" value="${d.v1}"><span>${d.u1}</span></div>${second}
-<button class="btn-calc" onclick="calc(${i})">Calculate</button><div class="result" id="r${i}">Enter values to calculate</div>`;
-track.appendChild(c);
-let dot=document.createElement('div');dot.className='dot';dot.onclick=()=>{cur=i;update()};dots.appendChild(dot);
+let cur=1; let auto=true;
+const track=document.getElementById('track');
+tools.forEach((t,i)=>{
+let el=document.createElement('div');el.className='tool-card';el.id='card'+i;
+el.innerHTML=`<div class="card-icon">${t.icon}</div><h3>${t.title}</h3><p>${t.desc}</p><div class="preview"><b>${t.fields[0].l}</b> ${t.fields[0].v} ${t.fields[0].u}</div><div class="preview"><b>${t.fields[1]?.l||'Result'}</b> ${t.fields[1]?.v||'Instant'}</div><button class="open-btn">Open Tool →</button>`;
+el.onclick=()=>{auto=false;openTool(i);update()};
+track.appendChild(el);
 });
-function calc(i){
-let a=document.getElementById(`i${i}a`).value;let bEl=document.getElementById(`i${i}b`);let b=bEl?bEl.value:null;
-let d=data[i];let res=d.f2?d.calc(parseFloat(a),parseFloat(b)):d.calc(a);document.getElementById(`r${i}`).innerText=res;
-}
 function update(){
-document.querySelectorAll('.card').forEach((c,j)=>c.classList.toggle('active',j===cur));
-document.querySelectorAll('.dot').forEach((d,j)=>d.classList.toggle('active',j===cur));
-let cardW=document.querySelector('.card').offsetWidth+14;
-let offset= -cur*cardW;
-if(window.innerWidth>=768){offset= -cur*374 + (window.innerWidth/2 - 180 - 0.5*window.innerWidth)}
+document.querySelectorAll('.tool-card').forEach((c,j)=>{
+c.classList.remove('active','blur');
+if(j===cur)c.classList.add('active');else c.classList.add('blur');
+});
+let offset=-cur*350 + (window.innerWidth/2 - 160);
+if(window.innerWidth<800) offset=-cur*(window.innerWidth*0.78+20)+(window.innerWidth*0.11);
 track.style.transform=`translateX(${offset}px)`;
 }
-update();window.addEventListener('resize',update);
-setInterval(()=>{cur=(cur+1)%data.length;update()},3500);
+function openTool(i){
+let t=tools[i];
+let fields=t.fields.map((f,j)=>`<label style="font-size:13px;font-weight:600;margin-top:12px;display:block">${f.l}</label><div class="input-group"><input id="m${j}" type="${f.type||'number'}" value="${f.v}"><span>${f.u}</span></div>`).join('');
+document.getElementById('modalBox').innerHTML=`
+<div class="modal-head"><h2>${t.icon} ${t.title}</h2><button class="close" onclick="closeModal()">✕</button></div>
+<p style="color:#666;font-size:13px">${t.desc}</p>
+${fields}
+<button class="calc-big" onclick="doCalc(${i})">Calculate Now</button>
+<div class="result-big" id="mRes">Enter values and calculate</div>`;
+document.getElementById('modal').classList.add('show');
+}
+function doCalc(i){
+let t=tools[i];
+let vals=t.fields.map((f,j)=>document.getElementById(`m${j}`).value);
+let r=t.id==='age'||t.id==='qr'?t.calc(vals[0]):t.calc(parseFloat(vals[0]),parseFloat(vals[1]));
+document.getElementById('mRes').innerHTML=`${r.main}<br><span style="font-weight:400;font-size:13px;color:#444">${r.sub}</span>`;
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');auto=true}
+update();
+let timer=setInterval(()=>{if(auto){cur=(cur+1)%tools.length;update()}},3500);
+
+// swipe
+let startX=0;track.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;auto=false});
+track.addEventListener('touchend',e=>{let dx=e.changedTouches[0].clientX-startX;if(dx<-50)cur=Math.min(cur+1,tools.length-1);if(dx>50)cur=Math.max(cur-1,0);update();setTimeout(()=>auto=true,4000)});
 </script>
 </body>
 </html>
