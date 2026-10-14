@@ -1,1 +1,20 @@
-function calcEMI(){const p=parseFloat(principal.value), r=parseFloat(rate.value)/12/100, n=parseFloat(tenure.value)*12; if(!p||!r||!n)return alert('Fill all'); const emi=p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); document.getElementById('r').style.display='block'; document.getElementById('r').innerHTML=`Monthly EMI: ₹${emi.toFixed(0)}<br><span style="font-size:13px;font-weight:400">Total Pay: ₹${(emi*n).toFixed(0)} | Interest: ₹${(emi*n-p).toFixed(0)}</span>`}
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-61NV39S2VE');</script>
+<title>Loan EMI Calculator – Monthly EMI, Total Interest | NEXORA</title><meta name="description" content="Free Loan EMI Calculator – Calculate EMI, total interest."><link rel="canonical" href="https://nexora-tools-drab.vercel.app/loan-emi-calculator.html"><meta name="theme-color" content="#6c5ce7">
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;background:#f7f8fc;color:#171725;line-height:1.6}a{color:inherit;text-decoration:none}.container{width:min(900px,calc(100% - 32px));margin:auto}header{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid #e8e8ef}.nav{height:70px;display:flex;align-items:center;justify-content:space-between}.logo{font-size:25px;font-weight:900}.logo span{color:#6c5ce7}.card{background:white;border:1px solid #e8e8ef;border-radius:18px;padding:28px;margin:18px 0}input,button{width:100%;padding:14px;border:1px solid #dedee8;border-radius:12px}button{background:#6c5ce7;color:white;font-weight:700;border:0;margin-top:12px}.result{background:#f0efff;border-radius:12px;padding:16px;margin-top:14px;font-weight:700;text-align:center}footer{border-top:1px solid #e8e8ef;padding:30px 0;background:white;color:#747486;font-size:13px;margin-top:40px}.footer-links{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}</style></head><body>
+<header><div class="container nav"><a href="/" class="logo">NEX<span>ORA</span></a><a href="/">← All Tools</a></div></header>
+<main class="container"><div class="card"><h1>Loan EMI Calculator</h1><label>Loan Amount (₹)</label><input id="p" type="number" placeholder="500000"><label style="display:block;margin-top:10px">Interest Rate (% yearly)</label><input id="r" type="number" placeholder="9.5"><label style="display:block;margin-top:10px">Tenure (Years)</label><input id="n" type="number" placeholder="5"><button onclick="calcEMI()">Calculate EMI</button><div id="res" class="result" style="display:none"></div></div></main>
+<footer><div class="container" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px"><div><b>NEXORA</b><div class="footer-links"><a href="/">Home</a><a href="about.html">About</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="disclaimer.html">Disclaimer</a><a href="sitemap.xml">Sitemap</a></div></div><div>© 2026 NEXORA</div></div></footer>
+<script>
+function calcEMI(){
+var P=parseFloat(document.getElementById('p').value);
+var R=parseFloat(document.getElementById('r').value)/12/100;
+var N=parseFloat(document.getElementById('n').value)*12;
+if(!P||!R||!N){alert('Fill all');return;}
+var emi=P*R*Math.pow(1+R,N)/(Math.pow(1+R,N)-1);
+var total=emi*N;
+var interest=total-P;
+document.getElementById('res').style.display='block';
+document.getElementById('res').innerHTML='EMI: Rs. '+emi.toFixed(0)+' /month <br><span style="font-weight:400;font-size:13px">Total: Rs. '+total.toFixed(0)+' | Interest: Rs. '+interest.toFixed(0)+'</span>';
+}
+</script></body></html>
