@@ -3,112 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXORA Tools - Professional Calculators</title>
+<title>NEXORA Tools</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
-body{background:#f8fafc;color:#111}
-.nav{width:100%;background:white;border-bottom:1px solid #e5e7eb;padding:14px 5%;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
-.logo{font-weight:900;font-size:20px;display:flex;gap:8px}
-.menu{display:flex;gap:20px;font-size:14px}
-.menu a{color:#555;text-decoration:none;font-weight:600}.menu a.active{color:black}
-.hero{text-align:center;padding:50px 20px;background:#0a1931;color:white}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
+body{background:#f8fafc;color:#111;overflow-x:hidden}
+.nav{width:100%;background:white;border-bottom:1px solid #e5e7eb;padding:12px 5%;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.logo{font-weight:900;font-size:19px}
+.hero{text-align:center;padding:45px 20px;background:#0a1931;color:white}
 .hero small{color:#7aa3dd;letter-spacing:3px;font-size:11px;font-weight:800}
-.hero h1{font-size:36px;margin:10px 0;font-weight:900}
-.hero p{color:#9ab0d0;font-size:14px}
+.hero h1{font-size:34px;font-weight:900;margin-top:8px}
+.hero p{color:#9ab0d0;margin-top:8px;font-size:14px}
 
-/* TOP 3 CLEAN TOOLS */
-.top-tools{width:100%;max-width:1200px;margin:-40px auto 40px;display:flex;gap:20px;justify-content:center;padding:0 4%;flex-wrap:wrap}
-.top-card{width:340px;background:white;border-radius:18px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.15);border:1px solid #e5e7eb}
-.top-card .icon{width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;margin-bottom:10px}
-.top-card h3{font-size:17px;font-weight:800}.top-card p{font-size:12px;color:#666;margin:6px 0 12px}
-.preview{background:#f3f4f6;border-radius:10px;padding:8px 12px;font-size:12px;margin:6px 0;display:flex;justify-content:space-between}
+/* TOP 3 SLIDER RIGHT TO LEFT */
+.slider-wrap{width:100%;overflow:hidden;background:#0a1931;padding-bottom:50px}
+.slider-track{display:flex;gap:20px;animation:scroll 25s linear infinite;width:max-content}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.slider-wrap:hover .slider-track{animation-play-state:paused}
+.top-card{min-width:330px;max-width:330px;background:white;border-radius:18px;padding:22px;flex-shrink:0;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
+.top-card .icon{width:48px;height:48px;background:#2563eb;border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;margin-bottom:12px}
+.top-card h3{font-size:17px;font-weight:800;color:black}
+.top-card p{font-size:12px;color:#666;margin:6px 0 10px;line-height:1.4}
+.top-card .btn-small{padding:8px 14px;background:#f3f4f6;border-radius:8px;font-size:12px;font-weight:700;color:#333;display:inline-block;margin-top:8px}
 
-/* REAL WORKING TOOLS */
-.container{width:96%;max-width:1200px;margin:0 auto;padding:20px 0}
-.section-title{font-size:26px;font-weight:900;margin:30px 0 16px;text-align:center}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
-.tool{background:white;border-radius:18px;padding:22px;border:1px solid #e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
-.tool-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-.tool-icon{width:44px;height:44px;background:#e0eaff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.tool h3{font-size:16px;font-weight:800}.tool p{font-size:12px;color:#666}
-label{font-size:12px;font-weight:700;margin-top:12px;display:block;margin-bottom:4px}
-input{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px;font-weight:600;outline:none}
-.btn{width:100%;padding:12px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:800;margin-top:12px;cursor:pointer}
-.result{margin-top:12px;background:#dbeafe;border-radius:10px;padding:10px;font-size:13px;font-weight:700;text-align:center}
+/* REAL TOOLS */
+.container{width:96%;max-width:1200px;margin:0 auto;padding:20px}
+.title{font-size:24px;font-weight:900;text-align:center;margin:30px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:18px}
+.tool{background:white;border-radius:18px;padding:20px;border:1px solid #e5e7eb;box-shadow:0 4px 15px rgba(0,0,0,0.05)}
+.tool-head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.t-icon{width:40px;height:40px;background:#e0eaff;border-radius:10px;display:flex;align-items:center;justify-content:center}
+label{font-size:12px;font-weight:700;margin-top:10px;display:block;margin-bottom:4px}
+input{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px;font-weight:600}
+.btn{width:100%;padding:12px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:800;margin-top:10px;cursor:pointer}
+.result{margin-top:10px;background:#dbeafe;border-radius:10px;padding:10px;font-size:13px;font-weight:700;text-align:center}
 
-/* FOOTER BIG SITE */
-.footer-bg{background:#0a1931;margin-top:60px;color:#8aa8d0}
-.footer{width:96%;max-width:1200px;margin:0 auto;padding:50px 20px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px}
-.footer h4{color:white;margin-bottom:12px;font-size:15px}
-.footer a,.footer p{color:#8aa8d0;text-decoration:none;display:block;margin:7px 0;font-size:13px;line-height:1.6}
-.copy{border-top:1px solid #1a2f5a;text-align:center;padding:16px;font-size:12px;color:#5a7296}
-@media(max-width:700px){.top-tools{flex-direction:column;align-items:center}.footer{grid-template-columns:1fr 1fr}.hero h1{font-size:24px}}
+.footer-bg{background:#0a1931;margin-top:50px}
+.footer{width:96%;max-width:1200px;margin:0 auto;padding:40px 20px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px}
+.footer h4{color:white;margin-bottom:10px;font-size:14px}
+.footer a,.footer p{color:#8aa8d0;font-size:12px;text-decoration:none;display:block;margin:6px 0;line-height:1.6}
+.copy{border-top:1px solid #1a2f5a;text-align:center;padding:14px;color:#5a7296;font-size:11px}
+@media(max-width:700px){.top-card{min-width:78vw;max-width:78vw}.footer{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<div class="nav">
-<div class="logo">🧮 NEXORA Tools</div>
-<div class="menu"><a href="#" class="active">Home</a><a href="#tools">Tools</a><a href="#about">About</a><a href="#contact">Contact</a></div>
-</div>
+<div class="nav"><div class="logo">🧮 NEXORA Tools</div><div style="font-size:13px;color:#666">Tools • About • Contact</div></div>
 
 <div class="hero">
 <small>CALCULATORS</small>
 <h1>Everything you need, in one place</h1>
-<p>Fast, accurate and easy to use — 12+ free tools</p>
+<p>Auto sliding tools — clean, fast, professional</p>
 </div>
 
-<!-- TOP 3 CLEAN -->
-<div class="top-tools">
-<div class="top-card"><div class="icon">🧍</div><h3>BMI Calculator</h3><p>Calculate your Body Mass Index</p><div class="preview"><span>Height</span><b>170 cm</b></div><div class="preview"><span>Weight</span><b>65 kg</b></div></div>
-<div class="top-card"><div class="icon">📅</div><h3>Age Calculator</h3><p>Find your exact age</p><div class="preview"><span>DOB</span><b>15/06/1995</b></div><div class="preview"><span>Today</span><b>30 Years</b></div></div>
-<div class="top-card"><div class="icon">🏦</div><h3>Loan EMI Calculator</h3><p>Estimate monthly loan payment</p><div class="preview"><span>Loan</span><b>₹5,00,000</b></div><div class="preview"><span>EMI</span><b>₹10,200/mo</b></div></div>
+<!-- TOP 3 AUTO SLIDE RIGHT TO LEFT -->
+<div class="slider-wrap">
+<div class="slider-track" id="track">
+<div class="top-card"><div class="icon">🧍</div><h3>BMI Calculator</h3><p>Calculate your Body Mass Index to check healthy range</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">📅</div><h3>Age Calculator</h3><p>Find your exact age in years, months, days</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">🏦</div><h3>Loan EMI Calculator</h3><p>Estimate your monthly loan payment & interest</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">%</div><h3>Percentage Calculator</h3><p>Quick percentage calculations instantly</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">🏷️</div><h3>Discount Calculator</h3><p>Find final price after discount</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">🔳</div><h3>QR Generator</h3><p>Generate QR for link, text, UPI</p><span class="btn-small">Open Tool →</span></div>
+<!-- duplicate for loop -->
+<div class="top-card"><div class="icon">🧍</div><h3>BMI Calculator</h3><p>Calculate your Body Mass Index to check healthy range</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">📅</div><h3>Age Calculator</h3><p>Find your exact age in years, months, days</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">🏦</div><h3>Loan EMI Calculator</h3><p>Estimate your monthly loan payment & interest</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">%</div><h3>Percentage Calculator</h3><p>Quick percentage calculations instantly</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">🏷️</div><h3>Discount Calculator</h3><p>Find final price after discount</p><span class="btn-small">Open Tool →</span></div>
+<div class="top-card"><div class="icon">🔳</div><h3>QR Generator</h3><p>Generate QR for link, text, UPI</p><span class="btn-small">Open Tool →</span></div>
+</div>
 </div>
 
 <!-- REAL WORKING TOOLS -->
 <div class="container" id="tools">
-<h2 class="section-title">All Working Tools — Use Here</h2>
+<h2 class="title">All Working Tools — Use Below</h2>
 <div class="grid">
-
-<div class="tool" id="bmiTool"><div class="tool-head"><div class="tool-icon">🧍</div><div><h3>BMI Calculator</h3><p>Check healthy weight range</p></div></div><label>Height (cm)</label><input id="h" type="number" value="170"><label>Weight (kg)</label><input id="w" type="number" value="65"><button class="btn" onclick="calcBMI()">Calculate BMI</button><div class="result" id="rBMI">Enter values</div></div>
-
-<div class="tool"><div class="tool-head"><div class="tool-icon">📅</div><div><h3>Age Calculator</h3><p>Calculate age from DOB</p></div></div><label>Date of Birth</label><input id="dob" type="date" value="1995-06-15"><button class="btn" onclick="calcAge()">Calculate Age</button><div class="result" id="rAge">Enter DOB</div></div>
-
-<div class="tool"><div class="tool-head"><div class="tool-icon">🏦</div><div><h3>Loan EMI Calculator</h3><p>Monthly EMI calculation</p></div></div><label>Loan Amount (₹)</label><input id="loan" type="number" value="500000"><label>Interest Rate (%)</label><input id="rate" type="number" value="8.5"><button class="btn" onclick="calcEMI()">Calculate EMI</button><div class="result" id="rEMI">Enter values</div></div>
-
-<div class="tool"><div class="tool-head"><div class="tool-icon">%</div><div><h3>Percentage Calculator</h3><p>Quick % calculation</p></div></div><label>Number</label><input id="num" type="number" value="500"><label>Percent (%)</label><input id="per" type="number" value="15"><button class="btn" onclick="calcPer()">Calculate</button><div class="result" id="rPer">Result</div></div>
-
-<div class="tool"><div class="tool-head"><div class="tool-icon">🏷️</div><div><h3>Discount Calculator</h3><p>Final price after discount</p></div></div><label>Price (₹)</label><input id="price" type="number" value="1000"><label>Discount (%)</label><input id="disc" type="number" value="20"><button class="btn" onclick="calcDisc()">Calculate</button><div class="result" id="rDisc">Result</div></div>
-
-<div class="tool"><div class="tool-head"><div class="tool-icon">🔳</div><div><h3>QR Generator</h3><p>Generate QR for link</p></div></div><label>Text / Link</label><input id="qr" type="text" value="nexora.com"><button class="btn" onclick="calcQR()">Generate QR</button><div class="result" id="rQR">Enter text</div></div>
-
+<div class="tool"><div class="tool-head"><div class="t-icon">🧍</div><h3>BMI Calculator</h3></div><label>Height (cm)</label><input id="h" type="number" value="170"><label>Weight (kg)</label><input id="w" type="number" value="65"><button class="btn" onclick="calcBMI()">Calculate BMI</button><div class="result" id="rBMI">Result</div></div>
+<div class="tool"><div class="tool-head"><div class="t-icon">📅</div><h3>Age Calculator</h3></div><label>DOB</label><input id="dob" type="date" value="1995-06-15"><button class="btn" onclick="calcAge()">Calculate Age</button><div class="result" id="rAge">Result</div></div>
+<div class="tool"><div class="tool-head"><div class="t-icon">🏦</div><h3>Loan EMI</h3></div><label>Loan Amount</label><input id="loan" type="number" value="500000"><label>Interest %</label><input id="rate" type="number" value="8.5"><button class="btn" onclick="calcEMI()">Calculate EMI</button><div class="result" id="rEMI">Result</div></div>
+<div class="tool"><div class="tool-head"><div class="t-icon">%</div><h3>Percentage</h3></div><label>Number</label><input id="num" type="number" value="500"><label>Percent</label><input id="per" type="number" value="15"><button class="btn" onclick="calcPer()">Calculate</button><div class="result" id="rPer">Result</div></div>
+<div class="tool"><div class="tool-head"><div class="t-icon">🏷️</div><h3>Discount</h3></div><label>Price</label><input id="price" type="number" value="1000"><label>Discount %</label><input id="disc" type="number" value="20"><button class="btn" onclick="calcDisc()">Calculate</button><div class="result" id="rDisc">Result</div></div>
+<div class="tool"><div class="tool-head"><div class="t-icon">🔳</div><h3>QR Generator</h3></div><label>Text / Link</label><input id="qr" type="text" value="nexora.com"><button class="btn" onclick="calcQR()">Generate</button><div class="result" id="rQR">Result</div></div>
 </div>
 </div>
 
-<!-- ABOUT US -->
-<div class="container" id="about" style="margin-top:50px;background:white;border-radius:20px;padding:30px;border:1px solid #e5e7eb">
-<h2 style="font-size:24px;font-weight:900;margin-bottom:10px">About Us</h2>
-<p style="color:#444;line-height:1.7;font-size:14px">NEXORA Tools is a free, fast and privacy-focused platform offering 12+ calculators for everyday needs. We don't track you, no ads, all tools work 100% in your browser. Our mission is to make calculations simple for students, professionals and creators.<br><br>Founded in 2024, trusted by 2.5M+ users across India. We are building India's biggest free tools suite.</p>
-</div>
-
-<!-- FOOTER -->
-<div class="footer-bg" id="contact">
+<div class="footer-bg">
 <div class="footer">
-<div><h4>🧮 NEXORA Tools</h4><p>Professional suite of calculators and utilities. Fast, accurate, privacy-focused. No ads, works offline.<br><br><b>Contact:</b><br>ayushchauhan902704@gmail.com<br>Dehradun, Uttarakhand, India</p></div>
-<div><h4>Tools</h4><a href="#tools">BMI Calculator</a><a href="#tools">Age Calculator</a><a href="#tools">Loan EMI Calculator</a><a href="#tools">Percentage Calculator</a><a href="#tools">Discount Calculator</a><a href="#tools">QR Generator</a></div>
-<div><h4>Company</h4><a href="#about">About Us</a><a>Our Story</a><a>Careers</a><a>Blog</a><a>Press & Media</a><a>Sitemap</a></div>
-<div><h4>Legal & Help</h4><a>Privacy Policy</a><a>Terms of Service</a><a>Cookie Policy</a><a>Disclaimer</a><a>Help Center</a><a href="mailto:ayushchauhan902704@gmail.com">Contact Us</a></div>
+<div><h4>🧮 NEXORA Tools</h4><p>Professional suite of calculators. Fast, free, privacy-focused. No ads.<br><br><b>Email:</b> ayushchauhan902704@gmail.com<br>Dehradun, India</p></div>
+<div><h4>Tools</h4><a>BMI Calculator</a><a>Age Calculator</a><a>EMI Calculator</a><a>Percentage</a><a>Discount</a><a>QR Generator</a></div>
+<div><h4>Company</h4><a>About Us</a><a>Careers</a><a>Blog</a><a>Press</a><a>Sitemap</a></div>
+<div><h4>Legal & Help</h4><a>Privacy Policy</a><a>Terms of Service</a><a>Cookie Policy</a><a>Disclaimer</a><a href="mailto:ayushchauhan902704@gmail.com">Contact Us</a></div>
 </div>
-<div class="copy">© 2026 NEXORA Tools • Built with ❤️ in India • Email: ayushchauhan902704@gmail.com • 100% Free & Secure • 2.5M+ Users</div>
+<div class="copy">© 2026 NEXORA Tools • ayushchauhan902704@gmail.com • Made in India • 2.5M+ Users • 100% Free</div>
 </div>
 
 <script>
-function calcBMI(){let h=document.getElementById('h').value/100;let w=document.getElementById('w').value;let bmi=(w/(h*h)).toFixed(1);let s=bmi<18.5?"Underweight":bmi<24.9?"Healthy":bmi<29.9?"Overweight":"Obese";document.getElementById('rBMI').innerText=`BMI: ${bmi} — ${s}`;}
-function calcAge(){let dob=new Date(document.getElementById('dob').value);let now=new Date();let age=now.getFullYear()-dob.getFullYear();let m=now.getMonth()-dob.getMonth();if(m<0||(m===0&&now.getDate()<dob.getDate()))age--;document.getElementById('rAge').innerText=`Age: ${age} Years`;}
-function calcEMI(){let p=parseFloat(document.getElementById('loan').value);let r=parseFloat(document.getElementById('rate').value)/12/100;let n=60;let emi=(p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1)).toFixed(0);document.getElementById('rEMI').innerText=`EMI: ₹${emi}/month`;}
-function calcPer(){let a=parseFloat(document.getElementById('num').value);let b=parseFloat(document.getElementById('per').value);document.getElementById('rPer').innerText=`${b}% of ${a} = ${a*b/100}`;}
-function calcDisc(){let a=parseFloat(document.getElementById('price').value);let b=parseFloat(document.getElementById('disc').value);document.getElementById('rDisc').innerText=`Final: ₹${a-a*b/100} | Save ₹${a*b/100}`;}
-function calcQR(){let t=document.getElementById('qr').value;document.getElementById('rQR').innerHTML=`QR Ready for <b>${t}</b> — <a href="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${t}" target="_blank" style="color:#2563eb">Download PNG</a>`;}
+function calcBMI(){let h=document.getElementById('h').value/100,w=document.getElementById('w').value;let bmi=(w/(h*h)).toFixed(1);document.getElementById('rBMI').innerText=`BMI: ${bmi}`;}
+function calcAge(){let dob=new Date(document.getElementById('dob').value),now=new Date();let age=now.getFullYear()-dob.getFullYear();let m=now.getMonth()-dob.getMonth();if(m<0||(m===0&&now.getDate()<dob.getDate()))age--;document.getElementById('rAge').innerText=`Age: ${age} Years`;}
+function calcEMI(){let p=parseFloat(document.getElementById('loan').value),r=parseFloat(document.getElementById('rate').value)/12/100,n=60;let emi=(p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1)).toFixed(0);document.getElementById('rEMI').innerText=`EMI: ₹${emi}/mo`;}
+function calcPer(){let a=parseFloat(document.getElementById('num').value),b=parseFloat(document.getElementById('per').value);document.getElementById('rPer').innerText=`${b}% of ${a} = ${a*b/100}`;}
+function calcDisc(){let a=parseFloat(document.getElementById('price').value),b=parseFloat(document.getElementById('disc').value);document.getElementById('rDisc').innerText=`Final: ₹${a-a*b/100}`;}
+function calcQR(){let t=document.getElementById('qr').value;document.getElementById('rQR').innerHTML=`QR for <b>${t}</b> — <a href="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${t}" target="_blank" style="color:#2563eb">Download</a>`;}
 </script>
 </body>
 </html>
