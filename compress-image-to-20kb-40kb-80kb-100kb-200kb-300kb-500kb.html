@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-61NV39S2VE');</script>
+<title>Compress Image to 20KB, 40KB, 80KB, 100KB, 200KB, 300KB, 500KB | NEXORA</title>
+<meta name="description" content="Free Image Compressor to 20KB, 40KB, 80KB, 100KB, 200KB, 300KB, 500KB for Govt Forms - UPSC, SSC, Railway. Compress JPG, PNG to exact KB size online. 100% browser side.">
+<meta name="keywords" content="compress image to 20kb, compress image to 40kb, compress image to 80kb, compress image to 100kb, compress image to 200kb, compress image to 300kb, compress image to 500kb">
+<link rel="canonical" href="https://nexora-tools-drab.vercel.app/compress-image-to-20kb-40kb-80kb-100kb-200kb-300kb-500kb.html">
+<meta name="theme-color" content="#6c5ce7">
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;background:#f7f8fc;color:#171725;line-height:1.6}a{color:inherit;text-decoration:none}.container{width:min(900px,calc(100% - 32px));margin:auto}header{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid #e8e8ef;z-index:10}.nav{height:70px;display:flex;align-items:center;justify-content:space-between}.logo{font-size:25px;font-weight:900}.logo span{color:#6c5ce7}.card{background:white;border:1px solid #e8e8ef;border-radius:18px;padding:28px;margin:18px 0}.badge{display:inline-block;background:#f0efff;color:#6c5ce7;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:10px}h1{font-size:28px;line-height:1.2}h1 span{color:#6c5ce7}p.small{font-size:13px;color:#747486;margin-top:6px}input,select,button{width:100%;padding:14px;border:1px solid #dedee8;border-radius:12px;font-size:15px}button{background:#6c5ce7;color:white;font-weight:700;border:0;margin-top:12px;cursor:pointer}button.secondary{background:#f0efff;color:#6c5ce7}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.preview img{width:100%;border-radius:12px;border:1px solid #eee;max-height:280px;object-fit:contain}.stat{background:#f7f8fc;border-radius:12px;padding:12px;text-align:center}.stat b{font-size:18px;display:block}footer{border-top:1px solid #e8e8ef;padding:30px 0;background:white;color:#747486;font-size:13px;margin-top:40px}.footer-links{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}.tag{display:inline-block;border:1px solid #e8e8ef;padding:8px 12px;border-radius:20px;font-size:13px;margin:4px 4px 0 0;cursor:pointer;font-weight:700}.tag.active{background:#6c5ce7;color:white;border-color:#6c5ce7}</style></head><body>
+<header><div class="container nav"><a href="/" class="logo">NEX<span>ORA</span></a><a href="/">All Tools</a></div></header>
+<main class="container">
+<div class="card">
+<div class="badge">All Size - 20KB to 500KB</div>
+<h1>Compress Image to <span>Exact KB</span></h1>
+<p class="small">20KB, 40KB, 80KB, 100KB, 200KB, 300KB, 500KB - 1 click. UPSC, SSC, Railway, Passport forms ke liye. Photo phone se bahar nahi jayegi.</p>
+<div style="margin-top:18px">
+<label style="font-weight:700;font-size:13px">1. Upload Photo</label>
+<input type="file" id="fileInput" accept="image/*" style="margin-top:6px">
+</div>
+<div style="margin-top:16px">
+<label style="font-weight:700;font-size:13px">2. Select Target Size</label>
+<div style="margin-top:8px">
+<span class="tag active" onclick="setKB(20,this)">20KB</span>
+<span class="tag" onclick="setKB(40,this)">40KB</span>
+<span class="tag" onclick="setKB(80,this)">80KB</span>
+<span class="tag" onclick="setKB(100,this)">100KB</span>
+<span class="tag" onclick="setKB(200,this)">200KB</span>
+<span class="tag" onclick="setKB(300,this)">300KB</span>
+<span class="tag" onclick="setKB(500,this)">500KB</span>
+</div>
+<div class="grid2" style="margin-top:12px">
+<div><label style="font-size:11px">Custom KB</label><input type="number" id="customKB" value="20" min="5" max="1000"></div>
+<div><label style="font-size:11px">Format</label><select id="format"><option value="image/jpeg">JPG - Best</option><option value="image/webp">WEBP</option><option value="image/png">PNG</option></select></div>
+</div>
+</div>
+<button onclick="compressImage()" id="compressBtn">Compress Now</button>
+<div id="resultArea" style="display:none">
+<div class="preview">
+<div class="stat"><span style="font-size:12px">Original</span><b id="origSize">-</b><img id="origPreview" style="display:none"></div>
+<div class="stat"><span style="font-size:12px">Compressed</span><b id="compSize" style="color:#6c5ce7">-</b><img id="compPreview"></div>
+</div>
+<div class="grid2" style="margin-top:12px">
+<a id="downloadLink" download><button id="dlText">Download Image</button></a>
+<button class="secondary" onclick="resetTool()">Another Photo</button>
+</div>
+</div>
+</div>
+</main>
+<footer><div class="container"><b>NEXORA</b> - 2026 - All tools free</div></footer>
+<script>
+let originalFile=null; let currentKB=20;
+function setKB(kb,el){currentKB=kb;document.getElementById('customKB').value=kb;document.querySelectorAll('.tag').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');}
+document.getElementById('customKB').addEventListener('input',e=>{currentKB=parseInt(e.target.value)||20;document.querySelectorAll('.tag').forEach(t=>t.classList.remove('active'));})
+document.getElementById('fileInput').addEventListener('change',e=>{originalFile=e.target.files[0];if(originalFile){let url=URL.createObjectURL(originalFile);document.getElementById('origPreview').src=url;document.getElementById('origPreview').style.display='block';document.getElementById('origSize').innerText=(originalFile.size/1024).toFixed(1)+' KB';}});
+async function compressImage(){if(!originalFile)return alert('Photo select karo');let targetKB=parseInt(document.getElementById('customKB').value)||currentKB;let format=document.getElementById('format').value;let btn=document.getElementById('compressBtn');btn.innerText='Compressing...';btn.disabled=true;let img=new Image();img.src=URL.createObjectURL(originalFile);await new Promise(r=>img.onload=r);let canvas=document.createElement('canvas');let ctx=canvas.getContext('2d');let width=img.width;let height=img.height;let quality=0.9;let attempts=0;let blob=null;while(attempts<15){canvas.width=width;canvas.height=height;ctx.clearRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);blob=await new Promise(res=>canvas.toBlob(res,format,quality));let sizeKB=blob.size/1024;if(sizeKB<=targetKB*1.08 && sizeKB>=targetKB*0.82)break;if(sizeKB>targetKB){if(quality>0.15)quality-=0.12;else{width*=0.85;height*=0.85;quality=0.85;}}else{quality+=0.05;if(quality>0.95)break;}attempts++;}let compUrl=URL.createObjectURL(blob);document.getElementById('compPreview').src=compUrl;document.getElementById('compSize').innerText=(blob.size/1024).toFixed(1)+' KB';document.getElementById('downloadLink').href=compUrl;document.getElementById('downloadLink').download=`nexora-${targetKB}kb.${format.split('/')[1]}`;document.getElementById('resultArea').style.display='block';document.getElementById('dlText').innerText=`Download ${targetKB}KB Image`;btn.innerText='Compress Now';btn.disabled=false;document.getElementById('resultArea').scrollIntoView({behavior:'smooth'});}
+function resetTool(){document.getElementById('fileInput').value='';document.getElementById('resultArea').style.display='none';}
+</script></body></html>
