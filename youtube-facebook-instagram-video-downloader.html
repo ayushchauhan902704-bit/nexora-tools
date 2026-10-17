@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Video Downloader - No Watermark | YouTube, Facebook, Instagram - NEXORA</title>
+<meta name="description" content="Download YouTube, Facebook, Instagram Reels Videos in HD without watermark. Free All Video Downloader by NEXORA.">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Plus Jakarta Sans',sans-serif}</style>
+</head>
+<body class="bg-[#f6f7fb] min-h-screen">
+<header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
+<a href="index.html" class="text-2xl font-bold"><span class="text-blue-600">NEX</span>ORA</a>
+<span class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">NO WATERMARK</span>
+</header>
+
+<main class="max-w-[520px] mx-auto px-4 py-6">
+<div class="bg-white rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] p-6">
+<h1 class="text-[26px] font-bold text-center text-slate-900">All Video Downloader</h1>
+<p class="text-center text-slate-500 text-sm mt-1">YouTube | Facebook | Instagram | Twitter - HD, No Watermark</p>
+
+<div class="mt-6">
+<label class="text-sm font-bold text-slate-800">Paste Video Link Here</label>
+<div class="flex gap-2 mt-2">
+<input id="videoUrl" type="text" placeholder="https://www.instagram.com/reel/..." class="flex-1 border border-slate-200 rounded-xl px-4 py-3.5 text-sm outline-none focus:border-blue-500 bg-[#f9fafb]">
+</div>
+
+<button onclick="downloadVideo()" id="dlBtn" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-[16px] transition">Download HD Video</button>
+<p class="text-[11px] text-center text-slate-400 mt-3">Original quality • No watermark • Free forever</p>
+</div>
+
+<div id="resultBox" class="hidden mt-6 border border-slate-100 rounded-2xl p-4 bg-[#f8faff]">
+<div class="flex gap-3">
+<img id="thumb" src="" class="w-24 h-16 rounded-lg object-cover bg-slate-200">
+<div class="flex-1">
+<h3 id="vTitle" class="text-sm font-bold line-clamp-2">Video Ready</h3>
+<p id="vSource" class="text-xs text-slate-500 mt-1">Source: Instagram</p>
+</div>
+</div>
+<a id="finalDl" href="#" download target="_blank" class="block w-full mt-4 bg-green-600 hover:bg-green-700 text-white text-center font-bold py-3 rounded-xl">Save Video (MP4 - No Watermark)</a>
+<p class="text-[11px] text-center text-slate-400 mt-2">If download fails, long press > Save Video</p>
+</div>
+
+<div class="mt-8 grid grid-cols-3 gap-3 text-center">
+<div class="bg-slate-50 rounded-xl py-3"><div class="text-lg">📸</div><p class="text-[11px] font-bold mt-1">Insta Reels</p></div>
+<div class="bg-slate-50 rounded-xl py-3"><div class="text-lg">📘</div><p class="text-[11px] font-bold mt-1">Facebook</p></div>
+<div class="bg-slate-50 rounded-xl py-3"><div class="text-lg">▶️</div><p class="text-[11px] font-bold mt-1">YouTube</p></div>
+</div>
+</div>
+
+<div class="mt-6 bg-white rounded-2xl p-5 text-xs text-slate-600 leading-5">
+<b>How to use:</b><br>
+1. Copy any Insta Reel / FB Video / YouTube link<br>
+2. Paste above and click Download<br>
+3. Get HD video without any watermark/logo
+</div>
+</main>
+
+<script>
+function downloadVideo(){
+let url = document.getElementById('videoUrl').value.trim();
+if(!url){ alert('Link paste karo bhai!'); return; }
+let btn = document.getElementById('dlBtn');
+btn.innerText = 'Fetching...';
+btn.disabled = true;
+
+let source = 'Instagram';
+if(url.includes('facebook') || url.includes('fb.watch')) source = 'Facebook';
+else if(url.includes('youtube') || url.includes('youtu.be')) source = 'YouTube';
+else if(url.includes('twitter') || url.includes('x.com')) source = 'Twitter';
+
+// DEMO LOGIC - Replace with your backend API later
+// For now it shows UI ready. For real download, connect to api like: https://api.nexora-tools.com/download?url=
+setTimeout(()=>{
+document.getElementById('resultBox').classList.remove('hidden');
+document.getElementById('vSource').innerText = 'Source: ' + source + ' • No Watermark';
+document.getElementById('vTitle').innerText = 'Your ' + source + ' video is ready to download in HD';
+document.getElementById('thumb').src = 'https://via.placeholder.com/200x120?text='+source;
+document.getElementById('finalDl').href = url; // In real, this will be direct mp4 link from backend
+btn.innerText = 'Download HD Video';
+btn.disabled = false;
+window.scrollTo({top:400, behavior:'smooth'});
+}, 1200);
+}
+</script>
+</body>
+</html>
