@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JPG to PDF - Free, Fast, No Watermark | NEXORA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body{font-family:Inter,sans-serif;background:#f8fafc;max-width:800px;margin:auto;padding:20px}
+.drop{border:3px dashed #6366f1;background:#fff;border-radius:20px;padding:40px;text-align:center;cursor:pointer}
+#preview{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+#preview img{width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid #ddd}
+.btn{background:#6366f1;color:#fff;padding:14px 28px;border:none;border-radius:12px;font-size:18px;cursor:pointer;width:100%;margin-top:20px}
+</style>
+</head>
+<body>
+<h1>JPG to PDF - Best Tool</h1>
+<p>50 photos tak ek sath, drag & drop, no watermark</p>
+<div class="drop" onclick="document.getElementById('file').click()">Click or Drag JPGs Here
+<input type="file" id="file" multiple accept="image/*" hidden>
+</div>
+<div id="preview"></div>
+<button class="btn" onclick="makePDF()">Convert to PDF & Download</button>
+
+<script>
+let images=[];
+file.onchange=e=>{
+  images=[...e.target.files];
+  preview.innerHTML='';
+  images.forEach(f=>{
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(f);
+    preview.appendChild(img);
+  })
+}
+async function makePDF(){
+  if(!images.length) return alert('Pehle photo select kar');
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  for(let i=0;i<images.length;i++){
+    const data=await toData(images[i]);
+    if(i>0) pdf.addPage();
+    pdf.addImage(data,'JPEG',10,10,190,270);
+  }
+  pdf.save('nexora-jpg-to-pdf.pdf');
+}
+function toData(file){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file)})}
+</script>
+</body>
+</html>
