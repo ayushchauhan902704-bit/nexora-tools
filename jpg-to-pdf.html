@@ -4,20 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JPG to PDF Converter - Free, No Watermark | NEXORA</title>
-<meta name="description" content="Convert JPG, PNG and WEBP photos into PDF online for free. Combine up to 50 images into a PDF with A4, Letter and fit-image options.">
-<meta name="robots" content="index,follow">
 <meta name="theme-color" content="#6366f1">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-* { box-sizing: border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; }
-button:disabled { opacity: .65; cursor: not-allowed; }
-#drop { transition: .2s; }
 .photo-card { position:relative; height:125px; overflow:hidden; border-radius:12px; border:1px solid #e5e7eb; background:#f3f4f6; }
 .photo-card img { width:100%; height:100%; object-fit:contain; }
 .remove-btn { position:absolute; top:5px; right:5px; width:28px; height:28px; border-radius:50%; background:#ef4444; color:white; font-weight:bold; }
-#downloadLink { display:none; }
+#pdfPreview { display:none; width:100%; height:500px; border:2px solid #e5e7eb; border-radius:12px; margin-top:16px; }
 </style>
 </head>
 <body class="bg-[#f6f7fb] p-3 sm:p-5 text-gray-900">
@@ -26,135 +20,127 @@ button:disabled { opacity: .65; cursor: not-allowed; }
 <div class="text-center">
 <div class="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-sm font-bold mb-4">📄 NEXORA FREE TOOL</div>
 <h1 class="text-3xl sm:text-4xl font-black tracking-tight">JPG to PDF Converter</h1>
-<p class="text-gray-500 mt-3 leading-relaxed">Convert JPG, PNG and WEBP images into PDF. Combine up to 50 photos, choose your page size and download without a watermark.</p>
+<p class="text-gray-500 mt-3">Convert JPG, PNG and WEBP into PDF. 50 photos, no watermark.</p>
 </div>
+
 <div id="drop" class="mt-7 border-[2px] border-dashed border-indigo-400 rounded-2xl p-8 sm:p-12 text-center bg-indigo-50 cursor-pointer">
 <div class="text-5xl">📁</div>
 <div class="font-extrabold text-lg mt-3">Select or Drag Photos Here</div>
-<div class="text-sm text-gray-500 mt-1">JPG, JPEG, PNG and WEBP supported</div>
-<div class="text-xs text-gray-400 mt-2">Maximum 50 photos</div>
 <input type="file" id="file" accept="image/*" multiple hidden>
 <button type="button" id="chooseBtn" class="mt-5 bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl">Choose Photos</button>
 </div>
-<div class="flex flex-wrap items-center justify-between gap-2 mt-5">
-<div class="font-extrabold">Your Photos</div>
-<div id="count" class="text-sm text-gray-500">0 / 50 photos</div>
-</div>
+
+<div class="flex justify-between mt-5"><div class="font-extrabold">Your Photos</div><div id="count" class="text-sm text-gray-500">0 / 50 photos</div></div>
 <div id="preview" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3"></div>
 <div id="emptyMessage" class="text-center text-sm text-gray-400 py-5">Your selected photos will appear here.</div>
+
 <div class="mt-5">
-<label for="size" class="block font-bold text-sm mb-2">PDF Page Size</label>
+<label class="block font-bold text-sm mb-2">PDF Page Size</label>
 <select id="size" class="w-full bg-gray-50 border border-gray-200 font-semibold py-3 px-4 rounded-xl">
 <option value="a4">A4 — Standard printing size</option>
 <option value="letter">US Letter — US standard</option>
 <option value="fit">Fit Image — Original aspect ratio</option>
 </select>
 </div>
-<div class="grid grid-cols-2 gap-3 mt-4">
-<button type="button" id="clearBtn" class="bg-white border border-gray-300 font-bold py-3 rounded-xl">Clear All</button>
-<button type="button" id="addMoreBtn" class="bg-indigo-50 text-indigo-700 font-bold py-3 rounded-xl">+ Add Photos</button>
+
+<!-- ALAG ALAG BUTTONS -->
+<div class="grid grid-cols-2 gap-3 mt-6">
+<button type="button" id="convertBtn" class="bg-white border-2 border-indigo-600 text-indigo-600 font-extrabold py-4 rounded-xl text-base">👁️ Convert & Preview</button>
+<button type="button" id="downloadBtn" class="bg-indigo-600 text-white font-extrabold py-4 rounded-xl text-base opacity-50" disabled>⬇️ Download PDF</button>
 </div>
-<button type="button" id="btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-4 rounded-xl text-lg">Convert to PDF & Download →</button>
-<div id="status" role="status" aria-live="polite" class="text-center mt-4 text-sm font-bold break-words"></div>
-<a id="downloadLink" href="#" target="_blank" rel="noopener" class="mt-4 w-full text-center bg-green-600 text-white font-bold py-4 rounded-xl">⬇ Download PDF</a>
-<p class="text-center text-xs text-gray-400 mt-5 leading-relaxed">Your selected photos are processed in your browser. No watermark is added.</p>
+
+<button type="button" id="clearBtn" class="w-full mt-3 bg-gray-100 font-bold py-3 rounded-xl">Clear All</button>
+
+<div id="status" class="text-center mt-4 text-sm font-bold"></div>
+<iframe id="pdfPreview"></iframe>
+
+<p class="text-center text-xs text-gray-400 mt-5">100% Private - Your photos never leave your phone.</p>
 </div>
-<footer class="text-center text-xs text-gray-400 mt-5">© 2026 NEXORA · Free Online Tools</footer>
+</div>
 </main>
+
 <script>
 (() => {
-const MAX_IMAGES = 50;
-const drop = document.getElementById("drop");
-const fileInput = document.getElementById("file");
-const preview = document.getElementById("preview");
-const count = document.getElementById("count");
-const emptyMessage = document.getElementById("emptyMessage");
-const status = document.getElementById("status");
-const btn = document.getElementById("btn");
-const sizeSelect = document.getElementById("size");
-let images = [];
-let busy = false;
-function setStatus(msg, err=false){ status.textContent=msg; status.className="text-center mt-4 text-sm font-bold break-words "+(err?"text-red-600":"text-indigo-600"); }
+const drop=document.getElementById("drop"), fileInput=document.getElementById("file"), preview=document.getElementById("preview"), count=document.getElementById("count"), emptyMessage=document.getElementById("emptyMessage"), status=document.getElementById("status"), convertBtn=document.getElementById("convertBtn"), downloadBtn=document.getElementById("downloadBtn"), sizeSelect=document.getElementById("size"), pdfPreview=document.getElementById("pdfPreview");
+let images=[]; let currentDoc=null; let currentFileName=""; let busy=false;
+function setStatus(m,e=false){ status.textContent=m; status.className="text-center mt-4 text-sm font-bold "+(e?"text-red-600":"text-indigo-600"); }
 function render(){
-  preview.replaceChildren();
-  count.textContent=`${images.length} / ${MAX_IMAGES} photos`;
-  emptyMessage.style.display=images.length?"none":"block";
-  images.forEach((item,i)=>{
+  preview.replaceChildren(); count.textContent=`${images.length} / 50 photos`; emptyMessage.style.display=images.length?"none":"block";
+  images.forEach((it,i)=>{
     const card=document.createElement("div"); card.className="photo-card";
-    const img=document.createElement("img"); img.src=item.url;
+    const img=document.createElement("img"); img.src=it.url;
     const num=document.createElement("span"); num.textContent=i+1; num.className="absolute left-2 top-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-md";
-    const rem=document.createElement("button"); rem.className="remove-btn"; rem.textContent="×";
-    rem.onclick=()=>{ if(busy) return; images.splice(i,1); render(); setStatus("Photo removed."); };
+    const rem=document.createElement("button"); rem.className="remove-btn"; rem.textContent="×"; rem.onclick=()=>{ images.splice(i,1); currentDoc=null; downloadBtn.disabled=true; downloadBtn.classList.add("opacity-50"); pdfPreview.style.display="none"; render(); };
     card.append(img,num,rem); preview.appendChild(card);
   });
 }
 function openPicker(){ if(!busy) fileInput.click(); }
 drop.onclick=openPicker;
-document.getElementById("chooseBtn").onclick=(e)=>{e.stopPropagation(); openPicker();};
-document.getElementById("addMoreBtn").onclick=openPicker;
+document.getElementById("chooseBtn").onclick=e=>{e.stopPropagation(); openPicker();};
 fileInput.onchange=async()=>{ await handleFiles(fileInput.files); fileInput.value=""; };
-["dragenter","dragover"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault(); if(!busy) drop.classList.add("bg-indigo-100");}));
-["dragleave","drop"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault(); drop.classList.remove("bg-indigo-100");}));
-drop.addEventListener("drop",async e=>{ if(busy) return; await handleFiles(e.dataTransfer.files); });
+drop.addEventListener("dragover",e=>{e.preventDefault();});
+drop.addEventListener("drop",async e=>{e.preventDefault(); await handleFiles(e.dataTransfer.files);});
 
-function readAsDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(); r.readAsDataURL(file); }); }
-function loadImage(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error("Image could not be loaded.")); i.src=src; }); }
-
-async function handleFiles(list){
-  const selected=Array.from(list||[]); const remaining=MAX_IMAGES-images.length; if(!remaining) return;
-  const toLoad=selected.slice(0,remaining);
-  for(const file of toLoad){
-    try{
-      const dataUrl=await readAsDataURL(file);
-      // try to get size, if fails still keep
-      let w=0,h=0; try{ const im=await loadImage(dataUrl); w=im.naturalWidth; h=im.naturalHeight; }catch{}
-      images.push({ url:dataUrl, width:w||800, height:h||1000 });
-    }catch{}
-  }
-  render(); setStatus(`${images.length} photos ready to convert.`);
+function readAsDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+function loadImage(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+function fixAndCompress(img){
+  const maxSide=2000; let w=img.naturalWidth, h=img.naturalHeight;
+  const scale=Math.min(1, maxSide/Math.max(w,h)); w=Math.round(w*scale); h=Math.round(h*scale);
+  const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+  return { data: canvas.toDataURL("image/jpeg", 0.85), w, h };
 }
-document.getElementById("clearBtn").onclick=()=>{ if(busy) return; images=[]; render(); setStatus("All photos cleared."); };
+async function handleFiles(list){
+  const sel=Array.from(list||[]).slice(0,50-images.length);
+  for(const file of sel){
+    try{ const dataUrl=await readAsDataURL(file); const im=await loadImage(dataUrl); const fixed=fixAndCompress(im); images.push({ url: fixed.data, width: fixed.w, height: fixed.h }); }catch{}
+  }
+  currentDoc=null; downloadBtn.disabled=true; downloadBtn.classList.add("opacity-50"); pdfPreview.style.display="none";
+  render(); if(images.length) setStatus(`${images.length} photos ready. Pehle Convert pe click karo.`);
+}
+document.getElementById("clearBtn").onclick=()=>{ images=[]; currentDoc=null; downloadBtn.disabled=true; downloadBtn.classList.add("opacity-50"); pdfPreview.style.display="none"; render(); setStatus("All cleared."); };
 
-async function convertToPDF(){
-  if(busy) return;
+async function convertPDF(){
   if(!images.length){ alert("Pehle photos upload karo!"); return; }
-  busy=true; btn.disabled=true; btn.textContent="Creating PDF...";
+  if(busy) return; busy=true; convertBtn.textContent="Converting..."; convertBtn.disabled=true;
   try{
-    const { jsPDF } = window.jspdf;
-    const selectedSize=sizeSelect.value;
-    let doc=null;
+    const { jsPDF }=window.jspdf; const selectedSize=sizeSelect.value; let doc=null;
     for(let i=0;i<images.length;i++){
-      setStatus(`Creating PDF: ${i+1} of ${images.length} photos...`);
-      const item=images[i];
-      // DIRECT USE - NO SECOND loadImage, isiliye iPhone error fix
+      setStatus(`Converting: ${i+1} of ${images.length}...`);
+      const it=images[i];
       if(selectedSize==="fit"){
-        const wMM=item.width*25.4/96; const hMM=item.height*25.4/96;
-        const ww=Math.max(10,wMM)||210; const hh=Math.max(10,hMM)||297;
-        if(!doc) doc=new jsPDF({ orientation:ww>hh?"landscape":"portrait", unit:"mm", format:[ww,hh], compress:true });
-        else doc.addPage([ww,hh], ww>hh?"landscape":"portrait");
-        doc.addImage(item.url, "JPEG", 0, 0, ww, hh, undefined, "FAST");
+        const wMM=it.width*25.4/96, hMM=it.height*25.4/96;
+        if(!doc) doc=new jsPDF({ orientation:wMM>hMM?"landscape":"portrait", unit:"mm", format:[wMM,hMM], compress:true });
+        else doc.addPage([wMM,hMM], wMM>hMM?"landscape":"portrait");
+        doc.addImage(it.url,"JPEG",0,0,wMM,hMM,undefined,"FAST");
       }else{
         if(!doc) doc=new jsPDF({ orientation:"portrait", unit:"mm", format:selectedSize==="letter"?"letter":"a4", compress:true });
         else doc.addPage(selectedSize==="letter"?"letter":"a4","portrait");
-        const pageW=doc.internal.pageSize.getWidth(); const pageH=doc.internal.pageSize.getHeight();
-        const margin=10; const maxW=pageW-margin*2; const maxH=pageH-margin*2;
-        // estimate ratio from stored size
-        const ratio=Math.min(maxW/(item.width||800), maxH/(item.height||1000));
-        const w=(item.width||800)*ratio; const h=(item.height||1000)*ratio;
-        doc.addImage(item.url, "JPEG", (pageW-w)/2, (pageH-h)/2, w, h, undefined, "FAST");
+        const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
+        const maxW=pw-20, maxH=ph-20; const ratio=Math.min(maxW/it.width, maxH/it.height);
+        const w=it.width*ratio, h=it.height*ratio;
+        doc.addImage(it.url,"JPEG",(pw-w)/2,(ph-h)/2,w,h,undefined,"FAST");
       }
-      await new Promise(r=>setTimeout(r,20));
+      await new Promise(r=>setTimeout(r,10));
     }
-    doc.save(`NEXORA-Photos-${Date.now()}.pdf`);
-    setStatus("✅ PDF Downloaded!");
-  }catch(e){
-    console.error(e);
-    setStatus("PDF error: "+(e.message||"Unknown"), true);
-  }finally{
-    busy=false; btn.disabled=false; btn.textContent="Convert to PDF & Download →";
-  }
+    currentDoc=doc; currentFileName=`NEXORA-Photos-${Date.now()}.pdf`;
+    // Preview dikhao
+    const blobUrl=doc.output("bloburl");
+    pdfPreview.src=blobUrl; pdfPreview.style.display="block";
+    downloadBtn.disabled=false; downloadBtn.classList.remove("opacity-50");
+    setStatus("✅ Convert Ho Gaya! Neeche preview dekho, fir Download pe click karo.");
+  }catch(e){ setStatus("Error: "+e.message,true); }
+  finally{ busy=false; convertBtn.disabled=false; convertBtn.textContent="👁️ Convert & Preview"; }
 }
-btn.onclick=convertToPDF;
+
+function downloadPDF(){
+  if(!currentDoc){ alert("Pehle Convert pe click karo!"); return; }
+  currentDoc.save(currentFileName);
+  setStatus("✅ PDF Downloaded!");
+}
+
+convertBtn.onclick=convertPDF;
+downloadBtn.onclick=downloadPDF;
 })();
 </script>
 </body>
