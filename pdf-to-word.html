@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF to Word - Free & Fast | NEXORA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js'</script>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f6f7fb]">
+<div class="max-w-3xl mx-auto p-6">
+<div class="bg-white rounded-[24px] p-8 shadow-sm">
+<h1 class="text-3xl font-black">PDF to Word</h1>
+<p class="text-gray-500 mt-1">Best quality text extraction, free, no watermark</p>
+<div id="drop" class="mt-6 border-[3px] border-dashed border-emerald-500 rounded-[20px] p-12 text-center bg-emerald-50/30 cursor-pointer">Click or Drop PDF Here<input type="file" id="file" accept=".pdf" hidden></div>
+<p id="status" class="mt-4 text-center font-bold text-emerald-600"></p>
+<button onclick="convert()" class="w-full mt-4 bg-emerald-500 text-white font-bold py-4 rounded-[14px]">Convert to Word & Download →</button>
+</div>
+</div>
+<script>
+let text=''; const drop=document.getElementById('drop'), file=document.getElementById('file'), status=document.getElementById('status');
+drop.onclick=()=>file.click();
+file.onchange=async e=>{
+ status.textContent='Reading PDF...'; const f=e.target.files[0];
+ const pdf=await pdfjsLib.getDocument(URL.createObjectURL(f)).promise; text='';
+ for(let i=1;i<=pdf.numPages;i++){let p=await pdf.getPage(i);let c=await p.getTextContent();text+=c.items.map(s=>s.str).join(' ')+'\n\n';}
+ status.textContent=`Ready! ${pdf.numPages} pages loaded`;
+}
+function convert(){if(!text) return alert('Pehle PDF daal'); let blob=new Blob([text],{type:'application/msword'}); let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='NEXORA-PDF-to-Word.doc';a.click();}
+</script>
+</body>
+</html>
