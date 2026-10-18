@@ -9,8 +9,13 @@
 <meta name="author" content="NEXORA Tools - Ayush Chauhan">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://nexora-tools-drab.vercel.app/background-remover.html">
-<!-- FIXED AI LIBRARY - iPhone + Android Working -->
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "@imgly/background-removal": "https://esm.sh/@imgly/background-removal@1.4.5"
+  }
+}
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
 body{background:#f6f7fb;color:#111}
@@ -91,7 +96,9 @@ background remover, remove background, remove bg, bg remover, image background r
   </div>
 </div>
 
-<script>
+<script type="module">
+import imglyRemoveBackground from "@imgly/background-removal";
+
 let img = new Image(); let bgColor = "transparent"; let cutoutBlob = null;
 const canvas = document.getElementById('canvas'); const ctx = canvas.getContext('2d');
 const statusEl = document.getElementById('status'); const loader = document.getElementById('loader'); const loaderBar = document.getElementById('loaderBar');
@@ -106,21 +113,34 @@ async function handleFile(file){
  if(!file) return;
  document.getElementById('uploadText').innerText = "⏳ AI Load Ho Raha Hai...";
  document.getElementById('previewArea').style.display='none';
- statusEl.innerText = "⏳ AI Model Download Ho Raha Hai (Pehli Baar 15 Sec)...";
+ statusEl.innerText = "⏳ AI Model Download (Pehli Baar 15-20 Sec)...";
  loader.style.display='block'; loaderBar.style.width='10%';
  try{
-   const blob = await ImglyBackgroundRemoval.removeBackground(file, {
-     progress: (k,c,t)=>{ loaderBar.style.width = Math.round((c/t)*100) + '%'; statusEl.innerText="🤖 AI Kaat Raha Hai "+Math.round((c/t)*100)+"%"; }
+   const blob = await imglyRemoveBackground(file, {
+     progress: (key, current, total) => {
+       const pct = Math.round((current/total)*100);
+       loaderBar.style.width = pct + '%';
+       statusEl.innerText = `🤖 AI Kaat Raha Hai - ${key} ${pct}%`;
+     }
    });
    cutoutBlob = blob;
-   loaderBar.style.width='100%'; loader.style.display='none';
+   loaderBar.style.width='100%'; 
+   setTimeout(()=>loader.style.display='none',500);
    const url = URL.createObjectURL(blob);
    img = new Image();
-   img.onload = ()=>{ redraw(); document.getElementById('previewArea').style.display='block'; document.getElementById('uploadText').innerText="✅ Background Removed (AI HD) - Choose BG Color"; statusEl.innerText="✅ AI Se Background Hat Gaya!"; document.getElementById('info').innerText=`Original: ${img.width}x${img.height} | AI Ready`; };
+   img.onload = ()=>{
+     redraw();
+     document.getElementById('previewArea').style.display='block';
+     document.getElementById('uploadText').innerText = "✅ Background Removed (AI HD) - Choose BG Color";
+     statusEl.innerText = "✅ Background Hat Gaya! Color Choose Karo";
+     document.getElementById('info').innerText = `AI Cutout Ready: ${img.width}x${img.height}`;
+   };
    img.src = url;
  }catch(err){
-   console.error(err); statusEl.innerText="❌ Error: "+err.message; loader.style.display='none';
-   document.getElementById('uploadText').innerText="📁 Click / Drag Photo to Remove Background";
+   console.error(err);
+   statusEl.innerText = "❌ Error: " + err.message;
+   loader.style.display='none';
+   document.getElementById('uploadText').innerText = "📁 Click / Drag Photo to Remove Background";
  }
 }
 document.querySelectorAll('.size-btn').forEach(b=>{
