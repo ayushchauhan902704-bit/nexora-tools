@@ -22,6 +22,9 @@ body{background:#f6f7fb;color:#111}
 .btn{width:100%;padding:14px;background:#111827;color:white;border:none;border-radius:12px;font-weight:800;margin-top:12px;cursor:pointer}
 .file-list{margin-top:12px;font-size:12px}
 .file-item{background:#f9fafb;border:1px solid #e5e7eb;padding:8px 10px;border-radius:8px;margin-top:6px;display:flex;justify-content:space-between}
+/* ALAG DOWNLOAD BUTTON KA STYLE - NAYA JODA */
+.btn-green{background:#10b981;color:white;font-size:16px;display:none;border:2px solid #059669}
+.download-area{margin-top:20px;border-top:2px dashed #10b981;padding-top:15px;display:none}
 </style>
 </head>
 <body>
@@ -39,6 +42,14 @@ body{background:#f6f7fb;color:#111}
 <div class="upload" id="mergeDrop"><span>📁 Click / Drag Multiple PDFs to Merge (2+ PDFs)</span><input type="file" id="mergeInput" accept="application/pdf" multiple hidden></div>
 <div id="mergeList" class="file-list"></div>
 <button class="btn" id="mergeBtn" style="display:none">🔗 Merge All PDFs to One PDF (HD)</button>
+
+<!-- YAHI NAYA ALAG DOWNLOAD BUTTON HAI - KUCH HATAYA NAHI -->
+<div class="download-area" id="downloadArea">
+<div style="text-align:center;font-weight:900;color:#065f46;margin-bottom:8px">✅ Merge Ho Gaya! Ab Neeche Se Download Karo</div>
+<button class="btn btn-green" id="downloadBtn">⬇️ DOWNLOAD FINAL PDF (Alag Button)</button>
+<p style="text-align:center;font-size:11px;color:#666;margin-top:8px">iPhone pe Long Press -> Download Linked File dabao agar direct na ho</p>
+</div>
+
 </div>
 
 <div id="splitBox" style="display:none">
@@ -49,6 +60,7 @@ body{background:#f6f7fb;color:#111}
 </div>
 
 <button class="btn" id="clearBtn" style="display:none;background:#f3f4f6;color:#111;border:1px solid #ddd">Clear</button>
+<div id="status" style="text-align:center;margin-top:10px;font-weight:800;font-size:13px;color:#10b981"></div>
 </div>
 
 <div class="pro-box">
@@ -89,12 +101,12 @@ body{background:#f6f7fb;color:#111}
 
 <script>
 const {PDFDocument}=PDFLib;
-let mergeFiles=[]; let splitFile=null;
+let mergeFiles=[]; let splitFile=null; let finalBlobUrl=null;
 const mergeTab=document.getElementById('mergeTab'); const splitTab=document.getElementById('splitTab');
 const mergeBox=document.getElementById('mergeBox'); const splitBox=document.getElementById('splitBox');
 mergeTab.onclick=()=>{mergeTab.classList.add('active');splitTab.classList.remove('active');mergeBox.style.display='block';splitBox.style.display='none';};
 splitTab.onclick=()=>{splitTab.classList.add('active');mergeTab.classList.remove('active');splitBox.style.display='block';mergeBox.style.display='none';};
-// Merge Logic
+// Merge Logic - SAME AS YOURS
 document.getElementById('mergeDrop').onclick=()=>document.getElementById('mergeInput').click();
 document.getElementById('mergeInput').onchange=e=>handleMerge(e.target.files);
 document.getElementById('mergeDrop').addEventListener('dragover',e=>e.preventDefault());
@@ -109,19 +121,48 @@ function renderMerge(){
  if(mergeFiles.length>=2){document.getElementById('mergeBtn').style.display='block';document.getElementById('clearBtn').style.display='block';}
 }
 window.removeMerge=(i)=>{mergeFiles.splice(i,1);renderMerge(); if(mergeFiles.length<2)document.getElementById('mergeBtn').style.display='none';};
+
+// BUTTON 1 - MERGE
 document.getElementById('mergeBtn').onclick=async()=>{
- const mergedPdf=await PDFDocument.create();
- for(let file of mergeFiles){
-  const bytes=await file.arrayBuffer();
-  const pdf=await PDFDocument.load(bytes);
-  const copied=await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-  copied.forEach(p=>mergedPdf.addPage(p));
+ const status=document.getElementById('status');
+ status.innerText="⏳ Merging... 2 sec ruko";
+ document.getElementById('mergeBtn').innerText="⏳ Merging PDFs...";
+ try{
+  const mergedPdf=await PDFDocument.create();
+  for(let file of mergeFiles){
+   const bytes=await file.arrayBuffer();
+   const pdf=await PDFDocument.load(bytes);
+   const copied=await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+   copied.forEach(p=>mergedPdf.addPage(p));
+  }
+  const mergedBytes=await mergedPdf.save();
+  const blob=new Blob([mergedBytes],{type:'application/pdf'});
+  finalBlobUrl=URL.createObjectURL(blob);
+  
+  // BUTTON 2 KO ALAG SE DIKHAO
+  document.getElementById('downloadArea').style.display='block';
+  document.getElementById('downloadBtn').style.display='block';
+  status.innerText="✅ Merge Ho Gaya! Ab Neeche Hare Button Se Download Karo";
+  document.getElementById('mergeBtn').innerText="✅ Merged - Ab Neeche Download Karo";
+  document.getElementById('downloadBtn').scrollIntoView({behavior:'smooth'});
+ }catch(e){
+  document.getElementById('status').innerText="Error: "+e.message;
  }
- const mergedBytes=await mergedPdf.save();
- const blob=new Blob([mergedBytes],{type:'application/pdf'});
- const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`NEXORA-Merged-${Date.now()}.pdf`; a.click(); URL.revokeObjectURL(url);
 };
-// Split Logic
+
+// BUTTON 2 - ALAG DOWNLOAD BUTTON
+document.getElementById('downloadBtn').onclick=()=>{
+ if(!finalBlobUrl){ alert("Pehle Merge Karo!"); return; }
+ const a=document.createElement('a');
+ a.href=finalBlobUrl;
+ a.download=`NEXORA-Merged-${Date.now()}.pdf`;
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ document.getElementById('status').innerText="⬇️ Download Start! Downloads Folder Check Karo";
+};
+
+// Split Logic - SAME AS YOURS
 document.getElementById('splitDrop').onclick=()=>document.getElementById('splitInput').click();
 document.getElementById('splitInput').onchange=e=>{splitFile=e.target.files[0]; document.getElementById('splitInfo').innerText=`Loaded: ${splitFile.name} - Ready to Split`; document.getElementById('clearBtn').style.display='block';};
 document.getElementById('splitDrop').addEventListener('dragover',e=>e.preventDefault());
@@ -147,7 +188,7 @@ document.getElementById('splitBtn').onclick=async()=>{
  }
  document.getElementById('splitInfo').innerText=`✅ Split Done!`;
 };
-document.getElementById('clearBtn').onclick=()=>{mergeFiles=[];splitFile=null;document.getElementById('mergeList').innerHTML="";document.getElementById('splitInfo').innerText="";document.getElementById('mergeBtn').style.display='none';document.getElementById('clearBtn').style.display='none';};
+document.getElementById('clearBtn').onclick=()=>{mergeFiles=[];splitFile=null;finalBlobUrl=null;document.getElementById('mergeList').innerHTML="";document.getElementById('splitInfo').innerText="";document.getElementById('mergeBtn').style.display='none';document.getElementById('downloadArea').style.display='none';document.getElementById('downloadBtn').style.display='none';document.getElementById('clearBtn').style.display='none';document.getElementById('status').innerText="";};
 </script>
 </body>
 </html>
