@@ -9,14 +9,8 @@
 <meta name="author" content="NEXORA Tools - Ayush Chauhan">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://nexora-tools-drab.vercel.app/background-remover.html">
-<!-- NAYA JODA - AI MODEL -->
-<script type="importmap">
-{
-  "imports": {
-    "@imgly/background-removal": "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.mjs"
-  }
-}
-</script>
+<!-- FIXED AI LIBRARY - iPhone + Android Working -->
+<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
 body{background:#f6f7fb;color:#111}
@@ -43,14 +37,12 @@ canvas{max-width:100%;border-radius:12px;border:1px solid #eee;margin-top:12px}
 <span id="uploadText">📁 Click / Drag Photo to Remove Background</span>
 <input type="file" id="fileInput" accept="image/*" hidden>
 </div>
-
 <div class="loader" id="loader"><div class="loader-bar" id="loaderBar"></div></div>
-<div class="status" id="status"></div>
-
+<div class="status" id="status">Photo daalo - AI background kaatega</div>
 <div style="text-align:center;margin-top:15px">
 <button class="size-btn active" data-color="transparent">Transparent BG</button>
 <button class="size-btn" data-color="white">White BG - Passport</button>
-<button class="size-btn" data-color="#1e88e5">Blue BG - Visa</button>
+<button class="size-btn" data-color="#6366f1">Blue BG - Visa</button>
 <button class="size-btn" data-color="#ef4444">Red BG</button>
 </div>
 <div id="previewArea" style="display:none;text-align:center">
@@ -73,7 +65,6 @@ background remover, remove background, remove bg, bg remover, image background r
 </p>
 </div>
 
-<!-- SAME FOOTER AS YOUR JPG TO PDF -->
 <div style="max-width:800px;margin:20px auto;width:96%;background:white;border-radius:24px;padding:20px;border:1px solid #e5e7eb">
   <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;font-size:13px;line-height:1.8;color:#64748b">
     <div>
@@ -100,20 +91,10 @@ background remover, remove background, remove bg, bg remover, image background r
   </div>
 </div>
 
-<!-- NAYA SCRIPT - ASLI AI WALA -->
-<script type="module">
-import { removeBackground } from "@imgly/background-removal";
-
-let img = new Image(); 
-let bgColor = "transparent";
-let cutoutBlob = null;
-let originalFile = null;
-
-const canvas = document.getElementById('canvas'); 
-const ctx = canvas.getContext('2d');
-const statusEl = document.getElementById('status');
-const loader = document.getElementById('loader');
-const loaderBar = document.getElementById('loaderBar');
+<script>
+let img = new Image(); let bgColor = "transparent"; let cutoutBlob = null;
+const canvas = document.getElementById('canvas'); const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status'); const loader = document.getElementById('loader'); const loaderBar = document.getElementById('loaderBar');
 
 document.getElementById('fileInput').addEventListener('change', e=>handleFile(e.target.files[0]));
 const dropArea = document.getElementById('dropArea');
@@ -123,87 +104,42 @@ dropArea.addEventListener('drop', e=>{e.preventDefault();handleFile(e.dataTransf
 
 async function handleFile(file){
  if(!file) return;
- originalFile = file;
  document.getElementById('uploadText').innerText = "⏳ AI Load Ho Raha Hai...";
  document.getElementById('previewArea').style.display='none';
- statusEl.innerText = "⏳ AI Model Download Ho Raha Hai (Pehli Baar 15 Sec Lagega)...";
- loader.style.display='block';
- loaderBar.style.width='10%';
- 
+ statusEl.innerText = "⏳ AI Model Download Ho Raha Hai (Pehli Baar 15 Sec)...";
+ loader.style.display='block'; loaderBar.style.width='10%';
  try{
-   loaderBar.style.width='40%';
-   statusEl.innerText = "🤖 AI Background Kaat Raha Hai... Ruko";
-   
-   // REAL AI REMOVE
-   cutoutBlob = await removeBackground(file, {
-     progress: (k,c,t)=>{ loaderBar.style.width = Math.round((c/t)*100) + '%' }
+   const blob = await ImglyBackgroundRemoval.removeBackground(file, {
+     progress: (k,c,t)=>{ loaderBar.style.width = Math.round((c/t)*100) + '%'; statusEl.innerText="🤖 AI Kaat Raha Hai "+Math.round((c/t)*100)+"%"; }
    });
-   
-   loaderBar.style.width='100%';
-   loader.style.display='none';
-   
-   // Load cutout to image
-   const url = URL.createObjectURL(cutoutBlob);
+   cutoutBlob = blob;
+   loaderBar.style.width='100%'; loader.style.display='none';
+   const url = URL.createObjectURL(blob);
    img = new Image();
-   img.onload = ()=>{
-     redraw();
-     document.getElementById('previewArea').style.display='block';
-     document.getElementById('uploadText').innerText = "✅ Background Removed (AI HD) - Choose BG Color";
-     statusEl.innerText = "✅ AI Se Background Hat Gaya! Ab Color Choose Karo";
-     document.getElementById('info').innerText = `Original: ${img.width}x${img.height} | AI Cutout Ready`;
-   };
+   img.onload = ()=>{ redraw(); document.getElementById('previewArea').style.display='block'; document.getElementById('uploadText').innerText="✅ Background Removed (AI HD) - Choose BG Color"; statusEl.innerText="✅ AI Se Background Hat Gaya!"; document.getElementById('info').innerText=`Original: ${img.width}x${img.height} | AI Ready`; };
    img.src = url;
-
  }catch(err){
-   console.error(err);
-   statusEl.innerText = "❌ Error: " + err.message;
-   loader.style.display='none';
-   document.getElementById('uploadText').innerText = "📁 Click / Drag Photo to Remove Background";
+   console.error(err); statusEl.innerText="❌ Error: "+err.message; loader.style.display='none';
+   document.getElementById('uploadText').innerText="📁 Click / Drag Photo to Remove Background";
  }
 }
-
 document.querySelectorAll('.size-btn').forEach(b=>{
- b.addEventListener('click', function(){
-  document.querySelectorAll('.size-btn').forEach(x=>x.classList.remove('active')); this.classList.add('active');
-  bgColor = this.dataset.color;
-  if(cutoutBlob){ redraw(); }
- });
+ b.addEventListener('click', function(){ document.querySelectorAll('.size-btn').forEach(x=>x.classList.remove('active')); this.classList.add('active'); bgColor = this.dataset.color; if(cutoutBlob){ redraw(); } });
 });
-
 function redraw(){
  if(!img.src) return;
- // Keep original high quality size
- canvas.width = img.width; 
- canvas.height = img.height;
- 
- // Fill BG
- if(bgColor==="transparent"){
-   ctx.clearRect(0,0,canvas.width,canvas.height);
- } else {
-   ctx.fillStyle = bgColor==="white"?"#ffffff":bgColor;
-   ctx.fillRect(0,0,canvas.width,canvas.height);
- }
- // Draw AI cutout
+ canvas.width = img.width; canvas.height = img.height;
+ if(bgColor==="transparent"){ ctx.clearRect(0,0,canvas.width,canvas.height); }
+ else { ctx.fillStyle = bgColor==="white"?"#ffffff":bgColor; ctx.fillRect(0,0,canvas.width,canvas.height); }
  ctx.drawImage(img,0,0);
- 
- let bgName = bgColor;
- if(bgColor==="transparent") bgName="transparent";
- else if(bgColor==="white") bgName="white";
- else if(bgColor==="#1e88e5") bgName="blue";
- else if(bgColor==="#ef4444") bgName="red";
- 
- document.getElementById('info').innerText = `Export: ${canvas.width}x${canvas.height} | BG: ${bgName} | AI HD`;
+ document.getElementById('info').innerText = `Export: ${canvas.width}x${canvas.height} | BG: ${bgColor} | AI HD`;
 }
-
 document.getElementById('downloadBtn').addEventListener('click', ()=>{
  if(!cutoutBlob){ alert("Pehle Photo Daalo!"); return; }
  canvas.toBlob(b=>{
-  const url = URL.createObjectURL(b); 
-  const a=document.createElement('a');
-  a.href=url; a.download=`nexora-bg-removed-${Date.now()}.png`; 
-  document.body.appendChild(a); a.click();
+  const url = URL.createObjectURL(b); const a=document.createElement('a');
+  a.href=url; a.download=`nexora-bg-removed-${Date.now()}.png`; document.body.appendChild(a); a.click();
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
-  statusEl.innerText="⬇️ Download Ho Gaya HD PNG!";
  },'image/png',1);
 });
 </script>
