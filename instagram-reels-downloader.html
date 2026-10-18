@@ -22,29 +22,16 @@
 <div class="flex items-center gap-2"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[11px] font-bold">✓ WORKING</span><a href="index.html" class="text-[13px] font-bold text-[#6c5ce7]">← All Tools</a></div>
 </header>
 
-<!-- IMPORTANT DOWNLOAD BUTTON SECTION -->
-<div class="max-w-[900px] w-full mx-auto px-4 pt-6">
-<div class="bg-white rounded-[24px] p-5 md:p-7 shadow-[0_18px_50px_rgba(30,30,70,0.08)] border border-[#e5e5ed]">
-<div class="text-center"><div class="inline-flex px-3 py-1 rounded-full bg-[#eeecff] text-[#5b4bd8] text-[12px] font-bold">📸 FREE • NO WATERMARK • HD</div><h1 class="mt-3 text-[28px] md:text-[42px] font-black leading-[0.95] tracking-tight">Instagram Reels <span class="text-[#6c5ce7]">Downloader</span></h1><p class="mt-2 text-[14px] text-gray-500">No Watermark • HD Quality • Fast • Free - Best Insta Downloader 2026</p></div>
-
-<div class="mt-6 flex flex-col md:flex-row gap-3">
-<input id="topLink" type="text" placeholder="Paste Instagram Reel Link Here... https://www.instagram.com/reel/..." class="flex-1 h-[56px] border border-[#dcdce7] rounded-[14px] px-4 text-[14px] outline-none focus:border-[#8c80ed] focus:ring-4 focus:ring-violet-100">
-<button id="mainDownloadBtn" class="h-[56px] px-8 rounded-[14px] bg-black text-white font-black text-[16px] tracking-wide hover:bg-zinc-900 transition">⬇️ DOWNLOAD NOW</button>
-</div>
-<p class="mt-3 text-[12px] text-center text-gray-400">Paste any public Instagram reel link - MP4 - HD - No Watermark - 100% Free</p>
-</div>
-</div>
-
-<!-- WORKING IFRAME - TERA REEL VAULT -->
-<div class="max-w-[900px] w-full mx-auto px-4 mt-4 flex-1 flex flex-col">
-<div class="bg-white rounded-[20px] border border-[#e5e5ed] overflow-hidden shadow-sm flex-1 flex flex-col min-h-[600px]">
+<!-- ONLY REEL VAULT - NO EXTRA INPUT BOX -->
+<div class="max-w-[900px] w-full mx-auto px-0 md:px-4 mt-0 md:mt-4 flex-1 flex flex-col">
+<div class="bg-white md:rounded-[20px] border-y md:border border-[#e5e5ed] overflow-hidden shadow-sm flex-1 flex flex-col min-h-[750px]">
 <div class="px-4 py-3 border-b bg-[#faf9ff] flex justify-between items-center"><span class="text-[13px] font-bold">🔥 Reel Vault - HD Downloader (Inside NEXORA)</span><span class="text-[11px] bg-black text-white px-2 py-1 rounded">NO FAIL</span></div>
-<iframe id="vaultFrame" src="https://reel-vault--ayushchauhan902.replit.app" style="width:100%;height:650px;border:none;" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+<iframe src="https://reel-vault--ayushchauhan902.replit.app" style="width:100%;height:100%;min-height:750px;border:none;" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
 </div>
 </div>
 
 <!-- SEO CONTENT + FOOTER WITH 5 PAGES + LINKEDIN -->
-<div class="max-w-[900px] w-full mx-auto px-4 mt-8 pb-10">
+<div class="max-w-[900px] w-full mx-auto px-4 mt-6 pb-10">
 <div class="bg-white rounded-[20px] border border-[#e5e5ed] p-6">
 <h2 class="font-black text-[20px]">About Instagram Reels Downloader - World Best by NEXORA</h2>
 <p class="text-[14px] text-gray-600 mt-2 leading-relaxed">NEXORA Instagram reels downloader is world best free tool to download Instagram reels without watermark in HD. Supports instagram reels downloader, instagram video downloader, insta reels downloader, ig reels downloader, instagram downloader no watermark, reels downloader hd, best instagram downloader, free instagram downloader, instagram reels saver, instagram downloader hd, reels download without watermark. Trusted by 81k+ users, Made in India, 100% working 2026.</p>
@@ -60,21 +47,5 @@
 </div>
 </footer>
 
-<script>
-document.getElementById('mainDownloadBtn').addEventListener('click',()=>{
-let link=document.getElementById('topLink').value.trim();
-let frame=document.getElementById('vaultFrame');
-if(!link){alert('Pehle Instagram reel ka link paste karo bhai!');return;}
-// Copy to clipboard and scroll to iframe
-navigator.clipboard.writeText(link);
-frame.scrollIntoView({behavior:'smooth'});
-// Try to pass url to iframe via query param (agar Replit support kare toh direct download)
-frame.src='https://reel-vault--ayushchauhan902.replit.app/?url='+encodeURIComponent(link);
-// Highlight button
-let btn=document.getElementById('mainDownloadBtn');
-btn.innerText='✅ LINK COPIED - PASTE BELOW & DOWNLOAD';
-setTimeout(()=>{btn.innerText='⬇️ DOWNLOAD NOW';},3000);
-});
-</script>
 </body>
 </html>
