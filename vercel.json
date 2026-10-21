@@ -1,6 +1,11 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
   "redirects": [
-    { "source": "/(.*).html", "destination": "/$1", "statusCode": 301 }
+    {
+      "source": "/(.*).html",
+      "destination": "/$1",
+      "permanent": true
+    }
   ]
 }
