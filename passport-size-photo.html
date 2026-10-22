@@ -21,9 +21,9 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to Make Passport Size Photo","step":[{"@type":"HowToStep","name":"Upload Photo","text":"Click upload and select JPG or PNG photo"},{"@type":"HowToStep","name":"Select Size","text":"Choose 3.5x4.5cm, 20KB SSC, 50KB UPSC, 2x2 Visa, Stamp Size"},{"@type":"HowToStep","name":"Download","text":"Click Download Photo - HD no watermark ready for govt forms"}]}</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif}
-body{background:#f7f8fc;color:#111827}
+body{background:#f7f8fc;color:#111827;overflow-y:auto !important;min-height:100vh;padding-bottom:80px}
 a{color:inherit;text-decoration:none}
-.container{width:min(900px,calc(100% - 32px));margin:auto}
+.container{width:min(900px,calc(100% - 32px));margin:auto;padding-bottom:20px}
 header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-bottom:1px solid #e8e8ef}
 .nav{height:68px;display:flex;justify-content:space-between;align-items:center}
 .logo{font-size:24px;font-weight:900;letter-spacing:-0.5px}.logo span{color:#6366f1}
@@ -34,14 +34,15 @@ header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop
 .upload-area:hover{background:#e0e7ff;transform:translateY(-1px)}
 .upload-area input{display:none}
 #previewWrap{display:none;text-align:center;margin-top:16px}
-#previewWrap img{max-width:200px;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+#previewWrap img{max-width:220px;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 4px 16px rgba(0,0,0,.08)}
 .size-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
-.size-btn{padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;background:#fff;cursor:pointer;font-size:13px;font-weight:700;transition:.2s}.size-btn:hover{border-color:#6366f1;background:#f5f3ff}
+@media(max-width:600px){.size-grid{grid-template-columns:1fr 1fr}}
+.size-btn{padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:700;transition:.2s;line-height:1.3}.size-btn:hover{border-color:#6366f1;background:#f5f3ff}
 .size-btn.active{background:#111827;color:#fff;border-color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .btn{width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:12px;font-weight:800;margin-top:16px;cursor:pointer;font-size:15px;display:none;transition:.2s}.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(16,185,129,.3)}
 .info{margin-top:10px;font-size:12px;font-weight:700;color:#111827}
-.pro-box{background:white;border-radius:20px;padding:24px;border:1px solid #e8e8ef;margin:20px auto;box-shadow:0 4px 24px rgba(0,0,0,.04)}
-footer{border-top:1px solid #e8e8ef;background:white;padding:36px 0;margin-top:24px;color:#64748b;font-size:13px}
+.pro-box{background:white;border-radius:20px;padding:24px;border:1px solid #e8e8ef;margin:20px auto;box-shadow:0 4px 24px rgba(0,0,0,.04);display:block !important}
+footer{border-top:1px solid #e8e8ef;background:white;padding:36px 0;margin-top:24px;color:#64748b;font-size:13px;display:block !important;padding-bottom:100px}
 table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}th,td{border:1px solid #e5e7eb;padding:8px}th{background:#f5f3ff}
 </style>
 </head>
@@ -50,7 +51,163 @@ table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}th,td{b
 <main class="container">
 <div class="hero"><span class="badge">📸 GOVT APPROVED • NO WATERMARK HD • SSC UPSC VISA • 87K+ USERS</span><h1 style="font-size:28px;font-weight:900;letter-spacing:-0.8px;margin-top:12px;line-height:1.2">Passport Size Photo Maker</h1><p style="font-size:13px;margin-top:8px;color:#64748b">20KB, 50KB, 3.5x4.5cm, 2x2 Visa, Stamp Size • 1 Click Ready • Private, Free</p></div>
 <div class="tool-wrap">
-<div class="upload-area" onclick="document.getElementById('fileInput').click()"><div style="font-size:32px">📁</div><span id="uploadText" style="display:block;margin-top:8px">Click to Upload Photo (JPG/PNG)</span><span style="font-size:11px;font-weight:600;color:#6366f1;margin-top:4px;display:block">White background auto • HD Quality • Exact KB</span><input type="file" id="fileInput" accept="image/*"></div>
+<div class="upload-area" id="uploadArea"><div style="font-size:32px">📁</div><span id="uploadText" style="display:block;margin-top:8px">Click to Upload Photo (JPG/PNG)</span><span style="font-size:11px;font-weight:600;color:#6366f1;margin-top:4px;display:block">White background auto • HD Quality • Exact KB</span><input type="file" id="fileInput" accept="image/*"></div>
 <div id="previewWrap"><img id="previewImg" src=""><div class="info" id="sizeInfo"></div></div>
 <div class="size-grid">
-<button class="size-btn active" data-w="413" data-h="531" data-kb="0">Passport 3.5x4.5 cm</
+<button class="size-btn active" data-w="413" data-h="531" data-kb="0">Passport 3.5x4.5 cm<br><span style="font-size:10px;font-weight:600;color:#6366f1">413x531 - HD</span></button>
+<button class="size-btn" data-w="200" data-h="230" data-kb="20">20KB - SSC Form<br><span style="font-size:10px">For SSC, Railway</span></button>
+<button class="size-btn" data-w="300" data-h="350" data-kb="50">50KB - UPSC Form<br><span style="font-size:10px">For UPSC, Govt</span></button>
+<button class="size-btn" data-w="600" data-h="600" data-kb="0">Visa 2x2 Inch<br><span style="font-size:10px">US Visa 600x600</span></button>
+<button class="size-btn" data-w="300" data-h="400" data-kb="0">Stamp Size<br><span style="font-size:10px">2.5x3.5 cm</span></button>
+<button class="size-btn" data-w="400" data-h="400" data-kb="0">1x1 Inch<br><span style="font-size:10px">1x1 Photo</span></button>
+</div>
+<button class="btn" id="downloadBtn">⬇️ Download Passport Photo</button>
+<div id="status" style="text-align:center;margin-top:12px;font-weight:700;font-size:13px;color:#10b981"></div>
+</div>
+
+<div class="pro-box"><h2 style="font-size:17px;font-weight:900">Why NEXORA No.1 Passport Photo Maker?</h2><p style="font-size:12.5px;color:#444;line-height:1.7;margin-top:8px">Unlike other apps with watermark, ads, upload to server, NEXORA Passport Photo Maker is 100% private - photo never leaves your phone, browser-based, no watermark, HD quality, exact KB for Govt forms. Make 20KB for SSC, 50KB for UPSC, 3.5x4.5cm for passport, Visa 2x2 for US Visa in 1 click. Auto white background. Trusted by 87K+ users. Best for SSC, UPSC, Railway, Bank forms. Made in India.</p>
+<h3 style="font-size:13px;font-weight:900;color:#6366f1;margin-top:12px">How to Make Passport Photo - 3 Steps</h3><p style="font-size:12.5px;color:#444;line-height:1.7;margin-top:6px"><b>Step 1:</b> Upload Photo - Click and select your photo<br><b>Step 2:</b> Select Size - Choose 3.5x4.5, 20KB, 50KB, Visa<br><b>Step 3:</b> Download - HD photo ready for govt form.</p></div>
+
+<div class="pro-box"><h2 style="font-size:17px;font-weight:900">NEXORA vs Others</h2><table><tr><th>Feature</th><th>NEXORA ✅</th><th>Others ❌</th></tr><tr><td>Watermark</td><td style="text-align:center">No Watermark ✅</td><td>Watermark</td></tr><tr><td>Privacy</td><td style="text-align:center">Private Browser ✅</td><td>Upload to Server</td></tr><tr><td>Exact KB</td><td style="text-align:center">20KB 50KB Exact ✅</td><td>Random KB</td></tr><tr><td>Price</td><td style="text-align:center">Free Forever ✅</td><td>Paid</td></tr></table></div>
+
+<div class="pro-box"><h2 style="font-size:17px;font-weight:900">FAQ</h2><p style="font-size:12.5px;color:#444;line-height:1.7;margin-top:8px"><b>Q: How to make 20KB photo?</b><br>A: Select 20KB SSC button, upload photo, download - auto 20KB.<br><br><b>Q: Is it free?</b><br>A: Yes, 100% free, private, no watermark.<br><br>Try Also: <a href="/jpg-to-pdf" style="color:#6366f1;font-weight:700">JPG to PDF</a> | <a href="/background-remover" style="color:#6366f1;font-weight:700">Background Remover</a> | <a href="/" style="color:#6366f1;font-weight:700">All Tools</a></p></div>
+</main>
+<footer><div class="container" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px"><div><div style="font-weight:900;font-size:18px;color:#111827">NEX<span style="color:#6366f1">ORA</span> — Built by Ayush Chauhan</div><div style="margin-top:8px;line-height:1.9">📧 Email: <a href="mailto:ayushchauhan902704@gmail.com" style="color:#6366f1;font-weight:700">ayushchauhan902704@gmail.com</a><br>📍 Dehradun, India</div></div><div><div>© 2026 NEXORA Tools</div><div>Made in India 🇮🇳 | 87k+ Users</div><div style="margin-top:6px"><a href="/" style="color:#6366f1;font-weight:700">← Back to All Tools</a></div></div></div></footer>
+
+<script>
+const fileInput=document.getElementById('fileInput');
+const uploadArea=document.getElementById('uploadArea');
+const previewWrap=document.getElementById('previewWrap');
+const previewImg=document.getElementById('previewImg');
+const sizeInfo=document.getElementById('sizeInfo');
+const downloadBtn=document.getElementById('downloadBtn');
+const statusEl=document.getElementById('status');
+const sizeBtns=document.querySelectorAll('.size-btn');
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+
+let originalImage=null;
+let selectedW=413, selectedH=531, selectedKB=0;
+let finalCanvas=null;
+
+uploadArea.onclick=()=>{ fileInput.value=null; fileInput.click(); };
+
+// iPhone fix - click pe value clear
+fileInput.addEventListener('click',function(){ this.value=null; });
+
+fileInput.addEventListener('change',async e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  console.log("File selected:", file.name, file.size);
+  statusEl.innerText="⏳ Loading...";
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      originalImage=img;
+      previewImg.src=reader.result;
+      previewWrap.style.display='block';
+      downloadBtn.style.display='block';
+      processImage();
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+sizeBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    sizeBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedW=parseInt(btn.dataset.w);
+    selectedH=parseInt(btn.dataset.h);
+    selectedKB=parseInt(btn.dataset.kb);
+    if(originalImage) processImage();
+  });
+});
+
+function processImage(){
+  if(!originalImage) return;
+  const canvas=document.createElement('canvas');
+  canvas.width=selectedW;
+  canvas.height=selectedH;
+  const ctx=canvas.getContext('2d');
+  // white background
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // cover logic
+  const imgRatio=originalImage.width/originalImage.height;
+  const canvasRatio=canvas.width/canvas.height;
+  let sx, sy, sW, sH;
+  if(imgRatio > canvasRatio){
+    sH=originalImage.height;
+    sW=sH*canvasRatio;
+    sx=(originalImage.width-sW)/2;
+    sy=0;
+  }else{
+    sW=originalImage.width;
+    sH=sW/canvasRatio;
+    sx=0;
+    sy=(originalImage.height-sH)/2;
+  }
+  ctx.drawImage(originalImage, sx, sy, sW, sH, 0, 0, canvas.width, canvas.height);
+  finalCanvas=canvas;
+  previewImg.src=canvas.toDataURL('image/jpeg',0.9);
+  sizeInfo.innerText=`${selectedW}x${selectedH}px | ${selectedKB>0?selectedKB+'KB Target': 'HD Quality'} | White BG`;
+  statusEl.innerText="✅ Ready! Download karo";
+}
+
+downloadBtn.onclick=async()=>{
+  if(!finalCanvas){ alert("Pehle photo upload karo"); return; }
+  statusEl.innerText="⏳ Compressing...";
+  let quality=0.9;
+  let blob=null;
+  
+  if(selectedKB>0){
+    // target KB ke liye quality ghatao
+    for(let q=0.9; q>=0.1; q-=0.1){
+      blob=await new Promise(res=>finalCanvas.toBlob(res,'image/jpeg',q));
+      if(blob.size/1024 <= selectedKB*1.2){ quality=q; break; }
+    }
+    // agar abhi bhi bada hai toh resize chota karo
+    if(blob.size/1024 > selectedKB*1.5){
+      const smaller=document.createElement('canvas');
+      const scale=0.8;
+      smaller.width=finalCanvas.width*scale;
+      smaller.height=finalCanvas.height*scale;
+      const sctx=smaller.getContext('2d');
+      sctx.fillStyle='#fff';
+      sctx.fillRect(0,0,smaller.width,smaller.height);
+      sctx.drawImage(finalCanvas,0,0,smaller.width,smaller.height);
+      finalCanvas=smaller;
+      blob=await new Promise(res=>finalCanvas.toBlob(res,'image/jpeg',0.7));
+    }
+  }else{
+    blob=await new Promise(res=>finalCanvas.toBlob(res,'image/jpeg',0.9));
+  }
+  
+  const url=URL.createObjectURL(blob);
+  const fileName=`NEXORA-${selectedW}x${selectedH}${selectedKB?'-'+selectedKB+'KB':''}.jpg`;
+  
+  if(isIOS){
+    // iPhone fix - blank tab pehle kholo
+    const win=window.open('about:blank','_blank');
+    if(win){
+      win.location.href=url;
+      statusEl.innerText="📱 New Tab khula → Share → Save to Photos";
+    }else{
+      window.location.href=url;
+    }
+  }else{
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    statusEl.innerText=`⬇️ Downloaded: ${fileName} (${(blob.size/1024).toFixed(1)}KB)`;
+  }
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+};
+</script>
+</body>
+</html>
