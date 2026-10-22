@@ -1,33 +1,3 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/about", "destination": "/about.html" },
-    { "source": "/contact", "destination": "/contact.html" },
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/disclaimer", "destination": "/disclaimer.html" },
-    { "source": "/age-calculator", "destination": "/age-calculator.html" },
-    { "source": "/bmi-calculator", "destination": "/bmi-calculator.html" },
-    { "source": "/percentage-calculator", "destination": "/percentage-calculator.html" },
-    { "source": "/loan-emi-calculator", "destination": "/loan-emi-calculator.html" },
-    { "source": "/discount-calculator", "destination": "/discount-calculator.html" },
-    { "source": "/date-difference", "destination": "/date-difference.html" },
-    { "source": "/background-remover", "destination": "/background-remover.html" },
-    { "source": "/passport-size-photo", "destination": "/passport-size-photo.html" },
-    { "source": "/compress-image", "destination": "/compress-image.html" },
-    { "source": "/image-to-word", "destination": "/image-to-word.html" },
-    { "source": "/jpg-to-pdf", "destination": "/jpg-to-pdf.html" },
-    { "source": "/pdf-to-jpg", "destination": "/pdf-to-jpg.html" },
-    { "source": "/pdf-merge-split", "destination": "/pdf-merge-split.html" },
-    { "source": "/pdf-to-word", "destination": "/pdf-to-word.html" },
-    { "source": "/word-to-pdf", "destination": "/word-to-pdf.html" },
-    { "source": "/qr-code-generator", "destination": "/qr-code-generator.html" },
-    { "source": "/password-generator", "destination": "/password-generator.html" },
-    { "source": "/resume-builder", "destination": "/resume-builder.html" },
-    { "source": "/instagram-reels-downloader", "destination": "/instagram-reels-downloader.html" },
-    { "source": "/ai-text-humanizer", "destination": "/ai-text-humanizer.html" },
-    { "source": "/word-counter", "destination": "/word-counter.html" },
-    { "source": "/character-counter", "destination": "/character-counter.html" },
-    { "source": "/unit-converter", "destination": "/unit-converter.html" }
-  ]
+  "cleanUrls": true
 }
