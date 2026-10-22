@@ -73,7 +73,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}th,td{b
 </main>
 <footer><div class="container" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px"><div><div style="font-weight:900;font-size:18px;color:#111827">NEX<span style="color:#6366f1">ORA</span> — Built by Ayush Chauhan</div><div style="margin-top:8px;line-height:1.9">📧 Email: <a href="mailto:ayushchauhan902704@gmail.com" style="color:#6366f1;font-weight:700">ayushchauhan902704@gmail.com</a><br>📱 Phone: <a href="tel:+919389641559" style="color:#6366f1;font-weight:700">+91 9389641559</a><br>📍 Dehradun, Uttarakhand, India<br>🔗 <a href="https://www.linkedin.com/in/ayush-chauhan-0b0960444" target="_blank" style="color:#0a66c2;font-weight:700">Connect on LinkedIn</a></div></div><div><div style="display:flex;gap:14px;flex-wrap:wrap;font-weight:700;margin-bottom:8px"><a href="/about" style="color:#111827">About</a><a href="/contact" style="color:#111827">Contact</a><a href="/privacy" style="color:#111827">Privacy</a><a href="/terms" style="color:#111827">Terms</a><a href="/disclaimer" style="color:#111827">Disclaimer</a><a href="/sitemap.xml" style="color:#111827">Sitemap</a></div><div>© 2026 NEXORA Tools - PDF Merge & Split</div><div>Made in India 🇮🇳 | 88k+ Users | No Watermark</div><div style="margin-top:6px"><a href="/" style="color:#6366f1;font-weight:700">← Back to All Tools</a></div></div></div></footer>
 <script>
-const {PDFDocument}=PDFLib;let mergeFiles=[];let finalBlobUrl=null;
+const {PDFDocument}=PDFLib;let mergeFiles=[];let finalBlobUrl=null;let finalBlob=null;let finalFileName="";
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
 const mergeTab=document.getElementById('mergeTab'),splitTab=document.getElementById('splitTab'),mergeBox=document.getElementById('mergeBox'),splitBox=document.getElementById('splitBox');
 mergeTab.onclick=()=>{mergeTab.classList.add('active');splitTab.classList.remove('active');mergeBox.style.display='block';splitBox.style.display='none';};
@@ -82,29 +82,27 @@ document.getElementById('mergeDrop').onclick=()=>document.getElementById('mergeI
 document.getElementById('mergeInput').onchange=e=>handleMerge(e.target.files);
 document.getElementById('mergeDrop').addEventListener('dragover',e=>{e.preventDefault()});
 document.getElementById('mergeDrop').addEventListener('drop',e=>{e.preventDefault();handleMerge(e.dataTransfer.files);});
-
 function handleMerge(files){for(let f of files)mergeFiles.push(f);renderMerge();}
 function renderMerge(){const list=document.getElementById('mergeList');list.innerHTML="";mergeFiles.forEach((f,i)=>{const d=document.createElement('div');d.className='file-item';d.innerHTML=`<span>${i+1}. ${f.name} (${(f.size/1024).toFixed(0)}KB)</span><span onclick="removeMerge(${i})" style="color:red;font-weight:800;cursor:pointer"> ✕ </span>`;list.appendChild(d);});if(mergeFiles.length>=2){document.getElementById('mergeBtn').style.display='block';}}
 window.removeMerge=(i)=>{mergeFiles.splice(i,1);renderMerge();if(mergeFiles.length<2)document.getElementById('mergeBtn').style.display='none';};
 
-// UNIVERSAL DOWNLOAD FUNCTION - iPhone Fix
 function triggerDownload(blob, fileName){
   const url=URL.createObjectURL(blob);
   if(isIOS){
-    // iPhone pe new tab khol do
-    const win=window.open(url, '_blank');
+    const win=window.open(url,'_blank');
     if(!win){
       window.location.href=url;
     }
-    document.getElementById('status').innerText="📱 New Tab khula → Share button → Save to Files";
-  } else {
+    document.getElementById('status').innerText="📱 New Tab khula → Share → Save to Files";
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }else{
     const a=document.createElement('a');
     a.href=url;
     a.download=fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
     document.getElementById('status').innerText="⬇️ Download Started: "+fileName;
   }
 }
@@ -115,36 +113,28 @@ document.getElementById('mergeBtn').onclick=async()=>{
   const mergedPdf=await PDFDocument.create();
   for(let file of mergeFiles){const bytes=await file.arrayBuffer();const pdf=await PDFDocument.load(bytes);const copied=await mergedPdf.copyPages(pdf,pdf.getPageIndices());copied.forEach(p=>mergedPdf.addPage(p));}
   const mergedBytes=await mergedPdf.save();
-  const blob=new Blob([mergedBytes],{type:'application/pdf'});
-  finalBlobUrl=URL.createObjectURL(blob);
+  finalBlob=new Blob([mergedBytes],{type:'application/pdf'});
+  finalBlobUrl=URL.createObjectURL(finalBlob);
+  finalFileName=`NEXORA-Merged-${Date.now()}.pdf`;
   const dl=document.getElementById('downloadBtn');
   dl.href=finalBlobUrl;
-  const finalName=`NEXORA-Merged-${Date.now()}.pdf`;
-  dl.download=finalName;
-  // store blob for iOS
-  dl._blob=blob;
-  dl._fileName=finalName;
+  dl.download=finalFileName;
   document.getElementById('downloadArea').style.display='block';
   status.innerText="✅ Merged! Neeche Download pe click karo";
-  // Auto download for Android/PC only
+  // iPhone pe auto-click block hota hai isliye hata diya - user khud click karega
   if(!isIOS){
-    setTimeout(()=>{dl.click();},500);
+    setTimeout(()=>{ dl.click(); }, 300);
   }
  }catch(e){status.innerText="Error: "+e.message;}
 };
 
 document.getElementById('downloadBtn').onclick=function(e){
- if(!this._blob){ if(!finalBlobUrl){alert("Pehle Merge Karo");e.preventDefault();return;} }
  e.preventDefault();
- if(this._blob){
-   triggerDownload(this._blob, this._fileName);
- } else if(finalBlobUrl){
-   // fallback
-   if(isIOS){ window.open(finalBlobUrl,'_blank'); } else { const a=document.createElement('a'); a.href=finalBlobUrl; a.download=this.download; a.click(); }
- }
+ if(!finalBlob){ alert("Pehle Merge Karo"); return; }
+ triggerDownload(finalBlob, finalFileName);
 };
 
-// Split Logic - FIXED FOR iPHONE
+// Split Logic - FIXED with blank tab trick for iPhone
 document.getElementById('splitDrop').onclick=()=>document.getElementById('splitInput').click();
 document.getElementById('splitInput').onchange=async e=>{
   const file=e.target.files[0];
@@ -164,13 +154,23 @@ document.getElementById('splitInput').onchange=async e=>{
       btn.style.border='1px solid #e5e7eb';
       btn.innerText=isIOS?`View & Save Page ${i+1}`:`Download Page ${i+1}`;
       btn.onclick=async()=>{
+        let win=null;
+        if(isIOS){
+          win=window.open('about:blank','_blank');
+          if(win){ win.document.write('<h2 style="font-family:sans-serif;text-align:center;padding:40px">⏳ Making PDF Page '+(i+1)+'...</h2>'); }
+        }
         const newPdf=await PDFDocument.create();
         const [copied]=await newPdf.copyPages(pdf,[i]);
         newPdf.addPage(copied);
         const out=await newPdf.save();
         const blob=new Blob([out],{type:'application/pdf'});
         const fileName=`NEXORA-Page-${i+1}.pdf`;
-        triggerDownload(blob, fileName);
+        if(isIOS && win){
+          const url=URL.createObjectURL(blob);
+          win.location.href=url;
+        }else{
+          triggerDownload(blob,fileName);
+        }
       };
       list.appendChild(btn);
     }
