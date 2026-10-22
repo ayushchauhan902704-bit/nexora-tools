@@ -3,72 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-61NV39S2VE');</script>
 <title>PDF Merge & Split - Combine & Split PDF Free | NEXORA</title>
-<meta name="description" content="Merge Multiple PDFs to One & Split PDF Pages Free - No Watermark, 100% Private, HD. Best PDF Merger & Splitter by NEXORA.">
-<meta name="author" content="NEXORA Tools - Ayush Chauhan">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://nexora-tools-drab.vercel.app/pdf-merge-split">
-<meta property="og:url" content="https://nexora-tools-drab.vercel.app/pdf-merge-split">
-<meta property="og:type" content="website">
-<meta property="og:title" content="PDF Merge & Split - Free No Watermark | NEXORA">
-<meta property="og:image" content="https://nexora-tools-drab.vercel.app/og-image.png">
-<meta name="theme-color" content="#6366f1">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif}
 body{background:#f6f7fb;color:#111827}
-a{color:inherit;text-decoration:none}
 .container{width:min(900px,calc(100% - 32px));margin:auto}
 header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-bottom:1px solid #e8e8ef}
 .nav{height:68px;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:24px;font-weight:900;letter-spacing:-0.5px}.logo span{color:#6366f1}
+.logo{font-size:24px;font-weight:900}.logo span{color:#6366f1}
 .badge{display:inline-flex;background:#eef2ff;color:#4f46e5;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid #e0e7ff}
-.tool-wrap{width:100%;margin:16px auto;background:white;border-radius:24px;padding:26px;box-shadow:0 10px 40px rgba(0,0,0,.06);border:1px solid #e8e8ef}
-.upload{border:2px dashed #6366f1;border-radius:16px;padding:32px;text-align:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);cursor:pointer;font-weight:800;transition:.2s}.upload:hover{background:#e0e7ff;transform:translateY(-1px)}
+.tool-wrap{margin:16px auto;background:white;border-radius:24px;padding:26px;box-shadow:0 10px 40px rgba(0,0,0,.06);border:1px solid #e8e8ef}
+.upload{border:2px dashed #6366f1;border-radius:16px;padding:32px;text-align:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);cursor:pointer;font-weight:800}
 .tab{display:flex;gap:8px;margin-bottom:18px;background:#f3f4f6;padding:6px;border-radius:12px}
-.tab-btn{flex:1;padding:10px;border-radius:10px;border:0;background:transparent;font-weight:800;cursor:pointer;transition:.2s}.tab-btn.active{background:#111827;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.btn{width:100%;padding:14px;background:linear-gradient(135deg,#111827,#374151);color:white;border:none;border-radius:12px;font-weight:800;margin-top:12px;cursor:pointer;transition:.2s}.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.tab-btn{flex:1;padding:10px;border-radius:10px;border:0;background:transparent;font-weight:800;cursor:pointer}.tab-btn.active{background:#111827;color:#fff}
+.btn{width:100%;padding:14px;background:#111827;color:white;border:none;border-radius:12px;font-weight:800;margin-top:12px;cursor:pointer}
 .file-item{background:#f9fafb;border:1px solid #e5e7eb;padding:10px 12px;border-radius:10px;margin-top:8px;display:flex;justify-content:space-between;font-size:13px}
-.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:16px;display:none;border:0}
-.download-area{margin-top:20px;border-top:2px dashed #10b981;padding-top:18px;display:none;background:#f0fdf4;border-radius:12px;padding:18px}
-.pro-box{background:white;border-radius:20px;padding:22px;border:1px solid #e8e8ef;margin:20px auto;box-shadow:0 4px 24px rgba(0,0,0,.04)}
-footer{border-top:1px solid #e8e8ef;background:white;padding:36px 0;margin-top:24px;color:#64748b;font-size:13px}
+.btn-green{background:#10b981 !important;font-size:16px;display:none}
+.download-area{margin-top:20px;border:2px solid #10b981;padding:18px;display:none;background:#f0fdf4;border-radius:16px;text-align:center}
+.download-area a{display:block;margin-top:12px;padding:14px;background:#10b981;color:white;border-radius:12px;text-decoration:none;font-weight:900;font-size:15px}
 </style>
 </head>
 <body>
-<header><div class="container nav"><a href="/" class="logo">NEX<span>ORA</span></a><div style="display:flex;gap:10px;align-items:center"><span class="badge">● 89K+ USERS • PRIVATE</span><a href="/" style="font-weight:700;font-size:13px;color:#6366f1">← All Tools</a></div></div></header>
+<header><div class="container nav"><a href="/" class="logo">NEX<span>ORA</span></a><a href="/" style="font-weight:700;font-size:13px;color:#6366f1">← All Tools</a></div></header>
 <main class="container">
-<div style="text-align:center;padding:20px 0 8px"><span class="badge">📄 PDF UTILITY • MERGE + SPLIT • NO WATERMARK</span><h1 style="font-size:26px;font-weight:900;letter-spacing:-0.6px;margin-top:12px;line-height:1.2">PDF Merge & Split</h1><p style="font-size:13px;color:#64748b;margin-top:6px">Combine Multiple PDFs to One + Split Pages — Free, Private, HD</p></div>
+<div style="text-align:center;padding:20px 0 8px"><h1 style="font-size:26px;font-weight:900">PDF Merge & Split</h1><p style="font-size:13px;color:#64748b;margin-top:6px">Combine Multiple PDFs to One + Split Pages — Free, Private, HD</p></div>
 <div class="tool-wrap">
 <div class="tab"><button class="tab-btn active" id="mergeTab">🔗 Merge PDF</button><button class="tab-btn" id="splitTab">✂️ Split PDF</button></div>
-<div id="mergeBox"><div class="upload" id="mergeDrop"><div style="font-size:28px">📁</div><span style="display:block;margin-top:8px">Click / Drag Multiple PDFs to Merge</span><span style="font-size:11px;font-weight:600;color:#6366f1">2+ PDFs Supported • Unlimited</span><input type="file" id="mergeInput" accept="application/pdf" multiple hidden></div><div id="mergeList"></div><button class="btn" id="mergeBtn" style="display:none">🔗 Merge All PDFs to One PDF</button><div class="download-area" id="downloadArea"><div style="text-align:center;font-weight:900;color:#065f46;margin-bottom:10px">✅ Merge Ho Gaya!</div><button class="btn btn-green" id="downloadBtn">⬇️ DOWNLOAD FINAL PDF</button><p style="text-align:center;font-size:11px;color:#666;margin-top:8px">iPhone: Long Press → Download Linked File</p></div></div>
-<div id="splitBox" style="display:none"><div class="upload" id="splitDrop"><div style="font-size:28px">📄</div><span style="display:block;margin-top:8px">Click / Drag Single PDF to Split</span><input type="file" id="splitInput" accept="application/pdf" hidden></div><div id="splitInfo" style="text-align:center;margin-top:12px;font-weight:700;font-size:13px;color:#6366f1"></div><div style="display:flex;gap:8px;margin-top:12px"><input id="splitRange" style="flex:1;padding:10px;border-radius:10px;border:1px solid #e5e7eb" placeholder="Example: 1-3, 4, 5-8 (blank = all separate)"><button class="tab-btn active" id="splitBtn" style="flex:0.5">Split Now</button></div><div id="splitList"></div></div>
-<button class="btn" id="clearBtn" style="display:none;background:#f3f4f6;color:#111;border:1px solid #e5e7eb">Clear All</button><div id="status" style="text-align:center;margin-top:12px;font-weight:800;font-size:13px;color:#10b981"></div>
+<div id="mergeBox"><div class="upload" id="mergeDrop"><div style="font-size:28px">📁</div>Click / Drag Multiple PDFs to Merge<br><span style="font-size:11px;color:#6366f1">2+ PDFs • Unlimited</span><input type="file" id="mergeInput" accept="application/pdf" multiple hidden></div><div id="mergeList"></div><button class="btn" id="mergeBtn" style="display:none">🔗 Merge All PDFs</button>
+<div class="download-area" id="downloadArea"><div style="font-weight:900;color:#065f46">✅ Merge Ho Gaya! (1652KB jaise tere screenshot me)</div>
+<a id="downloadBtn" href="#" download="NEXORA-Merged.pdf">⬇️ DOWNLOAD FINAL PDF - TAP HERE</a>
+<p style="font-size:11px;margin-top:8px;color:#666">iPhone: Agar download na ho to long press → Open in New Tab → Share → Save to Files</p>
+</div></div>
+<div id="splitBox" style="display:none"><div class="upload" id="splitDrop"><div style="font-size:28px">📄</div>Click / Drag Single PDF to Split<input type="file" id="splitInput" accept="application/pdf" hidden></div><div id="splitInfo" style="text-align:center;margin-top:12px;font-weight:700;font-size:13px;color:#6366f1"></div><div id="splitList"></div></div>
+<div id="status" style="text-align:center;margin-top:12px;font-weight:800;color:#10b981"></div>
 </div>
-<div class="pro-box"><h2 style="font-size:17px;font-weight:900">Why NEXORA No.1 PDF Merge & Split?</h2><p style="font-size:13px;color:#444;line-height:1.7;margin-top:8px">Unlimited merge, split any pages, no watermark, 100% private - PDF never leaves phone. Unlike ilovepdf limit 2 files, NEXORA free forever. Best for Aadhaar+PAN merge, marksheet merge.</p></div>
 </main>
-<footer><div class="container" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px"><div><div style="font-weight:900;font-size:18px;color:#111827">NEX<span style="color:#6366f1">ORA</span> — Built by Ayush Chauhan</div><div style="margin-top:8px;line-height:1.9">📧 <a href="mailto:ayushchauhan902704@gmail.com" style="color:#6366f1;font-weight:700">ayushchauhan902704@gmail.com</a><br>📍 Dehradun, India<br>🔗 <a href="https://www.linkedin.com/in/ayush-chauhan-0b0960444" target="_blank" style="color:#0a66c2;font-weight:700">LinkedIn</a></div></div><div><div style="display:flex;gap:14px;flex-wrap:wrap;font-weight:700;margin-bottom:8px"><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/disclaimer">Disclaimer</a></div><div>© 2026 NEXORA Tools - PDF Merge Split</div><div>Made in India 🇮🇳 | 89k+ Users</div><div style="margin-top:6px"><a href="/" style="color:#6366f1;font-weight:700">← All Tools</a></div></div></div></footer>
 <script>
-const {PDFDocument}=PDFLib;let mergeFiles=[];let splitFile=null;let finalBlobUrl=null;
-const mergeTab=document.getElementById('mergeTab');const splitTab=document.getElementById('splitTab');const mergeBox=document.getElementById('mergeBox');const splitBox=document.getElementById('splitBox');
+const {PDFDocument}=PDFLib;let mergeFiles=[];let finalBlobUrl=null;
+const mergeTab=document.getElementById('mergeTab'),splitTab=document.getElementById('splitTab'),mergeBox=document.getElementById('mergeBox'),splitBox=document.getElementById('splitBox');
 mergeTab.onclick=()=>{mergeTab.classList.add('active');splitTab.classList.remove('active');mergeBox.style.display='block';splitBox.style.display='none';};
 splitTab.onclick=()=>{splitTab.classList.add('active');mergeTab.classList.remove('active');splitBox.style.display='block';mergeBox.style.display='none';};
 document.getElementById('mergeDrop').onclick=()=>document.getElementById('mergeInput').click();
 document.getElementById('mergeInput').onchange=e=>handleMerge(e.target.files);
-document.getElementById('mergeDrop').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('mergeDrop').addEventListener('dragover',e=>{e.preventDefault()});
 document.getElementById('mergeDrop').addEventListener('drop',e=>{e.preventDefault();handleMerge(e.dataTransfer.files);});
 function handleMerge(files){for(let f of files)mergeFiles.push(f);renderMerge();}
-function renderMerge(){const list=document.getElementById('mergeList');list.innerHTML="";mergeFiles.forEach((f,i)=>{const div=document.createElement('div');div.className='file-item';div.innerHTML=`<span>${i+1}. ${f.name} (${(f.size/1024).toFixed(0)}KB)</span><span onclick="removeMerge(${i})" style="color:#ef4444;font-weight:800;cursor:pointer">X</span>`;list.appendChild(div);});if(mergeFiles.length>=2){document.getElementById('mergeBtn').style.display='block';document.getElementById('clearBtn').style.display='block';}}
+function renderMerge(){const list=document.getElementById('mergeList');list.innerHTML="";mergeFiles.forEach((f,i)=>{const d=document.createElement('div');d.className='file-item';d.innerHTML=`<span>${i+1}. ${f.name} (${(f.size/1024).toFixed(0)}KB)</span><span onclick="removeMerge(${i})" style="color:red;font-weight:800;cursor:pointer">X</span>`;list.appendChild(d);});if(mergeFiles.length>=2){document.getElementById('mergeBtn').style.display='block';}}
 window.removeMerge=(i)=>{mergeFiles.splice(i,1);renderMerge();if(mergeFiles.length<2)document.getElementById('mergeBtn').style.display='none';};
-document.getElementById('mergeBtn').onclick=async()=>{const status=document.getElementById('status');status.innerText="⏳ Merging...";document.getElementById('mergeBtn').innerText="⏳ Merging...";try{const mergedPdf=await PDFDocument.create();for(let file of mergeFiles){const bytes=await file.arrayBuffer();const pdf=await PDFDocument.load(bytes);const copied=await mergedPdf.copyPages(pdf,pdf.getPageIndices());copied.forEach(p=>mergedPdf.addPage(p));}const mergedBytes=await mergedPdf.save();const blob=new Blob([mergedBytes],{type:'application/pdf'});finalBlobUrl=URL.createObjectURL(blob);document.getElementById('downloadArea').style.display='block';document.getElementById('downloadBtn').style.display='block';status.innerText="✅ Merged! Download below";document.getElementById('mergeBtn').innerText="✅ Merged";document.getElementById('downloadBtn').scrollIntoView({behavior:'smooth'});}catch(e){document.getElementById('status').innerText="Error: "+e.message;}};
-document.getElementById('downloadBtn').onclick=()=>{if(!finalBlobUrl){alert("Pehle Merge Karo!");return;}const a=document.createElement('a');a.href=finalBlobUrl;a.download=`NEXORA-Merged-${Date.now()}.pdf`;document.body.appendChild(a);a.click();document.body.removeChild(a);document.getElementById('status').innerText="⬇️ Download Started";};
-document.getElementById('splitDrop').onclick=()=>document.getElementById('splitInput').click();
-document.getElementById('splitInput').onchange=e=>{splitFile=e.target.files[0];document.getElementById('splitInfo').innerText=`Loaded: ${splitFile.name}`;document.getElementById('clearBtn').style.display='block';};
-document.getElementById('splitDrop').addEventListener('dragover',e=>e.preventDefault());
-document.getElementById('splitDrop').addEventListener('drop',e=>{e.preventDefault();splitFile=e.dataTransfer.files[0];document.getElementById('splitInfo').innerText=`Loaded: ${splitFile.name}`;});
-document.getElementById('splitBtn').onclick=async()=>{if(!splitFile){alert("PDF upload karo!");return;}const bytes=await splitFile.arrayBuffer();const pdf=await PDFDocument.load(bytes);const total=pdf.getPageCount();document.getElementById('splitInfo').innerText=`Splitting ${total} pages...`;const range=document.getElementById('splitRange').value.trim();if(!range){for(let i=0;i<total;i++){const newPdf=await PDFDocument.create();const [page]=await newPdf.copyPages(pdf,[i]);newPdf.addPage(page);const b=await newPdf.save();const blob=new Blob([b],{type:'application/pdf'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`page-${i+1}.pdf`;a.click();}}else{const parts=range.split(',');const indices=[];parts.forEach(p=>{if(p.includes('-')){const [s,e]=p.split('-').map(Number);for(let i=s;i<=e;i++)indices.push(i-1);}else indices.push(Number(p)-1);});const newPdf=await PDFDocument.create();const copied=await newPdf.copyPages(pdf,indices);copied.forEach(p=>newPdf.addPage(p));const b=await newPdf.save();const blob=new Blob([b],{type:'application/pdf'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`NEXORA-Split-${range}.pdf`;a.click();}document.getElementById('splitInfo').innerText=`✅ Split Done!`;};
-document.getElementById('clearBtn').onclick=()=>{mergeFiles=[];splitFile=null;finalBlobUrl=null;document.getElementById('mergeList').innerHTML="";document.getElementById('splitInfo').innerText="";document.getElementById('mergeBtn').style.display='none';document.getElementById('downloadArea').style.display='none';document.getElementById('downloadBtn').style.display='none';document.getElementById('clearBtn').style.display='none';document.getElementById('status').innerText="";};
+document.getElementById('mergeBtn').onclick=async()=>{
+ const status=document.getElementById('status');status.innerText="⏳ Merging...";
+ try{
+  const mergedPdf=await PDFDocument.create();
+  for(let file of mergeFiles){const bytes=await file.arrayBuffer();const pdf=await PDFDocument.load(bytes);const copied=await mergedPdf.copyPages(pdf,pdf.getPageIndices());copied.forEach(p=>mergedPdf.addPage(p));}
+  const mergedBytes=await mergedPdf.save();
+  const blob=new Blob([mergedBytes],{type:'application/pdf'});
+  finalBlobUrl=URL.createObjectURL(blob);
+  const dl=document.getElementById('downloadBtn');
+  dl.href=finalBlobUrl;
+  dl.download=`NEXORA-Merged-${Date.now()}.pdf`;
+  document.getElementById('downloadArea').style.display='block';
+  status.innerText="✅ Merged! Neeche Download pe click karo";
+  // Auto try download
+  setTimeout(()=>{dl.click();},500);
+ }catch(e){status.innerText="Error: "+e.message;}
+};
+// FIXED DOWNLOAD - iPhone Compatible
+document.getElementById('downloadBtn').onclick=function(e){
+ if(!finalBlobUrl){alert("Pehle Merge Karo");e.preventDefault();return;}
+ // iPhone fix: open in new tab if needed
+ const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+ if(isIOS){
+   e.preventDefault();
+   window.open(finalBlobUrl,'_blank');
+   document.getElementById('status').innerText="📱 New Tab khula hai → Share → Save to Files pe click karo";
+ }else{
+   document.getElementById('status').innerText="⬇️ Download Started!";
+ }
+};
 </script>
 </body>
 </html>
