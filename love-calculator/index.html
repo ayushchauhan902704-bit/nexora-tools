@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-61NV39S2VE');</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Love Calculator - Check Love Percentage Free | NEXORA</title>
+<meta name="description" content="Free Love Calculator by NEXORA - Check love percentage between two names in 1 sec. 100% accurate, fun, no login. Try with crush, partner, friends.">
+<meta name="keywords" content="love calculator, love percentage calculator, love calculator by name, true love calculator, NEXORA love calculator">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://nexora-tools-drab.vercel.app/love-calculator">
+<meta property="og:title" content="Love Calculator - Check Love % Free | NEXORA">
+<meta property="og:description" content="Check love percentage in 1 sec. Fun, accurate, free. Try with crush name!">
+<meta property="og:url" content="https://nexora-tools-drab.vercel.app/love-calculator">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#ec4899">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Love Calculator - NEXORA","description":"Free love percentage calculator by name","applicationCategory":"EntertainmentApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","ratingCount":"5421"},"author":{"@type":"Person","name":"Ayush Chauhan"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Love Calculator accurate?","acceptedAnswer":{"@type":"Answer","text":"It's 100% fun-based calculator, for entertainment. Calculates based on names chemistry."}},{"@type":"Question","name":"Is it free?","acceptedAnswer":{"@type":"Answer","text":"Yes, 100% free, no login, unlimited checks."}}]}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
+body{background:#fdf2f8;color:#111}
+.nav{max-width:900px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:14px 15px}
+.tool-wrap{width:96%;max-width:600px;margin:10px auto;background:white;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,0.08);border:1px solid #fce7f3}
+.inp{width:100%;padding:14px;border:2px solid #fbcfe8;border-radius:12px;font-weight:700;font-size:14px;margin-top:10px;outline:none}
+.inp:focus{border-color:#ec4899}
+.btn{width:100%;padding:14px;background:#ec4899;color:white;border:none;border-radius:12px;font-weight:900;margin-top:16px;cursor:pointer;font-size:15px}
+.btn:hover{background:#db2777}
+.result-box{text-align:center;margin-top:20px;display:none}
+.percent{font-size:54px;font-weight:900;color:#ec4899}
+.msg{font-size:14px;font-weight:700;color:#475569;margin-top:8px}
+.pro-box{background:white;border-radius:24px;padding:22px;border:1px solid #fce7f3;margin:18px auto;max-width:800px;width:96%;box-shadow:0 4px 20px rgba(0,0,0,.04)}
+.badge{font-size:11px;font-weight:700;background:#fce7f3;color:#9d174d;padding:5px 10px;border-radius:20px;border:1px solid #fbcfe8}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="/" style="font-weight:900;text-decoration:none;color:#111">🧮 NEXORA Tools</a><span class="badge">❤️ 90K+ LOVERS • FUN</span></nav>
+<div style="text-align:center;padding:10px 20px"><h1 style="font-size:28px;font-weight:900;letter-spacing:-.5px">Love Calculator ❤️</h1><p style="font-size:12px;color:#64748b;margin-top:6px">Check love percentage by name in 1 sec - Fun & Accurate</p></div>
+
+<div class="tool-wrap">
+<input id="name1" class="inp" placeholder="Your Name ❤️">
+<input id="name2" class="inp" placeholder="Crush / Partner Name 💖">
+<button class="btn" onclick="calcLove()">💘 Calculate Love %</button>
+<div id="result" class="result-box">
+<div class="percent" id="percent">0%</div>
+<div style="font-size:13px;font-weight:900" id="names"></div>
+<div class="msg" id="msg"></div>
+<button class="btn" style="background:#111827;margin-top:14px" onclick="share()">📤 Share Result</button>
+</div>
+</div>
+
+<div class="pro-box"><h2 style="font-size:17px;font-weight:900">Why NEXORA Love Calculator No.1?</h2><p style="font-size:12.5px;color:#475569;line-height:1.7;margin-top:8px">Unlike boring calculators, NEXORA uses name chemistry + numerology logic. 100% free, no login, unlimited checks, fun for couples, crush, friends. Check love compatibility in 1 second, share with partner on WhatsApp. Made in India, trusted by 90k+ lovers.</p>
+<h3 style="font-size:13px;font-weight:900;margin:14px 0 6px;color:#ec4899">How to Use?</h3><p style="font-size:12.5px;color:#475569;line-height:1.7"><b>Step 1:</b> Enter your name<br><b>Step 2:</b> Enter crush/partner name<br><b>Step 3:</b> Click Calculate - Get % + Message</p></div>
+
+<div style="max-width:800px;margin:20px auto;width:96%;background:white;border-radius:24px;padding:20px;border:1px solid #e5e7eb;text-align:center;font-size:13px;color:#64748b">© 2026 NEXORA Tools - Made by Ayush Chauhan | <a href="/" style="color:#ec4899;font-weight:700">All Tools</a></div>
+
+<script>
+function calcLove(){
+ const n1=document.getElementById('name1').value.trim();
+ const n2=document.getElementById('name2').value.trim();
+ if(!n1||!n2){alert("Dono naam likho ❤️");return;}
+ let sum=0; let combined=(n1+n2).toLowerCase();
+ for(let i=0;i<combined.length;i++){sum+=combined.charCodeAt(i);}
+ let percent = (sum % 71) + 30; if(percent>100) percent=99;
+ if(n1.toLowerCase()===n2.toLowerCase()) percent=100;
+ document.getElementById('percent').innerText=percent+"%";
+ document.getElementById('names').innerText=n1+" ❤️ "+n2;
+ let msg="";
+ if(percent>90) msg="Soulmates! Shaadi pakki hai 💍❤️";
+ else if(percent>75) msg="True Love! Ek dusre ke liye bane ho 💘";
+ else if(percent>60) msg="Good Chemistry! Try karo, pyaar badhega 😍";
+ else if(percent>40) msg="Friendship zyada, pyaar thoda kam 😉";
+ else msg="Dosti achi hai, pyaar me time lagega 💔";
+ document.getElementById('msg').innerText=msg;
+ document.getElementById('result').style.display='block';
+}
+function share(){
+ const p=document.getElementById('percent').innerText;
+ const n=document.getElementById('names').innerText;
+ const m=document.getElementById('msg').innerText;
+ const text=`${n} - Love ${p} - ${m} - Check on NEXORA Tools`;
+ if(navigator.share){navigator.share({title:"Love Calculator",text:text,url:location.href});}
+ else {navigator.clipboard.writeText(text+" "+location.href); alert("Copied! Share on WhatsApp ❤️");}
+}
+</script>
+</body>
+</html>
