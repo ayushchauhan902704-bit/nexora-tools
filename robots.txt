@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nexora.example.com/sitemap.xml
+Sitemap: https://nexora-tools-drab.vercel.app/sitemap.xml
