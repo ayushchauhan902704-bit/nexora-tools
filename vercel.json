@@ -1,6 +1,7 @@
 {
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/love-calculator", "destination": "/app/love-calculator.html" },
     { "source": "/passport-size-photo", "destination": "/app/passport-size-photo.html" },
     { "source": "/background-remover", "destination": "/app/background-remover.html" },
     { "source": "/compress-image", "destination": "/app/compress-image.html" },
