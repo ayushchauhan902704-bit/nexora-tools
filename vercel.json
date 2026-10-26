@@ -1,3 +1,28 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/passport-size-photo", "destination": "/app/passport-size-photo.html" },
+    { "source": "/background-remover", "destination": "/app/background-remover.html" },
+    { "source": "/compress-image", "destination": "/app/compress-image.html" },
+    { "source": "/jpg-to-pdf", "destination": "/app/jpg-to-pdf.html" },
+    { "source": "/pdf-to-jpg", "destination": "/app/pdf-to-jpg.html" },
+    { "source": "/instagram-reels-downloader", "destination": "/app/instagram-reels-downloader.html" },
+    { "source": "/qr-code-generator", "destination": "/app/qr-code-generator.html" },
+    { "source": "/pdf-to-word", "destination": "/app/pdf-to-word.html" },
+    { "source": "/word-to-pdf", "destination": "/app/word-to-pdf.html" },
+    { "source": "/pdf-merge-split", "destination": "/app/pdf-merge-split.html" },
+    { "source": "/image-to-word", "destination": "/app/image-to-word.html" },
+    { "source": "/bmi-calculator", "destination": "/app/bmi-calculator.html" },
+    { "source": "/age-calculator", "destination": "/app/age-calculator.html" },
+    { "source": "/loan-emi-calculator", "destination": "/app/loan-emi-calculator.html" },
+    { "source": "/percentage-calculator", "destination": "/app/percentage-calculator.html" },
+    { "source": "/discount-calculator", "destination": "/app/discount-calculator.html" },
+    { "source": "/date-difference", "destination": "/app/date-difference.html" },
+    { "source": "/word-counter", "destination": "/app/word-counter.html" },
+    { "source": "/character-counter", "destination": "/app/character-counter.html" },
+    { "source": "/ai-text-humanizer", "destination": "/app/ai-text-humanizer.html" },
+    { "source": "/unit-converter", "destination": "/app/unit-converter.html" },
+    { "source": "/password-generator", "destination": "/app/password-generator.html" },
+    { "source": "/resume-builder", "destination": "/app/resume-builder.html" }
+  ]
 }
