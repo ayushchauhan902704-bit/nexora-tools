@@ -20,32 +20,80 @@
 
   <div id="result" class="hidden bg-white p-6 rounded-xl shadow mt-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><p class="font-bold">Max Quality (1280x720)</p><img id="maxres" class="w-full rounded mt-2 border"><a id="d1" download class="block mt-2 text-center bg-black text-white p-2 rounded">Download HD</a></div>
-      <div><p class="font-bold">High Quality (480x360)</p><img id="hq" class="w-full rounded mt-2 border"><a id="d2" download class="block mt-2 text-center bg-gray-800 text-white p-2 rounded">Download HQ</a></div>
-      <div><p class="font-bold">Medium Quality</p><img id="mq" class="w-full rounded mt-2 border"><a id="d3" download class="block mt-2 text-center bg-gray-700 text-white p-2 rounded">Download MQ</a></div>
-      <div><p class="font-bold">Small (120x90)</p><img id="def" class="w-full rounded mt-2 border"><a id="d4" download class="block mt-2 text-center bg-gray-600 text-white p-2 rounded">Download SD</a></div>
+      <div>
+        <p class="font-bold">Max Quality (1280x720)</p>
+        <img id="maxres" class="w-full rounded mt-2 border bg-gray-100" alt="HD Thumbnail">
+        <a id="d1" class="block mt-2 text-center bg-black text-white p-3 rounded cursor-pointer font-bold">Download HD</a>
+      </div>
+      <div>
+        <p class="font-bold">High Quality (480x360)</p>
+        <img id="hq" class="w-full rounded mt-2 border bg-gray-100" alt="HQ Thumbnail">
+        <a id="d2" class="block mt-2 text-center bg-gray-800 text-white p-3 rounded cursor-pointer font-bold">Download HQ</a>
+      </div>
+      <div>
+        <p class="font-bold">Medium Quality</p>
+        <img id="mq" class="w-full rounded mt-2 border bg-gray-100" alt="MQ Thumbnail">
+        <a id="d3" class="block mt-2 text-center bg-gray-700 text-white p-3 rounded cursor-pointer font-bold">Download MQ</a>
+      </div>
+      <div>
+        <p class="font-bold">Small (120x90)</p>
+        <img id="def" class="w-full rounded mt-2 border bg-gray-100" alt="SD Thumbnail">
+        <a id="d4" class="block mt-2 text-center bg-gray-600 text-white p-3 rounded cursor-pointer font-bold">Download SD</a>
+      </div>
     </div>
     <p class="text-xs text-gray-500 mt-6 text-center">Disclaimer: This tool is not affiliated with YouTube. All thumbnails belong to their respective owners.</p>
   </div>
 </div>
+
 <script>
 function extractId(url){
-  let reg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  let reg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|img\.youtube\.com\/vi\/)([^"&?\/\s]{11})/;
   let m = url.match(reg);
   return m ? m[1] : null;
 }
+
+async function downloadImage(url, filename){
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch(e){
+    window.open(url, '_blank');
+  }
+}
+
 function getThumb(){
-  let link = document.getElementById('ytLink').value;
+  let link = document.getElementById('ytLink').value.trim();
   let id = extractId(link);
   if(!id){ alert('Valid YouTube link daalo bhai!'); return; }
-  document.getElementById('maxres').src = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
-  document.getElementById('hq').src = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-  document.getElementById('mq').src = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-  document.getElementById('def').src = `https://img.youtube.com/vi/${id}/default.jpg`;
-  document.getElementById('d1').href = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
-  document.getElementById('d2').href = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-  document.getElementById('d3').href = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-  document.getElementById('d4').href = `https://img.youtube.com/vi/${id}/default.jpg`;
+
+  let maxUrl = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+  let hqUrl = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  let mqUrl = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+  let sdUrl = `https://img.youtube.com/vi/${id}/default.jpg`;
+
+  document.getElementById('maxres').src = maxUrl;
+  document.getElementById('hq').src = hqUrl;
+  document.getElementById('mq').src = mqUrl;
+  document.getElementById('def').src = sdUrl;
+
+  document.getElementById('d1').onclick = () => downloadImage(maxUrl, `thumbnail-${id}-HD.jpg`);
+  document.getElementById('d2').onclick = () => downloadImage(hqUrl, `thumbnail-${id}-HQ.jpg`);
+  document.getElementById('d3').onclick = () => downloadImage(mqUrl, `thumbnail-${id}-MQ.jpg`);
+  document.getElementById('d4').onclick = () => downloadImage(sdUrl, `thumbnail-${id}-SD.jpg`);
+
+  document.getElementById('maxres').onerror = function(){ 
+    this.src = hqUrl; 
+    document.getElementById('d1').onclick = () => downloadImage(hqUrl, `thumbnail-${id}-HQ.jpg`);
+  }
+
   document.getElementById('result').classList.remove('hidden');
 }
 </script>
