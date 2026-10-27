@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Thumbnail Downloader - HD Quality Free | Nexora Tools</title>
+<meta name="description" content="Download any YouTube thumbnail in HD, SD, HQ for free. Just paste video link.">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-3xl mx-auto p-4 md:p-8">
+  <a href="/tools.html" class="text-blue-600">← Back to Tools</a>
+  <h1 class="text-3xl font-bold mt-4">YT Thumbnail Downloader</h1>
+  <p class="text-gray-600 mt-2">Paste YouTube Video Link & Get HD Thumbnail</p>
+  
+  <div class="bg-white p-6 rounded-xl shadow mt-6">
+    <input id="ytLink" type="text" placeholder="Paste YouTube link here... e.g. https://youtu.be/dQw4w9WgXcQ" class="w-full p-4 border-2 rounded-lg focus:border-blue-500 outline-none">
+    <button onclick="getThumb()" class="w-full mt-4 bg-blue-600 text-white p-4 rounded-lg font-bold hover:bg-blue-700">Get Thumbnails</button>
+  </div>
+
+  <div id="result" class="hidden bg-white p-6 rounded-xl shadow mt-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><p class="font-bold">Max Quality (1280x720)</p><img id="maxres" class="w-full rounded mt-2 border"><a id="d1" download class="block mt-2 text-center bg-black text-white p-2 rounded">Download HD</a></div>
+      <div><p class="font-bold">High Quality (480x360)</p><img id="hq" class="w-full rounded mt-2 border"><a id="d2" download class="block mt-2 text-center bg-gray-800 text-white p-2 rounded">Download HQ</a></div>
+      <div><p class="font-bold">Medium Quality</p><img id="mq" class="w-full rounded mt-2 border"><a id="d3" download class="block mt-2 text-center bg-gray-700 text-white p-2 rounded">Download MQ</a></div>
+      <div><p class="font-bold">Small (120x90)</p><img id="def" class="w-full rounded mt-2 border"><a id="d4" download class="block mt-2 text-center bg-gray-600 text-white p-2 rounded">Download SD</a></div>
+    </div>
+    <p class="text-xs text-gray-500 mt-6 text-center">Disclaimer: This tool is not affiliated with YouTube. All thumbnails belong to their respective owners.</p>
+  </div>
+</div>
+<script>
+function extractId(url){
+  let reg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  let m = url.match(reg);
+  return m ? m[1] : null;
+}
+function getThumb(){
+  let link = document.getElementById('ytLink').value;
+  let id = extractId(link);
+  if(!id){ alert('Valid YouTube link daalo bhai!'); return; }
+  document.getElementById('maxres').src = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+  document.getElementById('hq').src = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  document.getElementById('mq').src = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+  document.getElementById('def').src = `https://img.youtube.com/vi/${id}/default.jpg`;
+  document.getElementById('d1').href = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+  document.getElementById('d2').href = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  document.getElementById('d3').href = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+  document.getElementById('d4').href = `https://img.youtube.com/vi/${id}/default.jpg`;
+  document.getElementById('result').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
