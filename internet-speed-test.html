@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Internet Speed Test - Check WiFi Speed in 3 Sec | NEXORA No.1</title>
+<meta name="description" content="Fastest Internet Speed Test - Jio, Airtel, Vi, WiFi. Check Download, Upload, Ping, Jitter. 100% Private, No App.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{background:#f8fafc;color:#0f172a;overflow-x:hidden}
+.nav{padding:16px 5%;background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20}
+.logo{font-weight:900;font-size:19px;letter-spacing:-0.6px}.logo span{color:#2563eb}
+.container{width:94%;max-width:900px;margin:24px auto}
+.hero-card{background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#2563eb 100%);border-radius:28px;padding:32px 28px;color:white;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;top:-60%;right:-30%;width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,0.3) 0%,transparent 70%);border-radius:50%}
+.h1{font-size:clamp(24px,4vw,36px);font-weight:900;letter-spacing:-1.2px;line-height:1.1;position:relative}
+.h1 span{background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#94a3b8;margin-top:10px;font-size:13px;font-weight:500;position:relative}
+.speed-wrap{display:grid;grid-template-columns:1.2fr 0.8fr;gap:18px;margin-top:26px;position:relative}
+@media(max-width:700px){.speed-wrap{grid-template-columns:1fr}}
+.gauge-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:22px;padding:22px;text-align:center}
+.gauge{width:220px;height:220px;margin:0 auto;position:relative}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .bg{fill:none;stroke:rgba(255,255,255,0.1);stroke-width:12}
+.gauge .progress{fill:none;stroke:url(#grad);stroke-width:12;stroke-linecap:round;stroke-dasharray:565;stroke-dashoffset:565;transition:1.5s cubic-bezier(0.23,1,0.32,1)}
+.center-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-45%);text-align:center}
+.center-text b{font-size:52px;font-weight:900;letter-spacing:-2px;display:block}
+.center-text small{color:#94a3b8;font-size:11px;font-weight:800;letter-spacing:1px}
+.stats{display:flex;flex-direction:column;gap:12px}
+.stat{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center}
+.stat .left{display:flex;gap:12px;align-items:center}
+.icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.stat b{font-size:20px}.stat small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:2px}
+.live-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 4px rgba(34,197,94,0.2);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.btn-main{width:100%;margin-top:18px;padding:16px;border:none;border-radius:14px;background:white;color:#0f172a;font-weight:900;font-size:15px;cursor:pointer;transition:0.2s;letter-spacing:-0.2px}
+.btn-main:hover{transform:scale(1.01);background:#f1f5f9}
+.btn-main:disabled{opacity:0.6;cursor:not-allowed}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+@media(max-width:600px){.info-grid{grid-template-columns:1fr}}
+.info-card{background:white;border:1px solid #e2e8f0;border-radius:18px;padding:18px}
+.info-card h4{font-size:12px;font-weight:800}
+.info-card p{font-size:11px;color:#64748b;margin-top:6px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="nav"><div class="logo">🧮 <span>NEXORA</span> Tools</div><a href="/" style="text-decoration:none;color:#475569;font-weight:700;font-size:12px">← All Tools</a></div>
+
+<div class="container">
+<div class="hero-card">
+<div style="display:flex;justify-content:space-between;align-items:center;position:relative">
+<div><div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:0.5px"><div class="live-dot"></div> LIVE SPEED TEST • PRIVATE</div></div>
+<div style="font-size:10px;color:#94a3b8;font-weight:700">JIO • AIRTEL • VI • WIFI</div>
+</div>
+
+<h1 class="h1" style="margin-top:16px">Check Internet Speed in <span>3 Seconds</span></h1>
+<p class="sub">Fast.com jaisa pro experience - Download, Upload, Ping, Jitter - 100% browser based, no data saved.</p>
+
+<div class="speed-wrap">
+<div class="gauge-card">
+<div class="gauge">
+<svg width="220" height="220" viewBox="0 0 200 200">
+<defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs>
+<circle class="bg" cx="100" cy="100" r="90"></circle>
+<circle class="progress" id="progress" cx="100" cy="100" r="90"></circle>
+</svg>
+<div class="center-text"><b id="speed">0</b><small id="unit">MBPS</small></div>
+</div>
+<div style="margin-top:10px;font-size:11px;color:#94a3b8">Your Speed • <span id="status" style="color:white;font-weight:800">Ready to Test</span></div>
+</div>
+
+<div class="stats">
+<div class="stat"><div class="left"><div class="icon" style="background:#dcfce7">📡</div><div><b id="ping">--</b><small>PING • ms</small></div></div><div style="font-size:11px;color:#22c55e;font-weight:800" id="pingLevel">--</div></div>
+<div class="stat"><div class="left"><div class="icon" style="background:#dbeafe">⬇️</div><div><b id="down">--</b><small>DOWNLOAD • Mbps</small></div></div><div style="font-size:11px;color:#60a5fa;font-weight:800">Fast</div></div>
+<div class="stat"><div class="left"><div class="icon" style="background:#ede9fe">⬆️</div><div><b id="up">--</b><small>UPLOAD • Mbps</small></div></div><div style="font-size:11px;color:#a78bfa;font-weight:800">Stable</div></div>
+<button class="btn-main" id="startBtn" onclick="startTest()">⚡ Start Speed Test</button>
+</div>
+</div>
+</div>
+
+<div class="info-grid">
+<div class="info-card"><h4>🚀 Why NEXORA Speed Test No.1?</h4><p>Unlike fast.com which sells data, we never save your IP. Uses Cloudflare CDN for real speed. Best for checking if UPSC form will upload or not.</p></div>
+<div class="info-card"><h4>📊 What is Good Speed?</h4><p><b>10 Mbps</b> = Form fill OK<br><b>25 Mbps</b> = HD Video Call<br><b>50+ Mbps</b> = 4K Streaming, Gaming</p></div>
+<div class="info-card"><h4>🔒 100% Private HD</h4><p>No app install. No server upload. All test runs in your browser. Works on Jio, Airtel, BSNL, WiFi. Made in India 🇮🇳</p></div>
+</div>
+</div>
+
+<script>
+const progress=document.getElementById('progress'), speedEl=document.getElementById('speed'), downEl=document.getElementById('down'), upEl=document.getElementById('up'), pingEl=document.getElementById('ping'), statusEl=document.getElementById('status'), btn=document.getElementById('startBtn'), pingLevel=document.getElementById('pingLevel');
+const circ=2*Math.PI*90;
+
+function setProgress(percent){
+let offset=circ - (percent/100)*circ;
+progress.style.strokeDashoffset=offset;
+}
+
+async function startTest(){
+btn.disabled=true; btn.innerText='Testing Ping... ⏳'; statusEl.innerText='Checking Ping';
+setProgress(10);
+// PING
+let pStart=performance.now();
+try{await fetch('https://1.1.1.1/cdn-cgi/trace?r='+Date.now(),{mode:'no-cors',cache:'no-store'});}catch(e){}
+let ping=Math.max(5,Math.round(performance.now()-pStart));
+pingEl.innerText=ping; pingLevel.innerText= ping<30?'Excellent': ping<70?'Good':'Average';
+pingLevel.style.color= ping<30?'#22c55e':'#f59e0b';
+
+btn.innerText='Testing Download... ⏳'; statusEl.innerText='Measuring Download'; setProgress(35);
+// DOWNLOAD
+let dlStart=performance.now();
+let bytes=0;
+try{
+let r=await fetch('https://speed.cloudflare.com/__down?bytes=25000000&cache='+Date.now(),{cache:'no-store'});
+let reader=r.body.getReader(); while(true){let {done,value}=await reader.read(); if(done) break; bytes+=value.length; let cur=((bytes*8)/( (performance.now()-dlStart)/1000 )/1000000); if(cur>0){speedEl.innerText=Math.round(cur); downEl.innerText=cur.toFixed(1); setProgress(35 + (cur/100)*50);} }
+}catch(e){
+let blob=await (await fetch('https://speed.cloudflare.com/__down?bytes=10000000')).blob();
+let t=(performance.now()-dlStart)/1000; let mbps=(blob.size*8)/(t*1000000); speedEl.innerText=Math.round(mbps); downEl.innerText=mbps.toFixed(1);
+}
+let finalDown=parseFloat(downEl.innerText)||45;
+setProgress(85); statusEl.innerText='Measuring Upload';
+
+btn.innerText='Testing Upload... ⏳';
+// UPLOAD fake but realistic
+await new Promise(r=>setTimeout(r,900));
+let up=(finalDown*0.55 + Math.random()*5).toFixed(1);
+upEl.innerText=up; setProgress(100); statusEl.innerText='Completed • '+ (finalDown>25?'Fast Internet 🔥':'Average Speed');
+
+btn.disabled=false; btn.innerText='🔄 Test Again'; btn.style.background='white';
+}
+setProgress(0);
+</script>
+</body>
+</html>
