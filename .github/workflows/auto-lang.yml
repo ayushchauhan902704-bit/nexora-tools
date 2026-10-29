@@ -1,19 +1,26 @@
 name: Auto Inject Language
 on: [push]
+
+permissions:
+  contents: write
+
 jobs:
   inject:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Inject auto translate script
         run: |
           for file in *.html; do
             if ! grep -q "auto-translate.js" "$file"; then
-              sed -i 's|</body>|<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script><style>.goog-te-banner-frame.skiptranslate{display:none!important}body{top:0!important}</style></body>|' "$file"
+              sed -i 's|</body>|<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script></body>|' "$file"
             fi
           done
-          git config --global user.email "ayush@nexora.com"
-          git config --global user.name "Ayush"
+          git config user.email "bot@nexora.com"
+          git config user.name "nexora-bot"
           git add .
-          git diff --staged --quiet || git commit -m "Auto language injected"
+          git commit -m "auto language injected" || echo "already injected"
           git push
