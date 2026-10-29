@@ -57,5 +57,5 @@ function updateUnits(){let t=document.getElementById('type').value,u1=document.g
 function convert(){let t=document.getElementById('type').value,v=parseFloat(document.getElementById('val1').value);if(isNaN(v))return;if(t==='length'){let base=v/units.length[document.getElementById('unit1').value];document.getElementById('val2').value=(base*units.length[document.getElementById('unit2').value]).toFixed(4)}else if(t==='weight'){let base=v/units.weight[document.getElementById('unit1').value];document.getElementById('val2').value=(base*units.weight[document.getElementById('unit2').value]).toFixed(4)}else if(t==='temp'){let c=document.getElementById('unit1').value==='C'?v:(v-32)*5/9;let f=document.getElementById('unit2').value==='C'?c:c*9/5+32;document.getElementById('val2').value=f.toFixed(2)}}
 updateUnits();
 </script>
-</body>
+<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script></body>
 </html>

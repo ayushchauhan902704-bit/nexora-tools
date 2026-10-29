@@ -61,5 +61,5 @@ async function handleFile(file){if(!file)return;fileName=file.name.replace(/\.(d
 document.getElementById('downloadBtn').addEventListener('click',()=>{if(!extractedText){alert("Pehle Word upload karo!");return;}const {jsPDF}=window.jspdf;const doc=new jsPDF();const lines=doc.splitTextToSize(extractedText,180);let y=20;for(let i=0;i<lines.length;i++){if(y>280){doc.addPage();y=20;}doc.text(lines[i],15,y);y+=7;}doc.save(`NEXORA-${fileName}.pdf`);statusEl.innerText="✅ PDF Downloaded - No Watermark HD!";});
 document.getElementById('clearBtn').addEventListener('click',()=>{previewEl.innerHTML="";previewEl.style.display='none';statusEl.innerText="";extractedText="";fileName="";document.getElementById('downloadBtn').style.display='none';document.getElementById('clearBtn').style.display='none';});
 </script>
-</body>
+<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script></body>
 </html>

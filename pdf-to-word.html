@@ -52,5 +52,5 @@ drop.onclick=()=>file.click();drop.ondragover=(e)=>{e.preventDefault();drop.clas
 file.onchange=async e=>{status.textContent='Reading PDF...';const f=e.target.files[0];if(!f)return;try{const pdf=await pdfjsLib.getDocument(URL.createObjectURL(f)).promise;text='';for(let i=1;i<=pdf.numPages;i++){let p=await pdf.getPage(i);let c=await p.getTextContent();text+=c.items.map(s=>s.str).join(' ')+'\n\n';}status.textContent=`Ready! ${pdf.numPages} pages loaded - Click Convert to Word`;}catch(err){status.textContent='Error: Try again with text PDF, scanned needs OCR tool';}}
 function convert(){if(!text)return alert('Pehle PDF daalo - Text PDF best, scanned ke liye OCR PDF to Word use karo');let blob=new Blob([text],{type:'application/msword'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='NEXORA-PDF-to-Word.doc';a.click();status.textContent='Downloaded! DOC file ready - Open in Word';}
 </script>
-</body>
+<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script></body>
 </html>

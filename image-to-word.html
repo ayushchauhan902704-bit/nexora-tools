@@ -76,5 +76,5 @@ file.onchange=async e=>{
 }
 function convert(){if(!text) return alert('Pehle Image/PDF daalo - JPG PNG best'); let blob=new Blob([text],{type:'application/msword'}); let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='NEXORA-OCR-to-Word.doc';a.click(); status.textContent='Downloaded! Word file ready';}
 </script>
-</body>
+<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script></body>
 </html>

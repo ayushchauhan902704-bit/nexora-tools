@@ -75,5 +75,5 @@
 </footer>
 
 <script>function calcBMI(){const h=parseFloat(document.getElementById('h').value)/100,w=parseFloat(document.getElementById('w').value);if(!h||!w)return alert('Enter height weight');const bmi=(w/(h*h)).toFixed(1);let cat=bmi<18.5?'Underweight':bmi<24.9?'Healthy':bmi<30?'Overweight':'Obese';let idealLow=(18.5*h*h).toFixed(1), idealHigh=(24.9*h*h).toFixed(1);document.getElementById('r').style.display='block';document.getElementById('r').innerHTML=`BMI: ${bmi} – ${cat}<br><small style='font-size:13px'>Ideal Weight: ${idealLow}kg - ${idealHigh}kg</small>`}</script>
-</body>
+<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script></body>
 </html>
