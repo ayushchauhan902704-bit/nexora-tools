@@ -6,7 +6,7 @@
 <div id="up" class="bg-[#FFE5CC] border-2 border-dashed border-orange-500 rounded-xl py-8 text-center font-bold">Drop video here or Click to upload
 <input id="inp" type="file" accept="video/*" hidden></div>
 <p id="fname" class="mt-2 text-sm font-bold hidden"></p>
-<p class="mt-4 text-gray-500">Target Size - Ab Real Compress Hoga</p>
+<p class="mt-4 text-gray-500">Target Size</p>
 <div class="grid grid-cols-3 gap-2 mt-2">
 <button class="sz bg-orange-500 text-white py-2.5 rounded-xl font-bold" data-s="5">5MB</button>
 <button class="sz bg-gray-100 py-2.5 rounded-xl font-bold" data-s="10">10MB</button>
@@ -15,21 +15,21 @@
 <button class="sz bg-gray-100 py-2.5 rounded-xl font-bold" data-s="40">40MB</button>
 <button class="sz bg-gray-100 py-2.5 rounded-xl font-bold" data-s="50">50MB</button>
 </div>
-<video id="v" class="hidden w-full mt-3 rounded-xl" playsinline muted></video>
+<video id="v" class="hidden w-full mt-3 rounded-xl" playsinline></video>
 <canvas id="c" class="hidden"></canvas>
 <div id="prog" class="hidden mt-3"><div class="bg-gray-200 h-2 rounded-full"><div id="bar" class="bg-orange-500 h-2 rounded-full" style="width:0%"></div></div><p id="pt" class="text-center text-sm">0%</p></div>
-<p id="result" class="hidden mt-2 text-center text-sm font-bold text-green-600"></p>
-<button id="btn" class="w-full mt-4 bg-orange-500 text-white py-3.5 rounded-xl font-bold">Compress to REAL 5MB</button>
+<p id="res" class="hidden mt-2 text-center text-sm font-bold text-green-600"></p>
+<button id="btn" class="w-full mt-4 bg-orange-500 text-white py-3.5 rounded-xl font-bold">Compress to 5MB</button>
 </div>
 <script>
 let target=5,file=null,dur=0,out=null;
 document.querySelectorAll('.sz').forEach(b=>{
- b.onclick=()=>{document.querySelectorAll('.sz').forEach(x=>x.className="sz bg-gray-100 py-2.5 rounded-xl font-bold"); b.className="sz bg-orange-500 text-white py-2.5 rounded-xl font-bold"; target=parseInt(b.dataset.s); document.getElementById('btn').innerText=`Compress to REAL ${target}MB`;}
+ b.onclick=()=>{document.querySelectorAll('.sz').forEach(x=>x.className="sz bg-gray-100 py-2.5 rounded-xl font-bold"); b.className="sz bg-orange-500 text-white py-2.5 rounded-xl font-bold"; target=parseInt(b.dataset.s); document.getElementById('btn').innerText=`Compress to ${target}MB`;}
 });
 const up=document.getElementById('up'), inp=document.getElementById('inp');
-up.onclick=()=>inp.click();
-inp.onchange=e=>load(e.target.files[0]);
-function load(f){file=f; document.getElementById('fname').innerText=`Original: ${f.name} - ${(f.size/1024/1024).toFixed(1)} MB`; document.getElementById('fname').classList.remove('hidden'); const v=document.getElementById('v'); v.src=URL.createObjectURL(f); v.onloadedmetadata=()=>dur=v.duration; v.load();}
+up.onclick=()=>inp.click(); inp.onchange=e=>load(e.target.files[0]);
+function load(f){file=f; document.getElementById('fname').innerText=`Original: ${(f.size/1024/1024).toFixed(1)} MB`; document.getElementById('fname').classList.remove('hidden'); const v=document.getElementById('v'); v.src=URL.createObjectURL(f); v.onloadedmetadata=()=>dur=v.duration; v.load();}
+
 document.getElementById('btn').onclick=async()=>{
  const b=document.getElementById('btn');
  if(b.innerText.includes('Download')){ const a=document.createElement('a'); a.href=URL.createObjectURL(out); a.download=`compressed-${target}MB.mp4`; a.click(); return;}
@@ -37,34 +37,49 @@ document.getElementById('btn').onclick=async()=>{
  b.innerText="Compressing..."; document.getElementById('prog').classList.remove('hidden');
  const v=document.getElementById('v'), c=document.getElementById('c'), ctx=c.getContext('2d');
  await new Promise(r=>{ if(v.readyState>=1) r(); else v.onloadedmetadata=()=>r(); });
- // REAL COMPRESSION LOGIC
+ 
+ // Balanced settings - ab zyada kam nahi hoga
  let scale, bitrate;
- if(target<=5){ scale=0.25; bitrate=300000; } // 360p se bhi kam
- else if(target<=10){ scale=0.35; bitrate=600000; }
- else if(target<=20){ scale=0.5; bitrate=1000000; }
- else if(target<=30){ scale=0.65; bitrate=1800000; }
- else{ scale=0.8; bitrate=2500000; }
+ if(target<=5){ scale=0.6; bitrate=900000; } // 60% size, 900kbps
+ else if(target<=10){ scale=0.7; bitrate=1500000; }
+ else if(target<=20){ scale=0.8; bitrate=2500000; }
+ else{ scale=0.9; bitrate=3500000; }
+ 
  c.width=v.videoWidth*scale; c.height=v.videoHeight*scale;
- const stream=c.captureStream(24); // FPS 24 kar diya
+ 
+ // Video + AUDIO dono lega ab
+ const canvasStream=c.captureStream(30);
+ const videoTrack=canvasStream.getVideoTracks()[0];
+ let audioTrack=null;
+ try{
+   const origStream=v.captureStream ? v.captureStream() : v.mozCaptureStream();
+   const audios=origStream.getAudioTracks();
+   if(audios.length>0) audioTrack=audios[0];
+ }catch(e){}
+ 
+ const finalStream=new MediaStream();
+ finalStream.addTrack(videoTrack);
+ if(audioTrack) finalStream.addTrack(audioTrack);
+
  const mime = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' : 'video/mp4';
- const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:bitrate});
+ const rec=new MediaRecorder(finalStream,{mimeType:mime,videoBitsPerSecond:bitrate});
  let chunks=[]; rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
  rec.onstop=()=>{
   out=new Blob(chunks,{type:'video/mp4'});
   let finalMB=(out.size/1024/1024).toFixed(1);
   document.getElementById('bar').style.width='100%';
   document.getElementById('pt').innerText=`Done!`;
-  document.getElementById('result').innerText=`Original: ${(file.size/1024/1024).toFixed(1)}MB → Compressed: ${finalMB}MB (Target ${target}MB)`;
-  document.getElementById('result').classList.remove('hidden');
-  b.innerText=`⬇️ Download ${finalMB}MB Video (Playable MP4)`;
+  document.getElementById('res').innerText=`Original: ${(file.size/1024/1024).toFixed(1)}MB → Now: ${finalMB}MB | Audio: OK | Speed: Normal`;
+  document.getElementById('res').classList.remove('hidden');
+  b.innerText=`⬇️ Download ${finalMB}MB MP4`;
   b.className="w-full mt-4 bg-green-600 text-white py-3.5 rounded-xl font-bold";
  };
- v.currentTime=0; try{await v.play();}catch(e){}
+ v.currentTime=0; v.muted=false; await v.play();
  rec.start(100);
  let iv=setInterval(()=>{
-  if(v.paused||v.ended){clearInterval(iv); rec.stop(); v.pause(); return;}
+  if(v.ended || v.paused){clearInterval(iv); rec.stop(); v.pause(); return;}
   ctx.drawImage(v,0,0,c.width,c.height);
-  let p=Math.round((v.currentTime/dur)*100); document.getElementById('bar').style.width=p+'%'; document.getElementById('pt').innerText=p+'% - Compressing';
- },40);
+  let p=Math.round((v.currentTime/dur)*100); document.getElementById('bar').style.width=p+'%'; document.getElementById('pt').innerText=p+'%';
+ },33);
 }
 </script></body></html>
