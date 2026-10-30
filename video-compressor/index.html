@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Video Compressor</title><script src="https://cdn.tailwindcss.com"></script></head>
+<title>Video Compressor - MP4</title><script src="https://cdn.tailwindcss.com"></script></head>
 <body class="bg-black p-3 flex justify-center">
 <div class="w-full max-w-[500px] bg-white rounded-[20px] p-4">
   <div id="uploadBox" class="bg-[#FFE5CC] border-2 border-dashed border-orange-500 rounded-xl py-8 text-center font-bold">Drop video here or Click to upload
@@ -15,58 +15,53 @@
     <button class="size-btn bg-gray-100 py-2.5 rounded-xl font-bold" data-size="40">40MB</button>
     <button class="size-btn bg-gray-100 py-2.5 rounded-xl font-bold" data-size="50">50MB</button>
   </div>
-  <video id="v" class="hidden w-full mt-3 rounded-xl" controls></video>
+  <video id="v" class="hidden w-full mt-3 rounded-xl" playsinline muted></video>
   <canvas id="c" class="hidden"></canvas>
   <div id="prog" class="hidden mt-3"><div class="bg-gray-200 h-2 rounded-full"><div id="bar" class="bg-orange-500 h-2 rounded-full" style="width:0%"></div></div><p id="pTxt" class="text-center text-sm">0%</p></div>
-  <button id="mainBtn" class="w-full mt-4 bg-orange-500 text-white py-3.5 rounded-xl font-bold">Compress Video</button>
-  <p class="text-[10px] text-center text-gray-400 mt-2">Fast Mode - No FFmpeg</p>
+  <button id="mainBtn" class="w-full mt-4 bg-orange-500 text-white py-3.5 rounded-xl font-bold">Compress to MP4</button>
 </div>
 <script>
-let size=5, file=null, duration=0, outBlob=null;
+let size=5,file=null,duration=0,outBlob=null;
 document.querySelectorAll('.size-btn').forEach(b=>{
-  b.onclick=()=>{document.querySelectorAll('.size-btn').forEach(x=>x.className="size-btn bg-gray-100 py-2.5 rounded-xl font-bold"); b.className="size-btn bg-orange-500 text-white py-2.5 rounded-xl font-bold"; size=parseInt(b.dataset.size);}
+ b.onclick=()=>{document.querySelectorAll('.size-btn').forEach(x=>x.className="size-btn bg-gray-100 py-2.5 rounded-xl font-bold"); b.className="size-btn bg-orange-500 text-white py-2.5 rounded-xl font-bold"; size=parseInt(b.dataset.size);}
 });
 const up=document.getElementById('uploadBox'), inp=document.getElementById('fileInput');
 up.onclick=()=>inp.click();
 inp.onchange=e=>load(e.target.files[0]);
-function load(f){file=f; document.getElementById('fileName').innerText=`📄 ${f.name} - ${(f.size/1024/1024).toFixed(1)} MB`; document.getElementById('fileName').classList.remove('hidden'); const v=document.getElementById('v'); v.src=URL.createObjectURL(f); v.classList.remove('hidden'); v.onloadedmetadata=()=>duration=v.duration;}
+function load(f){file=f; document.getElementById('fileName').innerText=`📄 ${f.name} - ${(f.size/1024/1024).toFixed(1)} MB`; document.getElementById('fileName').classList.remove('hidden'); const v=document.getElementById('v'); v.src=URL.createObjectURL(f); v.onloadedmetadata=()=>duration=v.duration; v.load();}
 
 document.getElementById('mainBtn').onclick=async()=>{
-  const btn=document.getElementById('mainBtn');
-  if(btn.innerText.includes('Download')){ const a=document.createElement('a'); a.href=URL.createObjectURL(outBlob); a.download=`compressed-${size}MB.mp4`; a.click(); return; }
-  if(!file){alert('Video select kar!');return;}
-  
-  // Fast compression using MediaRecorder
-  btn.innerText="Compressing..."; document.getElementById('prog').classList.remove('hidden');
-  const v=document.getElementById('v'), c=document.getElementById('c'), ctx=c.getContext('2d');
-  
-  // Resolution reduce based on target size
-  let scale = size<=10 ? 0.4 : size<=20 ? 0.6 : 0.8;
-  c.width = v.videoWidth * scale; c.height = v.videoHeight * scale;
-  
-  const stream = c.captureStream(30);
-  const targetBitrate = Math.max(200000, (size*8192*1000)/ (duration||30) - 128000);
-  
-  const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: targetBitrate });
-  let chunks=[];
-  recorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
-  recorder.onstop=()=>{
-    outBlob=new Blob(chunks,{type:'video/webm'});
-    document.getElementById('bar').style.width='100%';
-    document.getElementById('pTxt').innerText=`Done! ${(outBlob.size/1024/1024).toFixed(1)} MB (Target ~${size}MB)`;
-    btn.innerText="⬇️ Download Compressed Video"; btn.className="w-full mt-4 bg-green-600 text-white py-3.5 rounded-xl font-bold";
-  };
-  
-  v.currentTime=0; await v.play();
-  recorder.start(100);
-  
-  let interval=setInterval(()=>{
-    if(v.paused || v.ended){ clearInterval(interval); recorder.stop(); v.pause(); return; }
-    ctx.drawImage(v,0,0,c.width,c.height);
-    let p=Math.round((v.currentTime/duration)*100);
-    document.getElementById('bar').style.width=p+'%';
-    document.getElementById('pTxt').innerText=p+'%';
-  },50);
+ const btn=document.getElementById('mainBtn');
+ if(btn.innerText.includes('Download')){ const a=document.createElement('a'); a.href=URL.createObjectURL(outBlob); a.download=`compressed-${size}MB.mp4`; a.click(); return; }
+ if(!file){alert('Video select kar!');return;}
+ btn.innerText="Compressing..."; document.getElementById('prog').classList.remove('hidden');
+ const v=document.getElementById('v'), c=document.getElementById('c'), ctx=c.getContext('2d');
+ let scale=size<=10?0.5:size<=20?0.7:0.85;
+ await new Promise(r=>{ if(v.readyState>=1) r(); else v.onloadedmetadata=()=>r(); });
+ c.width=v.videoWidth*scale; c.height=v.videoHeight*scale;
+ const stream=c.captureStream(30);
+ // iPhone ke liye MP4 mimeType
+ let mime='video/mp4';
+ if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm;codecs=vp9';
+ if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm';
+ const targetBitrate=Math.max(300000,(size*8192*1000)/(duration||30));
+ const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:targetBitrate});
+ let chunks=[]; recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+ recorder.onstop=()=>{
+  let type = mime.includes('mp4')?'video/mp4':'video/webm';
+  outBlob=new Blob(chunks,{type});
+  document.getElementById('bar').style.width='100%';
+  document.getElementById('pTxt').innerText=`Done! ${(outBlob.size/1024/1024).toFixed(1)} MB - MP4 Ready`;
+  btn.innerText="⬇️ Download MP4 (Playable)"; btn.className="w-full mt-4 bg-green-600 text-white py-3.5 rounded-xl font-bold";
+ };
+ v.currentTime=0; try{await v.play();}catch(e){}
+ recorder.start(100);
+ let interval=setInterval(()=>{
+  if(v.paused||v.ended){clearInterval(interval); recorder.stop(); v.pause(); return;}
+  ctx.drawImage(v,0,0,c.width,c.height);
+  let p=Math.round((v.currentTime/duration)*100);
+  document.getElementById('bar').style.width=p+'%';
+  document.getElementById('pTxt').innerText=p+'%';
+ },40);
 }
-</script>
-</body></html>
+</script></body></html>
