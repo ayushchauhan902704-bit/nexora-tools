@@ -5,22 +5,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f97316">
+
 <title>Video Compressor - Compress Video to 5MB, 10MB, 20MB | NEXORA</title>
-<meta name="description" content="Compress videos to 5MB, 10MB, 20MB, 30MB, 50MB or 100MB for free. Preserve audio and download your compressed video with NEXORA.">
+<meta name="description" content="Free online video compressor. Compress videos to 5MB, 10MB, 20MB, 30MB, 50MB, 75MB or 100MB with audio.">
 <meta name="robots" content="index, follow">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script>
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());
+gtag('config','G-61NV39S2VE');
+</script>
+
 <style>
 *{box-sizing:border-box}
 body{background:#09090b;font-family:Arial,sans-serif}
-#dropArea{transition:.2s}
-#dropArea.active{background:#ffedd5;border-color:#ea580c}
-.sz{transition:.2s}
-.sz.selected{background:#f97316;color:white;border-color:#f97316}
 button:disabled{opacity:.55;cursor:not-allowed}
+#dropArea{transition:.2s}
+#dropArea.active{background:#ffedd5;border-color:#f97316}
+.sz{border:1px solid #e5e7eb;background:#f9fafb;color:#444;transition:.2s}
+.sz.selected{background:#f97316;color:white;border-color:#f97316}
 video{background:#111}
-.progress-fill{transition:width .2s}
+.progress-fill{transition:width .25s}
 </style>
 </head>
 
@@ -28,593 +38,824 @@ video{background:#111}
 
 <div class="max-w-xl mx-auto">
 
-<!-- Header -->
+<!-- HEADER -->
 <div class="text-center mb-6">
-  <div class="inline-flex items-center gap-2 bg-orange-500/10 text-orange-400 px-4 py-2 rounded-full text-sm font-bold mb-3">
-    <span>⚡</span> NEXORA FREE TOOL
-  </div>
-  <h1 class="text-white text-3xl font-extrabold">Video Compressor</h1>
-  <p class="text-gray-400 text-sm mt-2">
-    Compress videos to your desired file size
-  </p>
+ <div class="inline-block bg-orange-500/10 text-orange-400 px-4 py-2 rounded-full text-sm font-bold mb-3">
+  ⚡ NEXORA FREE TOOL
+ </div>
+ <h1 class="text-white text-3xl font-extrabold">Video Compressor</h1>
+ <p class="text-gray-400 text-sm mt-2">
+  Compress your video to your desired file size
+ </p>
 </div>
 
 <div class="bg-white rounded-3xl p-4 sm:p-6 shadow-2xl">
 
-<!-- Upload -->
+<!-- UPLOAD -->
 <div id="dropArea"
  class="border-2 border-dashed border-orange-400 bg-orange-50 rounded-2xl p-7 text-center cursor-pointer">
 
- <div class="text-4xl mb-3">🎬</div>
+ <div class="text-5xl mb-3">🎬</div>
  <h2 class="font-bold text-gray-800">Upload Your Video</h2>
  <p class="text-sm text-gray-500 mt-2">
-  Click or drag & drop your video here
+ Click or drag and drop your video here
  </p>
  <p class="text-xs text-gray-400 mt-2">
-  MP4, MOV, WebM and other browser-supported formats
+ MP4, MOV, WebM and other supported formats
  </p>
+
  <input id="fileInput" type="file" accept="video/*" hidden>
 </div>
 
-<!-- File info -->
+<!-- FILE INFO -->
 <div id="fileInfo" class="hidden mt-4 bg-gray-50 rounded-xl p-3">
- <p id="fileName" class="font-bold text-sm text-gray-800 break-all"></p>
+ <p id="fileName" class="font-bold text-sm break-all text-gray-800"></p>
  <div class="flex justify-between text-xs text-gray-500 mt-2">
-  <span>Original size</span>
+  <span>Original Size</span>
   <b id="originalSize" class="text-gray-800"></b>
  </div>
  <div class="flex justify-between text-xs text-gray-500 mt-1">
-  <span>Video duration</span>
+  <span>Duration</span>
   <b id="durationText" class="text-gray-800"></b>
+ </div>
+ <div class="flex justify-between text-xs text-gray-500 mt-1">
+  <span>Resolution</span>
+  <b id="resolutionText" class="text-gray-800"></b>
  </div>
 </div>
 
-<!-- Original preview -->
+<!-- ORIGINAL PREVIEW -->
 <div id="previewBox" class="hidden mt-4">
- <p class="font-bold text-sm mb-2 text-gray-700">Original Video Preview</p>
+ <p class="font-bold text-sm text-gray-700 mb-2">Original Video Preview</p>
  <video id="originalVideo" controls playsinline
   class="w-full rounded-xl max-h-64"></video>
 </div>
 
-<!-- Target -->
+<!-- TARGET SIZE -->
 <div class="mt-6">
- <h3 class="font-bold text-gray-800">Choose Target Size</h3>
- <p class="text-xs text-gray-500 mt-1">
-  Select the maximum file size you want
+ <h2 class="font-bold text-gray-800 text-lg">Choose Target Size</h2>
+ <p class="text-sm text-gray-500 mt-1">
+ Select the maximum file size you want
  </p>
 
- <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
-
-  <button class="sz selected border rounded-xl py-3 font-bold" data-size="5">5 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="10">10 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="20">20 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="30">30 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="40">40 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="50">50 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="75">75 MB</button>
-  <button class="sz border bg-gray-50 rounded-xl py-3 font-bold" data-size="100">100 MB</button>
-
+ <div class="grid grid-cols-3 gap-3 mt-4">
+  <button class="sz selected rounded-xl py-4 font-bold text-lg" data-size="5">5 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="10">10 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="20">20 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="30">30 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="40">40 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="50">50 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="75">75 MB</button>
+  <button class="sz rounded-xl py-4 font-bold text-lg" data-size="100">100 MB</button>
  </div>
 </div>
 
-<!-- Quality info -->
-<div class="mt-5 bg-orange-50 border border-orange-100 rounded-xl p-3">
- <p class="font-bold text-sm text-orange-800">✨ Smart Compression</p>
- <p class="text-xs text-orange-700 mt-1">
-  Automatically calculates video bitrate according to duration and target size. Audio is encoded separately to preserve sound.
+<!-- INFORMATION -->
+<div class="mt-5 bg-orange-50 border border-orange-100 rounded-xl p-4">
+ <h3 class="font-bold text-orange-800">✨ Smart Video Compression</h3>
+ <p class="text-sm text-orange-700 mt-2">
+ Automatically calculates video bitrate according to duration and target size. Converts video to MP4 with H.264 video and AAC audio.
  </p>
 </div>
 
-<!-- Progress -->
-<div id="progressBox" class="hidden mt-5">
- <div class="flex justify-between text-sm mb-2">
+<!-- PROGRESS -->
+<div id="progressBox" class="hidden mt-6">
+
+ <div class="flex justify-between gap-2 text-sm mb-2">
   <b id="statusText" class="text-gray-700">Preparing...</b>
   <b id="percentText" class="text-orange-600">0%</b>
  </div>
+
  <div class="h-3 rounded-full bg-gray-200 overflow-hidden">
   <div id="progressBar"
    class="progress-fill bg-orange-500 h-full rounded-full"
    style="width:0%"></div>
  </div>
+
  <p id="progressHint" class="text-xs text-gray-500 mt-2">
-  Please keep this page open.
+ Please keep this page open during compression.
  </p>
+
 </div>
 
-<!-- Compress -->
+<!-- COMPRESS BUTTON -->
 <button id="compressBtn"
- class="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-base">
+ class="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-lg">
  ⚡ Compress Video to 5 MB
 </button>
 
-<!-- Result -->
-<div id="resultBox" class="hidden mt-5 border border-green-200 bg-green-50 rounded-2xl p-4">
+<!-- RESULT -->
+<div id="resultBox" class="hidden mt-6 border border-green-200 bg-green-50 rounded-2xl p-4">
 
- <h3 class="text-green-800 font-extrabold text-lg">✓ Compression Complete</h3>
+ <h3 class="text-green-800 font-extrabold text-xl">
+ ✓ Compression Complete!
+ </h3>
 
  <div class="grid grid-cols-2 gap-3 mt-4">
+
   <div class="bg-white rounded-xl p-3">
    <p class="text-xs text-gray-500">Original Size</p>
-   <p id="beforeSize" class="font-extrabold text-lg"></p>
+   <p id="beforeSize" class="font-extrabold text-lg mt-1"></p>
   </div>
+
   <div class="bg-white rounded-xl p-3">
    <p class="text-xs text-gray-500">Final Size</p>
-   <p id="afterSize" class="font-extrabold text-lg text-green-700"></p>
+   <p id="afterSize" class="font-extrabold text-lg text-green-700 mt-1"></p>
   </div>
+
  </div>
 
- <p id="resultMessage" class="text-xs text-green-800 mt-3"></p>
+ <p id="resultMessage" class="text-sm text-green-800 mt-4"></p>
 
  <video id="outputVideo" controls playsinline
-  class="w-full rounded-xl mt-4 max-h-64 hidden"></video>
+  class="hidden w-full rounded-xl mt-4 max-h-64"></video>
 
  <button id="downloadBtn"
-  class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold">
+  class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold">
   ⬇ Download Compressed Video
  </button>
-</div>
-
-<p id="errorBox" class="hidden mt-4 bg-red-50 text-red-700 p-3 rounded-xl text-sm"></p>
-
-<div class="text-center text-xs text-gray-400 mt-6">
- Your video is processed in your browser. No upload to our server.
-</div>
 
 </div>
 
-<p class="text-center text-gray-500 text-xs mt-5">
-© 2026 NEXORA — Free Online Tools
-</p>
+<!-- ERROR -->
+<div id="errorBox"
+ class="hidden mt-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm">
+</div>
+
+<div class="text-center text-xs text-gray-400 mt-7">
+ Your video is processed in your browser. It is not uploaded to our server.
+</div>
+
+</div>
+
+<div class="text-center text-gray-500 text-xs mt-6">
+ © 2026 NEXORA — Free Online Tools
+</div>
 
 </div>
 
 <script type="module">
 
-import { FFmpeg } from
-"https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-
-import { toBlobURL } from
-"https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
+// =====================================
+// NEXORA VIDEO COMPRESSOR PRO
+// =====================================
 
 const $ = id => document.getElementById(id);
 
+let FFmpegClass;
 let ffmpeg = null;
-let ffmpegReady = false;
-let selectedSize = 5;
+let engineReady = false;
+let busy = false;
+
 let selectedFile = null;
-let duration = 0;
+let selectedSize = 5;
+let videoDuration = 0;
+let videoWidth = 0;
+let videoHeight = 0;
+
 let outputBlob = null;
 let outputURL = null;
 let originalURL = null;
 let outputName = "";
-let busy = false;
 
 const dropArea = $("dropArea");
 const fileInput = $("fileInput");
 
-function formatSize(bytes) {
- return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+// =====================================
+// HELPERS
+// =====================================
+
+function formatSize(bytes){
+ return (bytes/1048576).toFixed(2)+" MB";
 }
 
-function formatDuration(seconds) {
- if (!Number.isFinite(seconds)) return "Unknown";
- const m = Math.floor(seconds / 60);
- const s = Math.floor(seconds % 60);
+function formatDuration(sec){
+ if(!Number.isFinite(sec)) return "Unknown";
+ const m=Math.floor(sec/60);
+ const s=Math.floor(sec%60);
  return `${m} min ${s} sec`;
 }
 
-function showError(message) {
- $("errorBox").textContent = message;
+function progress(value,message){
+ value=Math.max(0,Math.min(100,value));
+
+ $("progressBar").style.width=value+"%";
+ $("percentText").textContent=Math.round(value)+"%";
+ $("statusText").textContent=message;
+}
+
+function error(message){
+ $("errorBox").textContent=message;
  $("errorBox").classList.remove("hidden");
 }
 
-function clearError() {
+function clearError(){
  $("errorBox").classList.add("hidden");
 }
 
-function setProgress(percent, message) {
- const p = Math.max(0, Math.min(100, percent));
- $("progressBar").style.width = p + "%";
- $("percentText").textContent = Math.round(p) + "%";
- $("statusText").textContent = message;
-}
+function cleanupOutput(){
+ if(outputURL){
+  URL.revokeObjectURL(outputURL);
+ }
 
-function setBusy(value) {
- busy = value;
- $("compressBtn").disabled = value;
- fileInput.disabled = value;
+ outputURL=null;
+ outputBlob=null;
 
- document.querySelectorAll(".sz").forEach(b => {
-  b.disabled = value;
- });
-}
-
-function cleanupOutput() {
- if (outputURL) URL.revokeObjectURL(outputURL);
- outputURL = null;
- outputBlob = null;
+ $("outputVideo").pause();
  $("outputVideo").removeAttribute("src");
  $("outputVideo").load();
+
  $("resultBox").classList.add("hidden");
 }
 
-function loadVideo(file) {
- if (busy) return;
+function setBusy(value){
+ busy=value;
+
+ $("compressBtn").disabled=value;
+ fileInput.disabled=value;
+
+ document.querySelectorAll(".sz").forEach(b=>{
+  b.disabled=value;
+ });
+}
+
+// =====================================
+// UPLOAD VIDEO
+// =====================================
+
+function loadVideo(file){
+
+ if(busy || !file) return;
 
  clearError();
  cleanupOutput();
 
- if (!file) return;
-
- if (!file.type.startsWith("video/")) {
-  showError("Please select a valid video file.");
+ if(!file.type.startsWith("video/") &&
+    !/\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(file.name)){
+  error("Please select a valid video file.");
   return;
  }
 
- selectedFile = file;
+ selectedFile=file;
 
- if (originalURL) URL.revokeObjectURL(originalURL);
- originalURL = URL.createObjectURL(file);
+ if(originalURL){
+  URL.revokeObjectURL(originalURL);
+ }
 
- const video = $("originalVideo");
- video.src = originalURL;
+ originalURL=URL.createObjectURL(file);
 
- $("fileName").textContent = file.name;
- $("originalSize").textContent = formatSize(file.size);
+ const video=$("originalVideo");
+
+ video.src=originalURL;
+
+ $("fileName").textContent=file.name;
+ $("originalSize").textContent=formatSize(file.size);
 
  $("fileInfo").classList.remove("hidden");
  $("previewBox").classList.remove("hidden");
 
- video.onloadedmetadata = () => {
-  duration = video.duration;
+ video.onloadedmetadata=()=>{
 
-  $("durationText").textContent =
-   formatDuration(duration);
+  videoDuration=video.duration;
+  videoWidth=video.videoWidth;
+  videoHeight=video.videoHeight;
 
-  if (!Number.isFinite(duration) || duration <= 0) {
-   showError("Could not read video duration. Try another video.");
-  }
+  $("durationText").textContent=formatDuration(videoDuration);
+
+  $("resolutionText").textContent=
+   videoWidth+" × "+videoHeight;
+
  };
 
- video.onerror = () => {
-  showError("This browser cannot preview this video format.");
+ video.onerror=()=>{
+  error("Your browser cannot preview this video. Try another supported format.");
  };
 
  video.load();
 }
 
-dropArea.addEventListener("click", () => {
- if (!busy) fileInput.click();
+dropArea.addEventListener("click",()=>{
+ if(!busy) fileInput.click();
 });
 
-fileInput.addEventListener("change", e => {
+fileInput.addEventListener("change",e=>{
  loadVideo(e.target.files[0]);
 });
 
-["dragenter","dragover"].forEach(event => {
- dropArea.addEventListener(event, e => {
+["dragenter","dragover"].forEach(event=>{
+ dropArea.addEventListener(event,e=>{
   e.preventDefault();
-  if (!busy) dropArea.classList.add("active");
+  if(!busy) dropArea.classList.add("active");
  });
 });
 
-["dragleave","drop"].forEach(event => {
- dropArea.addEventListener(event, e => {
+["dragleave","drop"].forEach(event=>{
+ dropArea.addEventListener(event,e=>{
   e.preventDefault();
   dropArea.classList.remove("active");
  });
 });
 
-dropArea.addEventListener("drop", e => {
- if (busy) return;
- loadVideo(e.dataTransfer.files[0]);
+dropArea.addEventListener("drop",e=>{
+ if(!busy) loadVideo(e.dataTransfer.files[0]);
 });
 
-// Target selection
-document.querySelectorAll(".sz").forEach(button => {
- button.addEventListener("click", () => {
-  if (busy) return;
+// =====================================
+// TARGET SIZE
+// =====================================
 
-  document.querySelectorAll(".sz").forEach(b => {
+document.querySelectorAll(".sz").forEach(button=>{
+
+ button.addEventListener("click",()=>{
+
+  if(busy) return;
+
+  document.querySelectorAll(".sz").forEach(b=>{
    b.classList.remove("selected");
   });
 
   button.classList.add("selected");
-  selectedSize = Number(button.dataset.size);
 
-  $("compressBtn").textContent =
+  selectedSize=Number(button.dataset.size);
+
+  $("compressBtn").textContent=
    `⚡ Compress Video to ${selectedSize} MB`;
 
   cleanupOutput();
   clearError();
+
  });
+
 });
 
-// Load FFmpeg only when required
-async function loadEngine() {
+// =====================================
+// LOAD FFMPEG LIBRARY WITH FALLBACK
+// =====================================
 
- if (ffmpegReady) return;
+async function loadLibrary(){
 
- setProgress(0, "Loading compression engine...");
- $("progressHint").textContent =
-  "First load downloads the video processing engine. Please wait.";
+ if(FFmpegClass) return;
 
- ffmpeg = new FFmpeg();
+ progress(1,"Loading video compressor library...");
 
- ffmpeg.on("progress", ({ progress }) => {
-  if (!busy) return;
-
-  const p = Math.min(95, Math.max(0, progress * 90));
-
-  $("progressBar").style.width = p + "%";
-  $("percentText").textContent = Math.round(p) + "%";
- });
-
- const base =
- "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
-
- const coreURL = await toBlobURL(
-  `${base}/ffmpeg-core.js`,
-  "text/javascript"
- );
-
- const wasmURL = await toBlobURL(
-  `${base}/ffmpeg-core.wasm`,
-  "application/wasm"
- );
-
- await ffmpeg.load({
-  coreURL,
-  wasmURL
- });
-
- ffmpegReady = true;
-}
-
-// Encoding
-async function encodeVideo(videoBitrate, audioBitrate, attempt) {
-
- try {
-  await ffmpeg.deleteFile("output.mp4");
- } catch(e) {}
-
- const args = [
-  "-y",
-  "-i", "input_video",
-  "-map", "0:v:0",
-  "-map", "0:a?",
-  "-c:v", "libx264",
-  "-preset", "veryfast",
-  "-pix_fmt", "yuv420p",
-  "-b:v", `${videoBitrate}k`,
-  "-maxrate", `${videoBitrate}k`,
-  "-bufsize", `${videoBitrate * 2}k`,
-  "-c:a", "aac",
-  "-b:a", `${audioBitrate}k`,
-  "-ar", "44100",
-  "-movflags", "+faststart",
-  "-threads", "1",
-  "-sn",
-  "-dn",
-  "output.mp4"
+ const urls=[
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js",
+  "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
  ];
 
- setProgress(0, `Encoding video — attempt ${attempt}`);
+ let lastError;
 
- const result = await ffmpeg.exec(args);
+ for(const url of urls){
 
- if (result !== 0) {
-  throw new Error("Video encoding failed.");
+  try{
+   const module=await import(url);
+   FFmpegClass=module.FFmpeg;
+   return;
+  }catch(e){
+   lastError=e;
+  }
+
  }
 
- const data = await ffmpeg.readFile("output.mp4");
+ throw new Error(
+  "Could not load compressor library. Check your internet connection and try again. "+
+  (lastError?.message||"")
+ );
 
- return new Blob([data], {
-  type: "video/mp4"
- });
 }
 
-// Main compression
-$("compressBtn").addEventListener("click", async () => {
+// =====================================
+// DOWNLOAD ENGINE WITH PROGRESS
+// =====================================
 
- if (busy) return;
+async function downloadAsset(url,type,start,end,expectedSize){
+
+ const response=await fetch(url,{cache:"force-cache"});
+
+ if(!response.ok){
+  throw new Error("Engine download failed: "+response.status);
+ }
+
+ if(!response.body){
+  throw new Error("Your browser does not support engine downloading.");
+ }
+
+ const total=
+  Number(response.headers.get("content-length"))||expectedSize;
+
+ const reader=response.body.getReader();
+
+ const chunks=[];
+ let received=0;
+
+ while(true){
+
+  const {done,value}=await reader.read();
+
+  if(done) break;
+
+  chunks.push(value);
+  received+=value.length;
+
+  let ratio=received/total;
+
+  // If CDN does not provide file size,
+  // use estimated size for approximate progress.
+  ratio=Math.min(0.99,ratio);
+
+  progress(
+   start+ratio*(end-start),
+   "Downloading compression engine..."
+  );
+
+ }
+
+ return URL.createObjectURL(
+  new Blob(chunks,{type})
+ );
+
+}
+
+// =====================================
+// INITIALIZE FFMPEG
+// =====================================
+
+async function initializeEngine(){
+
+ if(engineReady) return;
+
+ await loadLibrary();
+
+ ffmpeg=new FFmpegClass();
+
+ ffmpeg.on("log",({message})=>{
+  console.log("FFmpeg:",message);
+ });
+
+ ffmpeg.on("progress",({progress:p})=>{
+
+  if(!busy) return;
+
+  if(Number.isFinite(p)){
+   progress(
+    90+Math.max(0,Math.min(1,p))*9,
+    "Compressing video..."
+   );
+  }
+
+ });
+
+ const cdns=[
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd",
+  "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd"
+ ];
+
+ let lastError;
+
+ for(const base of cdns){
+
+  let coreURL=null;
+  let wasmURL=null;
+
+  try{
+
+   progress(2,"Downloading video engine...");
+
+   coreURL=await downloadAsset(
+    base+"/ffmpeg-core.js",
+    "text/javascript",
+    2,8,
+    150000
+   );
+
+   wasmURL=await downloadAsset(
+    base+"/ffmpeg-core.wasm",
+    "application/wasm",
+    8,85,
+    32000000
+   );
+
+   progress(87,"Starting video engine...");
+
+   await ffmpeg.load({
+    coreURL,
+    wasmURL
+   });
+
+   engineReady=true;
+
+   // Keep generated URLs available for this page session.
+   window.nexoraEngineURLs=[coreURL,wasmURL];
+
+   progress(90,"Video engine ready!");
+
+   return;
+
+  }catch(e){
+
+   lastError=e;
+
+   if(coreURL) URL.revokeObjectURL(coreURL);
+   if(wasmURL) URL.revokeObjectURL(wasmURL);
+
+   // Try next CDN.
+  }
+
+ }
+
+ throw new Error(
+  "Video engine could not start. Please refresh the page and try again. "+
+  (lastError?.message||"")
+ );
+
+}
+
+// =====================================
+// ENCODE VIDEO
+// =====================================
+
+async function encodeVideo(videoBitrate,audioBitrate,attempt){
+
+ try{
+  await ffmpeg.deleteFile("nexora-output.mp4");
+ }catch(e){}
+
+ const args=[
+
+  "-y",
+
+  "-i","nexora-input."+getExtension(selectedFile.name),
+
+  "-map","0:v:0",
+  "-map","0:a?",
+
+  "-c:v","libx264",
+  "-preset","veryfast",
+  "-pix_fmt","yuv420p",
+
+  "-b:v",videoBitrate+"k",
+  "-maxrate",videoBitrate+"k",
+  "-bufsize",(videoBitrate*2)+"k",
+
+  "-c:a","aac",
+  "-b:a",audioBitrate+"k",
+  "-ar","44100",
+
+  "-movflags","+faststart",
+
+  "-threads","1",
+
+  "-sn",
+  "-dn",
+
+  "nexora-output.mp4"
+
+ ];
+
+ progress(90,"Encoding video — attempt "+attempt);
+
+ const exitCode=await ffmpeg.exec(args);
+
+ if(exitCode!==0){
+  throw new Error("Video encoding failed. Try another video.");
+ }
+
+ const data=await ffmpeg.readFile("nexora-output.mp4");
+
+ return new Blob([data],{
+  type:"video/mp4"
+ });
+
+}
+
+function getExtension(name){
+
+ const match=name.match(/\.([a-z0-9]+)$/i);
+
+ const ext=match?match[1].toLowerCase():"mp4";
+
+ if(!/^[a-z0-9]+$/.test(ext)) return "mp4";
+
+ return ext;
+
+}
+
+// =====================================
+// SHOW RESULT
+// =====================================
+
+function showResult(blob,message){
+
+ if(outputURL) URL.revokeObjectURL(outputURL);
+
+ outputBlob=blob;
+ outputURL=URL.createObjectURL(blob);
+
+ $("beforeSize").textContent=formatSize(selectedFile.size);
+ $("afterSize").textContent=formatSize(blob.size);
+
+ $("resultMessage").textContent=message;
+
+ const video=$("outputVideo");
+
+ video.src=outputURL;
+ video.classList.remove("hidden");
+ video.load();
+
+ $("resultBox").classList.remove("hidden");
+
+ progress(100,"Compression completed!");
+
+}
+
+// =====================================
+// MAIN COMPRESS BUTTON
+// =====================================
+
+$("compressBtn").addEventListener("click",async()=>{
+
+ if(busy) return;
 
  clearError();
  cleanupOutput();
 
- if (!selectedFile) {
-  showError("Please upload a video first.");
+ if(!selectedFile){
+  error("Please upload a video first.");
   return;
  }
 
- if (!Number.isFinite(duration) || duration <= 0) {
-  showError("Video duration is not ready. Please wait for preview to load.");
+ if(!Number.isFinite(videoDuration)||videoDuration<=0){
+  error("Please wait until the video preview is ready.");
   return;
  }
 
- const targetBytes = selectedSize * 1024 * 1024;
+ const targetBytes=selectedSize*1024*1024;
 
- if (selectedFile.size <= targetBytes) {
+ // Already smaller than target
+ if(selectedFile.size<=targetBytes){
 
-  outputBlob = selectedFile;
-  outputName = selectedFile.name;
+  outputName=selectedFile.name;
 
   showResult(
    selectedFile,
-   "Your original video is already within the selected target size. No re-encoding was needed."
+   "Your original video is already within the selected maximum size. No re-encoding was necessary."
   );
 
   return;
  }
 
  setBusy(true);
+
  $("progressBox").classList.remove("hidden");
- $("compressBtn").textContent = "Compressing...";
+ $("compressBtn").textContent="Compressing...";
 
- try {
+ $("progressHint").textContent=
+  "First use downloads the video engine. Keep this page open.";
 
-  await loadEngine();
+ try{
 
-  setProgress(2, "Preparing original video...");
+  // Load engine
+  await initializeEngine();
 
-  const bytes = new Uint8Array(
+  progress(91,"Preparing video...");
+
+  // Prepare input file
+  const inputName=
+   "nexora-input."+getExtension(selectedFile.name);
+
+  const inputData=new Uint8Array(
    await selectedFile.arrayBuffer()
   );
 
-  await ffmpeg.writeFile("input_video", bytes);
+  await ffmpeg.writeFile(inputName,inputData);
 
-  /*
-   * Target bitrate calculation.
-   * Reserve space for container overhead.
-   */
+  // Calculate target bitrate
+  // Reserve 10% for container overhead and variation.
+  const audioBitrate=selectedSize<=10?96:128;
 
-  const audioBitrate = selectedSize <= 10 ? 96 : 128;
+  const totalBitrate=
+   (targetBytes*8/videoDuration/1000)*0.90;
 
-  const totalBitrate =
-   (targetBytes * 8 / duration / 1000) * 0.94;
-
-  let videoBitrate = Math.floor(
-   totalBitrate - audioBitrate
+  let videoBitrate=Math.floor(
+   totalBitrate-audioBitrate
   );
 
-  if (videoBitrate < 80) {
+  if(videoBitrate<50){
+
    throw new Error(
-    "This video is too long for the selected target size. Choose a larger target size."
+    "This video is too long for the selected target size. Please choose a larger target."
    );
+
   }
 
-  let result = null;
+  let result=null;
 
-  // Retry with adjusted bitrate if output exceeds target.
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // Try up to 3 encodes to meet maximum size
+  for(let attempt=1;attempt<=3;attempt++){
 
-   result = await encodeVideo(
+   result=await encodeVideo(
     videoBitrate,
     audioBitrate,
     attempt
    );
 
-   const actualSize = result.size;
-
-   if (actualSize <= targetBytes) {
+   if(result.size<=targetBytes){
     break;
    }
 
-   if (attempt < 3) {
+   if(attempt<3){
 
-    const ratio = targetBytes / actualSize;
+    const ratio=targetBytes/result.size;
 
-    const newBitrate = Math.floor(
-     (videoBitrate + audioBitrate) * ratio * 0.94
-     - audioBitrate
+    videoBitrate=Math.floor(
+     (videoBitrate+audioBitrate)*ratio*0.92-audioBitrate
     );
 
-    if (newBitrate < 80) break;
+    if(videoBitrate<50) break;
 
-    videoBitrate = newBitrate;
    }
+
   }
 
-  outputBlob = result;
-
-  outputName =
-   selectedFile.name.replace(/\.[^/.]+$/, "") +
+  outputName=
+   selectedFile.name.replace(/\.[^/.]+$/,"")+
    "-compressed.mp4";
 
-  setProgress(100, "Compression completed!");
-
-  if (outputBlob.size > targetBytes) {
-   showResult(
-    outputBlob,
-    "The selected target could not be reached at a practical bitrate. The actual file size is shown above. Try a larger target."
-   );
-  } else {
-   showResult(
-    outputBlob,
-    "Video compressed successfully. Audio was encoded in AAC where an audio track was present."
-   );
-  }
-
-  try {
-   await ffmpeg.deleteFile("input_video");
-   await ffmpeg.deleteFile("output.mp4");
-  } catch(e) {}
-
- } catch(error) {
-
-  console.error(error);
-
-  showError(
-   error.message ||
-   "Compression failed. Try a smaller video or a different browser."
+  showResult(
+   result,
+   result.size<=targetBytes
+    ? "Success! The compressed video is within your selected maximum size. Audio is included if the original had an audio track."
+    : "The selected maximum size could not be reached after 3 attempts. The actual output size is shown above. Please choose a larger target."
   );
+
+  // Clean temporary files
+  try{
+   await ffmpeg.deleteFile(inputName);
+   await ffmpeg.deleteFile("nexora-output.mp4");
+  }catch(e){}
+
+ }catch(e){
+
+  console.error(e);
 
   $("progressBox").classList.add("hidden");
 
- } finally {
+  error(
+   e.message||
+   "Something went wrong. Please try another video."
+  );
+
+ }finally{
 
   setBusy(false);
 
-  $("compressBtn").textContent =
-   `⚡ Compress Video to ${selectedSize} MB`;
+  $("compressBtn").textContent=
+   "⚡ Compress Video to "+selectedSize+" MB";
 
  }
 
 });
 
-// Result
-function showResult(blob, message) {
+// =====================================
+// DOWNLOAD
+// =====================================
 
- if (outputURL) URL.revokeObjectURL(outputURL);
+$("downloadBtn").addEventListener("click",()=>{
 
- outputURL = URL.createObjectURL(blob);
-
- $("beforeSize").textContent =
-  formatSize(selectedFile.size);
-
- $("afterSize").textContent =
-  formatSize(blob.size);
-
- $("resultMessage").textContent = message;
-
- const video = $("outputVideo");
- video.src = outputURL;
- video.classList.remove("hidden");
- video.load();
-
- $("resultBox").classList.remove("hidden");
-
- $("progressBox").classList.remove("hidden");
- $("progressBar").style.width = "100%";
- $("percentText").textContent = "100%";
- $("statusText").textContent = "Done!";
-}
-
-// Download
-$("downloadBtn").addEventListener("click", () => {
-
- if (!outputBlob || !outputURL) {
-  showError("Please compress a video first.");
+ if(!outputBlob||!outputURL){
+  error("Please compress a video first.");
   return;
  }
 
- const a = document.createElement("a");
- a.href = outputURL;
- a.download = outputName;
+ const a=document.createElement("a");
+
+ a.href=outputURL;
+ a.download=outputName;
+
  document.body.appendChild(a);
  a.click();
  a.remove();
 
 });
 
-// Clean up when leaving page
-window.addEventListener("beforeunload", () => {
+// =====================================
+// CLEANUP
+// =====================================
 
- if (originalURL) URL.revokeObjectURL(originalURL);
- if (outputURL) URL.revokeObjectURL(outputURL);
+window.addEventListener("beforeunload",()=>{
+
+ if(originalURL) URL.revokeObjectURL(originalURL);
+ if(outputURL) URL.revokeObjectURL(outputURL);
+
+ if(window.nexoraEngineURLs){
+  window.nexoraEngineURLs.forEach(url=>{
+   URL.revokeObjectURL(url);
+  });
+ }
 
 });
 
 </script>
+
 </body>
 </html>
