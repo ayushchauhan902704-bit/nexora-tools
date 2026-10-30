@@ -119,12 +119,20 @@ $("compressBtn").onclick=async()=>{
  const v=$("originalVideo"), c=$("canvas"), ctx=c.getContext("2d");
  await new Promise(r=>{if(v.readyState>=1) r(); else v.onloadedmetadata=r;});
 
- // PERFECT BALANCE - Audio + Speed + Size
- let scale, bitrate;
- if(selectedSize<=5){scale=0.6; bitrate=900000;}
- else if(selectedSize<=10){scale=0.7; bitrate=1500000;}
- else if(selectedSize<=20){scale=0.8; bitrate=2500000;}
- else{scale=0.9; bitrate=4000000;}
+ // === FIX: EXACT TARGET SIZE - Jitna manga utna hi banega ===
+ const targetBytes = selectedSize * 1024 * 1024;
+ const audioBps = 128000;
+ let totalBps = (targetBytes * 8) / videoDuration;
+ let videoBps = Math.floor((totalBps * 0.90) - audioBps);
+ if(videoBps < 500000) videoBps = 500000;
+ if(videoBps > 10000000) videoBps = 10000000;
+
+ // Scale - target ke hisab se, taaki jyada chota na ho
+ let scale;
+ if(selectedSize <= 5){ scale = videoDuration < 15 ? 0.9 : 0.75; }
+ else if(selectedSize <= 10){ scale = 0.9; }
+ else if(selectedSize <= 20){ scale = 0.95; }
+ else{ scale = 1.0; }
 
  c.width=videoWidth*scale; c.height=videoHeight*scale;
 
@@ -139,13 +147,11 @@ $("compressBtn").onclick=async()=>{
    const source=audioCtx.createMediaElementSource(v);
    const dest=audioCtx.createMediaStreamDestination();
    source.connect(dest);
-   // source ko speakers se bhi connect karo taki sunai de
    try{source.connect(audioCtx.destination);}catch(e){}
    if(dest.stream.getAudioTracks().length>0){
      audioTrack=dest.stream.getAudioTracks()[0];
    }
  }catch(e){
-   console.log("AudioContext failed",e);
    try{
      const tmp=v.captureStream ? v.captureStream() : v.mozCaptureStream();
      if(tmp.getAudioTracks().length>0) audioTrack=tmp.getAudioTracks()[0];
@@ -157,7 +163,7 @@ $("compressBtn").onclick=async()=>{
  if(audioTrack) mixed.addTrack(audioTrack);
 
  const mime=MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' : 'video/mp4';
- const rec=new MediaRecorder(mixed,{mimeType:mime, videoBitsPerSecond:bitrate});
+ const rec=new MediaRecorder(mixed,{mimeType:mime, videoBitsPerSecond:videoBps});
  let chunks=[];
  rec.ondataavailable=e=>{if(e.data.size>0) chunks.push(e.data);};
  rec.onstop=()=>{
@@ -166,7 +172,7 @@ $("compressBtn").onclick=async()=>{
    outputURL=URL.createObjectURL(outputBlob);
    $("beforeSize").textContent=formatSize(selectedFile.size);
    $("afterSize").textContent=formatSize(outputBlob.size);
-   $("resultMessage").textContent=`Original ${formatSize(selectedFile.size)} → ${formatSize(outputBlob.size)} | Audio: ${audioTrack?'Yes ✓':'Check volume'} | Target ${selectedSize}MB`;
+   $("resultMessage").textContent=`Original ${formatSize(selectedFile.size)} → ${formatSize(outputBlob.size)} | Audio: ${audioTrack?'Yes ✓':'Check volume'} | Target ${selectedSize}MB | Bitrate ${Math.round(videoBps/1000)}k`;
    $("outputVideo").src=outputURL; $("outputVideo").classList.remove("hidden"); $("outputVideo").load();
    $("resultBox").classList.remove("hidden");
    $("progressBox").classList.add("hidden");
@@ -185,7 +191,7 @@ $("compressBtn").onclick=async()=>{
    }
    ctx.drawImage(v,0,0,c.width,c.height);
    const p=Math.round((v.currentTime/videoDuration)*100);
-   $("progressBar").style.width=p+"%"; $("percentText").textContent=p+"%"; $("statusText").textContent=`Compressing ${p}% with Audio`;
+   $("progressBar").style.width=p+"%"; $("percentText").textContent=p+"%"; $("statusText").textContent=`Compressing to ${selectedSize}MB - ${p}%`;
  },33);
 };
 
