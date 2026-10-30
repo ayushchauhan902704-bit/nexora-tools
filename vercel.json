@@ -1,6 +1,7 @@
 {
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/love-calculator", "destination": "/app/love-calculator.html" },
     { "source": "/passport-size-photo", "destination": "/app/passport-size-photo.html" },
     { "source": "/background-remover", "destination": "/app/background-remover.html" },
@@ -24,6 +25,12 @@
     { "source": "/ai-text-humanizer", "destination": "/app/ai-text-humanizer.html" },
     { "source": "/unit-converter", "destination": "/app/unit-converter.html" },
     { "source": "/password-generator", "destination": "/app/password-generator.html" },
-    { "source": "/resume-builder", "destination": "/app/resume-builder.html" }
+    { "source": "/resume-builder", "destination": "/app/resume-builder.html" },
+    { "source": "/video-compressor", "destination": "/app/video-compressor.html" },
+    { "source": "/yt-thumbnail-downloader", "destination": "/app/yt-thumbnail-downloader.html" },
+    { "source": "/internet-speed-test", "destination": "/app/internet-speed-test.html" },
+    { "source": "/text-to-speech", "destination": "/app/text-to-speech.html" },
+    { "source": "/tools", "destination": "/app/tools.html" },
+    { "source": "/mirror", "destination": "/app/mirror.html" }
   ]
 }
