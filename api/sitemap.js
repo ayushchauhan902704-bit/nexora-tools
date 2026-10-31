@@ -9,6 +9,7 @@ export default function handler(req, res) {
     { loc: `${baseUrl}/internet-speed-test`, priority: '0.9', changefreq: 'weekly' },
     { loc: `${baseUrl}/text-to-speech`, priority: '0.9', changefreq: 'weekly' },
     { loc: `${baseUrl}/yt-thumbnail-downloader`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/image-to-text`, priority: '0.9', changefreq: 'weekly' },
     
     { loc: `${baseUrl}/about`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/age-calculator`, priority: '0.8', changefreq: 'weekly' },
