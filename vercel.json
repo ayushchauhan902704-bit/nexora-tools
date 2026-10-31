@@ -30,6 +30,7 @@
     { "source": "/yt-thumbnail-downloader", "destination": "/app/yt-thumbnail-downloader.html" },
     { "source": "/internet-speed-test", "destination": "/app/internet-speed-test.html" },
     { "source": "/text-to-speech", "destination": "/app/text-to-speech.html" },
+    { "source": "/image-to-text", "destination": "/app/image-to-text.html" },
     { "source": "/tools", "destination": "/app/tools.html" },
     { "source": "/mirror", "destination": "/app/mirror.html" }
   ]
