@@ -1,1 +1,42 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Compress Video to 5MB</title></head><body style="background:#09090b;color:white;text-align:center;padding:50px;font-family:system-ui"><h1>5MB Compressor - LIVE ✅</h1><a href="/video-compressor/" style="background:#f97316;padding:12px 24px;border-radius:99px;color:white;text-decoration:none">Back to Main</a></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compress Video to 5MB - Free Online Compressor</title>
+<style>
+body{background:#09090b;color:white;font-family:system-ui;text-align:center;padding:20px}
+.box{max-width:600px;margin:30px auto;background:#18181b;padding:30px;border-radius:16px;border:1px solid #27272a}
+.drop{border:2px dashed #3f3f46;padding:40px;border-radius:12px}
+.btn{background:#f97316;border:none;padding:12px 24px;border-radius:99px;color:white;font-weight:bold;cursor:pointer;margin-top:15px}
+a{color:#a1a1aa;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Compress Video to <span style="color:#f97316">5MB</span> ✅</h1>
+<p style="color:#a1a1aa">Main Compressor Yahi Hai - 5MB Target Set Hai</p>
+
+<div class="box">
+  <div class="drop">
+    <p style="font-size:40px">📁</p>
+    <p>Drop Video Here to Compress to 5MB</p>
+    <input type="file" id="videoInput" accept="video/*" style="display:none">
+    <button class="btn" onclick="document.getElementById('videoInput').click()">Select Video</button>
+    <p id="status" style="color:#f97316;margin-top:15px"></p>
+  </div>
+  <p style="margin-top:20px;font-size:12px;color:#71717a">Target: 5MB | HD Quality | No Watermark</p>
+</div>
+
+<a href="/video-compressor/">← Back to Main Compressor</a>
+
+<script>
+document.getElementById('videoInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(file){
+    document.getElementById('status').innerText = "Selected: " + file.name + " (" + (file.size/1024/1024).toFixed(2) + "MB) - Compressing to 5MB...";
+    // Yaha tera asli compression ka JS aayega
+  }
+});
+</script>
+</body>
+</html>
