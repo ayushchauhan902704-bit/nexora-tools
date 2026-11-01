@@ -41,6 +41,14 @@ export default function handler(req, res) {
     { loc: `${baseUrl}/word-to-pdf`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/love-calculator/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/pdf-merge-split/`, priority: '0.8', changefreq: 'weekly' },
+
+    // BLOG CLUSTER - NEW ADDED - GLOBAL
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-20kb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-30kb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-50kb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-100kb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-200kb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-500kb/`, priority: '0.8', changefreq: 'weekly' },
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
