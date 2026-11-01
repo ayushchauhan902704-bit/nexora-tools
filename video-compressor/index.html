@@ -1,195 +1,59 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free Online Video Compressor - Reduce Video Size | NEXORA</title>
-<meta name="description" content="Compress videos online with NEXORA. Choose a target size, preview your video and download the compressed result. Free browser-based video compressor.">
-<meta name="author" content="NEXORA Tools">
-<meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="https://nexora-tools-drab.vercel.app/video-compressor/">
-<meta property="og:title" content="Free Online Video Compressor | NEXORA">
-<meta property="og:description" content="Reduce video file size online with a target size selector.">
-<meta property="og:url" content="https://nexora-tools-drab.vercel.app/video-compressor/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Video Compression Quality Guide | NEXORA</title>
+<meta name="description" content="Video Compression Quality Guide. Use the free NEXORA online video compressor to choose a target file size, process a supported video and download the resul">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://nexora-tools-drab.vercel.app/video-compressor/video-compressor-quality-settings/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://nexora-tools-drab.vercel.app/og-image.png">
+<meta property="og:title" content="Video Compression Quality Guide | NEXORA">
+<meta property="og:description" content="Video Compression Quality Guide. Use the free NEXORA online video compressor to choose a target file size, process a supported video and download the resul">
+<meta property="og:url" content="https://nexora-tools-drab.vercel.app/video-compressor/video-compressor-quality-settings/">
 <meta name="theme-color" content="#f97316">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-61NV39S2VE');</script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"NEXORA Tools","url":"https://nexora-tools-drab.vercel.app/"}</script>
 <style>
-*{box-sizing:border-box} body{background:#09090b;font-family:system-ui,sans-serif}
-#dropArea.active{background:#ffedd5;border-color:#f97316}
-.sz{border:1px solid #e5e7eb;background:#f9fafb;color:#444;transition:.2s}
-.sz.selected{background:#f97316;color:white;border-color:#f97316;transform:scale(1.05);box-shadow:0 4px 12px rgba(249,115,22,.3)}
-video{background:#111} .progress-fill{transition:width .25s}
-.nav{max-width:900px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:14px 15px;flex-wrap:wrap;gap:10px}
+*{box-sizing:border-box}body{margin:0;background:#09090b;color:#18181b;font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.65}
+header{padding:18px 20px;max-width:850px;margin:auto}header a{color:#fff;text-decoration:none;font-weight:900;font-size:20px}
+main{max-width:850px;margin:12px auto 30px;padding:28px;background:#fff;border-radius:22px;width:calc(100% - 28px)}
+h1{font-size:clamp(27px,5vw,38px);line-height:1.15;margin:0 0 14px;color:#111827}
+h2{font-size:20px;margin:26px 0 8px;color:#111827}p,li{color:#4b5563}
+.cta{display:inline-block;background:#f97316;color:#fff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:12px;margin:12px 0}
+.note{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:13px;color:#9a3412}
+footer{max-width:850px;margin:0 auto;padding:10px 20px 28px;color:#a1a1aa;font-size:13px}
+footer a{color:#fdba74}
 </style>
 </head>
-<body class="min-h-screen">
-<nav class="nav">
-<a href="/" style="font-weight:900;text-decoration:none;color:white;font-size:18px">🧮 NEXORA Tools</a>
-<span style="color:#fdba74;font-size:12px;font-weight:700">FREE ONLINE TOOL</span>
-</nav>
-<header style="text-align:center;padding:14px 20px">
-<div class="inline-block bg-orange-500/10 text-orange-400 px-4 py-2 rounded-full text-xs font-bold mb-3 border border-orange-500/20">⚡ NEXORA FREE VIDEO TOOL</div>
-<h1 style="font-size:30px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1.15">Free Online Video Compressor</h1>
-<p style="font-size:13px;color:#a1a1aa;margin:8px auto 0;max-width:600px">Choose a target file size, compress your video and download the result. Processing support depends on your browser and device.</p>
-<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-<span style="font-size:11px;background:#ffedd5;color:#c2410c;padding:6px 12px;border-radius:99px;font-weight:700">FREE</span>
-<span style="font-size:11px;background:#ffedd5;color:#c2410c;padding:6px 12px;border-radius:99px;font-weight:700">BROWSER-BASED</span>
-<span style="font-size:11px;background:#ffedd5;color:#c2410c;padding:6px 12px;border-radius:99px;font-weight:700">TARGET SIZE OPTIONS</span>
-</div>
-</header>
-<div class="max-w-xl mx-auto px-3 py-4">
-<div class="bg-white rounded-3xl p-4 sm:p-6 shadow-2xl">
-<div id="dropArea" class="border-2 border-dashed border-orange-400 bg-orange-50 rounded-2xl p-7 text-center cursor-pointer hover:bg-orange-100 transition">
-<div class="text-5xl mb-3">🎬</div><h2 class="font-bold text-gray-800">Upload Your Video</h2>
-<p class="text-sm text-gray-500 mt-2">Click or drag and drop a video file</p>
-<input id="fileInput" type="file" accept="video/*" hidden>
-</div>
-<div id="fileInfo" class="hidden mt-4 bg-gray-50 rounded-xl p-3">
-<p id="fileName" class="font-bold text-sm break-all"></p>
-<div class="flex justify-between text-xs text-gray-500 mt-2"><span>Original Size</span><b id="originalSize"></b></div>
-<div class="flex justify-between text-xs text-gray-500 mt-1"><span>Duration</span><b id="durationText"></b></div>
-<div class="flex justify-between text-xs text-gray-500 mt-1"><span>Resolution</span><b id="resolutionText"></b></div>
-</div>
-<div id="previewBox" class="hidden mt-4"><p class="font-bold text-sm mb-2">Preview</p><video id="originalVideo" controls playsinline class="w-full rounded-xl max-h-64"></video></div>
-<canvas id="canvas" class="hidden"></canvas>
-<div class="mt-6">
-<h2 class="font-bold text-base">Choose Target Size</h2>
-<div class="grid grid-cols-4 gap-2 mt-4">
-<button class="sz selected rounded-xl py-3 font-bold text-sm" data-size="5">5 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="8">8 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="10">10 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="16">16 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="20">20 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="25">25 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="50">50 MB</button>
-<button class="sz rounded-xl py-3 font-bold text-sm" data-size="100">100 MB</button>
-</div>
-<p style="font-size:10px;color:#9ca3af;margin-top:8px;text-align:center">Actual output size can vary by video, duration, browser and encoding support.</p>
-</div>
-<div id="progressBox" class="hidden mt-6">
-<div class="flex justify-between text-sm mb-2"><b id="statusText">Compressing...</b><b id="percentText" class="text-orange-600">0%</b></div>
-<div class="h-3 rounded-full bg-gray-200 overflow-hidden"><div id="progressBar" class="progress-fill bg-orange-500 h-full" style="width:0%"></div></div>
-<p class="text-xs text-gray-500 mt-2">Keep this page open while processing.</p>
-</div>
-<button id="compressBtn" class="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-lg transition">⚡ Compress Video to 5 MB</button>
-<div id="resultBox" class="hidden mt-6 border border-green-200 bg-green-50 rounded-2xl p-4">
-<h3 class="text-green-800 font-extrabold text-xl">✓ Compression Complete</h3>
-<div class="grid grid-cols-2 gap-3 mt-4">
-<div class="bg-white rounded-xl p-3"><p class="text-xs text-gray-500">Original</p><p id="beforeSize" class="font-extrabold text-lg"></p></div>
-<div class="bg-white rounded-xl p-3"><p class="text-xs text-gray-500">Final</p><p id="afterSize" class="font-extrabold text-lg text-green-700"></p></div>
-</div>
-<p id="resultMessage" class="text-sm text-green-800 mt-4"></p>
-<video id="outputVideo" controls playsinline class="hidden w-full rounded-xl mt-4 max-h-64"></video>
-<button id="downloadBtn" class="w-full mt-4 bg-green-600 text-white py-4 rounded-xl font-bold">⬇ Download Compressed Video</button>
-</div>
-<div id="errorBox" class="hidden mt-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm"></div>
-</div></div>
-<footer style="max-width:640px;margin:20px auto;width:96%;background:white;border-radius:24px;padding:20px;color:#64748b;font-size:13px;line-height:1.8">
-<strong style="font-size:18px;color:#111827">NEX<span style="color:#f97316">ORA</span> Tools</strong>
-<p>Free online tools made to simplify everyday tasks.</p>
-<p>Email: <a href="mailto:ayushchauhan902704@gmail.com" style="color:#f97316">ayushchauhan902704@gmail.com</a></p>
-<p><a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
-<p>© 2026 NEXORA Tools</p>
-</footer>
-<script>
-const $=id=>document.getElementById(id);
-let selectedFile=null, selectedSize=5, videoDuration=0, videoWidth=0, videoHeight=0;
-let outputBlob=null, outputURL=null, originalURL=null, busy=false;
-function formatSize(b){return (b/1048576).toFixed(2)+" MB";}
-function formatDuration(s){if(!isFinite(s)) return "Unknown"; const m=Math.floor(s/60), sec=Math.floor(s%60); return `${m} min ${sec} sec`; }
-function loadVideo(file){
- if(busy||!file) return;
- selectedFile=file;
- if(originalURL) URL.revokeObjectURL(originalURL);
- originalURL=URL.createObjectURL(file);
- const v=$("originalVideo");
- v.src=originalURL; v.muted=false;
- $("fileName").textContent=file.name; $("originalSize").textContent=formatSize(file.size);
- $("fileInfo").classList.remove("hidden"); $("previewBox").classList.remove("hidden");
- v.onloadedmetadata=()=>{videoDuration=v.duration; videoWidth=v.videoWidth; videoHeight=v.videoHeight; $("durationText").textContent=formatDuration(videoDuration); $("resolutionText").textContent=videoWidth+"x"+videoHeight;};
- v.load();
-}
-$("dropArea").onclick=()=>$("fileInput").click();
-$("fileInput").onchange=e=>loadVideo(e.target.files[0]);
-["dragenter","dragover"].forEach(ev=>{$("dropArea").addEventListener(ev,e=>{e.preventDefault(); $("dropArea").classList.add("active");});});
-["dragleave","drop"].forEach(ev=>{$("dropArea").addEventListener(ev,e=>{e.preventDefault(); $("dropArea").classList.remove("active");});});
-$("dropArea").addEventListener("drop",e=>loadVideo(e.dataTransfer.files[0]));
-document.querySelectorAll(".sz").forEach(b=>{
- b.onclick=()=>{
-  if(busy) return;
-  document.querySelectorAll(".sz").forEach(x=>x.classList.remove("selected"));
-  b.classList.add("selected"); selectedSize=Number(b.dataset.size);
-  $("compressBtn").textContent=`⚡ Compress Video to ${selectedSize} MB`;
- };
-});
-$("compressBtn").onclick=async()=>{
- if(busy) return;
- if(!selectedFile){$("errorBox").textContent="Upload video first"; $("errorBox").classList.remove("hidden"); return;}
- if(!isFinite(videoDuration)||videoDuration<=0){$("errorBox").textContent="Wait for preview"; $("errorBox").classList.remove("hidden"); return;}
- busy=true; $("errorBox").classList.add("hidden"); $("progressBox").classList.remove("hidden"); $("compressBtn").disabled=true;
- $("compressBtn").textContent="Compressing..."; $("resultBox").classList.add("hidden");
- const v=$("originalVideo"), c=$("canvas"), ctx=c.getContext("2d");
- await new Promise(r=>{if(v.readyState>=1) r(); else v.onloadedmetadata=r;});
- const targetBytes = selectedSize * 1024 * 1024;
- const audioBps = 128000;
- let totalBps = (targetBytes * 8) / videoDuration;
- let videoBps = Math.floor((totalBps * 0.90) - audioBps);
- if(videoBps < 500000) videoBps = 500000;
- if(videoBps > 10000000) videoBps = 10000000;
- let scale;
- if(selectedSize <= 5){ scale = videoDuration < 15 ? 0.9 : 0.75; }
- else if(selectedSize <= 10){ scale = 0.9; }
- else if(selectedSize <= 20){ scale = 0.95; }
- else{ scale = 1.0; }
- c.width=videoWidth*scale; c.height=videoHeight*scale;
- const canvasStream=c.captureStream(30);
- const videoTrack=canvasStream.getVideoTracks()[0];
- let audioTrack=null; let audioCtx=null;
- try{
-   audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-   const source=audioCtx.createMediaElementSource(v);
-   const dest=audioCtx.createMediaStreamDestination();
-   source.connect(dest);
-   try{source.connect(audioCtx.destination);}catch(e){}
-   if(dest.stream.getAudioTracks().length>0) audioTrack=dest.stream.getAudioTracks()[0];
- }catch(e){
-   try{const tmp=v.captureStream ? v.captureStream() : v.mozCaptureStream(); if(tmp.getAudioTracks().length>0) audioTrack=tmp.getAudioTracks()[0];}catch(e2){}
- }
- const mixed=new MediaStream(); mixed.addTrack(videoTrack); if(audioTrack) mixed.addTrack(audioTrack);
- const mime=MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' : 'video/mp4';
- const rec=new MediaRecorder(mixed,{mimeType:mime, videoBitsPerSecond:videoBps});
- let chunks=[]; rec.ondataavailable=e=>{if(e.data.size>0) chunks.push(e.data);};
- rec.onstop=()=>{
-   outputBlob=new Blob(chunks,{type:"video/mp4"});
-   if(outputURL) URL.revokeObjectURL(outputURL);
-   outputURL=URL.createObjectURL(outputBlob);
-   $("beforeSize").textContent=formatSize(selectedFile.size);
-   $("afterSize").textContent=formatSize(outputBlob.size);
-   $("resultMessage").textContent=`Original ${formatSize(selectedFile.size)} → ${formatSize(outputBlob.size)} | Target ${selectedSize}MB`;
-   $("outputVideo").src=outputURL; $("outputVideo").classList.remove("hidden"); $("outputVideo").load();
-   $("resultBox").classList.remove("hidden"); $("progressBox").classList.add("hidden");
-   busy=false; $("compressBtn").disabled=false; $("compressBtn").textContent=`⚡ Compress Video to ${selectedSize} MB`;
-   if(audioCtx) audioCtx.close();
- };
- v.currentTime=0; v.muted=false; v.volume=1; try{await v.play();}catch(e){}
- rec.start(100);
- const iv=setInterval(()=>{
-   if(v.ended || v.paused || v.currentTime>=videoDuration){ clearInterval(iv); rec.stop(); v.pause(); return; }
-   ctx.drawImage(v,0,0,c.width,c.height);
-   const p=Math.round((v.currentTime/videoDuration)*100);
-   $("progressBar").style.width=p+"%"; $("percentText").textContent=p+"%"; $("statusText").textContent=`Compressing to ${selectedSize}MB - ${p}%`;
- },33);
-};
-$("downloadBtn").onclick=()=>{
- if(!outputBlob) return;
- const a=document.createElement("a"); a.href=outputURL;
- a.download=selectedFile.name.replace(/\.[^/.]+$/,"")+`-compressed-${selectedSize}MB.mp4`;
- a.click();
-};
-</script>
+<body>
+<header><a href="/">NEXORA Tools</a></header>
+<main>
+<h1>Video Compression Quality Guide</h1>
+<p>Need to video compression quality and size? This page explains the workflow and takes you to the same NEXORA video compressor used for every target-size and use-case guide.</p>
+<a class="cta" href="/video-compressor/">Open Free Video Compressor →</a>
+<h2>How to use the video compressor</h2>
+<ol>
+<li>Open the main NEXORA video compressor.</li>
+<li>Select a video file from your device.</li>
+<li>Choose the closest available target size in MB.</li>
+<li>Start compression and keep the browser tab open.</li>
+<li>Preview the result, check its actual file size, then download it.</li>
+</ol>
+<h2>About video compression quality and size</h2>
+<p>Smaller target sizes usually require lower bitrate, resolution or both. Inspect fine details, motion and audio before using the output.</p>
+<p>Smaller target sizes usually require lower bitrate, resolution or both. Inspect fine details, motion and audio before using the output. The main compressor is a single shared tool; this page is an informational guide and does not run a separate compression engine.</p>
+<div class="note"><strong>Important:</strong> The selected MB value is a target, not an exact-size guarantee. Output size and quality depend on the source video's duration, resolution, bitrate, browser, device and codec support. Always check the actual output before sharing or submitting it.</div>
+<h2>Frequently asked questions</h2>
+<h3>Is this tool free?</h3>
+<p>The NEXORA compressor is offered as a free browser-based tool. No account is required to open the compressor.</p>
+<h3>Will the output be exactly selected MB target?</h3>
+<p>Not necessarily. The selected size is a target estimate. Check the actual exported size after processing.</p>
+<h3>Does it work on every phone and browser?</h3>
+<p>No. Video decoding, MediaRecorder, audio capture and available memory differ by browser and device. Try a short sample first.</p>
+<h3>Does compression reduce quality?</h3>
+<p>It can. Smaller target sizes generally require stronger compression. Preview the output and choose a larger target if quality matters more than file size.</p>
+<a class="cta" href="/video-compressor/">Compress a Video Now →</a>
+</main>
+<footer>© 2026 NEXORA Tools · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></footer>
 </body></html>
