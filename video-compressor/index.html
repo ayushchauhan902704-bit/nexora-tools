@@ -61,7 +61,26 @@ img{loading:lazy}
 <div id="fileInfo" class="hidden mt-4 bg-gray-50 rounded-xl p-3"><p id="fileName" class="font-bold text-sm break-all"></p><div class="flex justify-between text-xs text-gray-500 mt-2"><span>Original Size</span><b id="originalSize"></b></div><div class="flex justify-between text-xs text-gray-500 mt-1"><span>Duration</span><b id="durationText"></b></div><div class="flex justify-between text-xs text-gray-500 mt-1"><span>Resolution</span><b id="resolutionText"></b></div></div>
 <div id="previewBox" class="hidden mt-4"><p class="font-bold text-sm mb-2">Preview</p><video id="originalVideo" controls playsinline class="w-full rounded-xl max-h-64"></video></div>
 <canvas id="canvas" class="hidden"></canvas>
-<div class="mt-6"><h2 class="font-bold text-base">Choose Target Size</h2><div class="grid grid-cols-4 gap-2 mt-4"><button class="sz selected rounded-xl py-3 font-bold text-sm" data-size="5">5 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="8">8 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="10">10 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="16">16 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="20">20 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="25">25 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="50">50 MB</button><button class="sz rounded-xl py-3 font-bold text-sm" data-size="100">100 MB</button></div></div>
+<div class="mt-6">
+<h2 class="font-bold text-base">Choose Target Size - Exact MB Guarantee</h2>
+<div class="grid grid-cols-4 gap-2 mt-4">
+<button class="sz selected rounded-xl py-3 font-bold text-sm" data-size="5">5 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="8">8 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="10">10 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="16">16 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="20">20 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="25">25 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="50">50 MB</button>
+<button class="sz rounded-xl py-3 font-bold text-sm" data-size="100">100 MB</button>
+</div>
+<!-- CUSTOM MB INPUT - NEW ADDED ONLY THIS -->
+<div style="margin-top:14px;display:flex;gap:8px;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px 14px">
+<span style="font-size:13px;font-weight:800;color:#9a3412">🎯 Custom:</span>
+<input id="customSizeInput" type="number" min="1" max="500" placeholder="Enter MB - e.g. 7, 12, 33" style="flex:1;border:none;background:transparent;font-weight:700;font-size:14px;outline:none;color:#111" oninput="setCustomSize(this.value)">
+<span style="font-size:12px;font-weight:700;color:#c2410c">MB</span>
+</div>
+<p style="font-size:10px;color:#9ca3af;margin-top:8px;text-align:center">16MB for WhatsApp, 8MB for Discord, 25MB for Email - Or type custom MB above!</p>
+</div>
 <div id="progressBox" class="hidden mt-6"><div class="flex justify-between text-sm mb-2"><b id="statusText">Compressing...</b><b id="percentText" class="text-orange-600">0%</b></div><div class="h-3 rounded-full bg-gray-200 overflow-hidden"><div id="progressBar" class="progress-fill bg-orange-500 h-full" style="width:0%"></div></div></div>
 <button id="compressBtn" class="w-full mt-6 bg-orange-500 text-white font-bold py-4 rounded-xl text-lg">⚡ Compress Video to 5 MB</button>
 <div id="resultBox" class="hidden mt-6 border border-green-200 bg-green-50 rounded-2xl p-4"><h3 class="text-green-800 font-extrabold text-xl">✓ Compression Complete!</h3><div class="grid grid-cols-2 gap-3 mt-4"><div class="bg-white rounded-xl p-3"><p class="text-xs text-gray-500">Original</p><p id="beforeSize" class="font-extrabold text-lg"></p></div><div class="bg-white rounded-xl p-3"><p class="text-xs text-gray-500">Final</p><p id="afterSize" class="font-extrabold text-lg text-green-700"></p></div></div><p id="resultMessage" class="text-sm text-green-800 mt-4"></p><video id="outputVideo" controls playsinline class="hidden w-full rounded-xl mt-4 max-h-64"></video><button id="downloadBtn" class="w-full mt-4 bg-green-600 text-white py-4 rounded-xl font-bold">⬇ Download Compressed Video</button></div>
@@ -116,8 +135,16 @@ document.querySelectorAll(".sz").forEach(b=>{
   document.querySelectorAll(".sz").forEach(x=>x.classList.remove("selected"));
   b.classList.add("selected"); selectedSize=Number(b.dataset.size);
   $("compressBtn").textContent=`⚡ Compress Video to ${selectedSize} MB`;
+  if($("customSizeInput")) $("customSizeInput").value="";
  };
 });
+function setCustomSize(val){
+ let num=Number(val);
+ if(!num || num < 1 || num > 500) return;
+ document.querySelectorAll(".sz").forEach(x=>x.classList.remove("selected"));
+ selectedSize=num;
+ $("compressBtn").textContent=`⚡ Compress Video to ${selectedSize} MB`;
+}
 $("compressBtn").onclick=async()=>{
  if(busy) return;
  if(!selectedFile){$("errorBox").textContent="Upload video first"; $("errorBox").classList.remove("hidden"); return;}
@@ -187,4 +214,4 @@ $("downloadBtn").onclick=()=>{
 <script src="/auto-translate.js"></script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
-</html> 
+</html>
