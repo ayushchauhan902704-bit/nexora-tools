@@ -9,6 +9,13 @@
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="NEXORA Tools - Ayush Chauhan">
 <link rel="canonical" href="https://nexora-tools-drab.vercel.app/image-dpi-changer.html">
+
+<link rel="alternate" hreflang="en" href="https://nexora-tools-drab.vercel.app/image-dpi-changer.html" />
+<link rel="alternate" hreflang="bn" href="https://nexora-tools-drab.vercel.app/image-dpi-changer.html?lang=bn" />
+<link rel="alternate" hreflang="hi" href="https://nexora-tools-drab.vercel.app/image-dpi-changer.html?lang=hi" />
+<link rel="alternate" hreflang="pt" href="https://nexora-tools-drab.vercel.app/image-dpi-changer.html?lang=pt" />
+<link rel="alternate" hreflang="x-default" href="https://nexora-tools-drab.vercel.app/image-dpi-changer.html" />
+
 <meta property="og:url" content="https://nexora-tools-drab.vercel.app/image-dpi-changer.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Image DPI Changer - 72 to 300 DPI - Worldwide No.1 | NEXORA">
@@ -37,38 +44,6 @@ gtag('config', 'G-61NV39S2VE');
   "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
   "author":{"@type":"Person","name":"Ayush Chauhan"},
   "aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","ratingCount":"72341"}
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"BreadcrumbList",
-  "itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Home","item":"https://nexora-tools-drab.vercel.app/"},
-    {"@type":"ListItem","position":2,"name":"Image DPI Changer","item":"https://nexora-tools-drab.vercel.app/image-dpi-changer.html"}
-  ]
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"Organization",
-  "name":"NEXORA Tools",
-  "url":"https://nexora-tools-drab.vercel.app/",
-  "logo":"https://nexora-tools-drab.vercel.app/og-image.png",
-  "founder":"Ayush Chauhan",
-  "address":{"@type":"PostalAddress","addressLocality":"Dehradun","addressRegion":"Uttarakhand","addressCountry":"India"}
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"FAQPage",
-  "mainEntity":[
-    {"@type":"Question","name":"Is this Image DPI Changer Free?","acceptedAnswer":{"@type":"Answer","text":"Yes, NEXORA Image DPI Changer is 100% free forever, no watermark, no signup, unlimited use."}},
-    {"@type":"Question","name":"Is my data Safe?","acceptedAnswer":{"@type":"Answer","text":"Yes, 100% safe. Images are processed locally in your browser, never uploaded to server."}},
-    {"@type":"Question","name":"How accurate is this tool?","acceptedAnswer":{"@type":"Answer","text":"This tool accurately changes DPI metadata (pHYs chunk for PNG, JFIF for JPG) to 72-1200 DPI without losing quality or pixels."}}
-  ]
 }
 </script>
 
@@ -148,15 +123,15 @@ footer{margin-top:36px;padding:22px 15px;text-align:center;border-top:1px solid 
 <main class="container">
 
 <section class="hero">
-<div class="tag">WORLDWIDE NO.1 • FREE DPI TOOL</div>
-<h1>Image DPI Changer - Change 72 to 300 DPI Instantly</h1>
-<p>Change your JPG, PNG or HEIC image DPI to 72, 150, 300, 600 or custom value. Best for printing, Amazon, passport & worldwide docs. 100% Private - No Watermark.</p>
+<div class="tag" id="t-tag">WORLDWIDE NO.1 • FREE DPI TOOL</div>
+<h1 id="t-title">Image DPI Changer - Change 72 to 300 DPI Instantly</h1>
+<p id="t-desc">Change your JPG, PNG or HEIC image DPI to 72, 150, 300, 600 or custom value. Best for printing, Amazon, passport & worldwide docs. 100% Private - No Watermark.</p>
 </section>
 
 <section class="tool">
 <label for="fileInput" class="upload" id="uploadBox">
 <div class="upload-icon">📏</div>
-<h2>Upload Your Image</h2>
+<h2 id="t-upload">Upload Your Image</h2>
 <p>Tap to choose or <strong>browse files</strong> - JPG, PNG, HEIC supported</p>
 </label>
 <input type="file" id="fileInput" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif">
@@ -170,7 +145,7 @@ footer{margin-top:36px;padding:22px 15px;text-align:center;border-top:1px solid 
 </div>
 
 <div class="settings">
-<h3>Select DPI</h3>
+<h3 id="t-select">Select DPI</h3>
 <div class="preset">
 <button type="button" data-dpi="72">72 DPI</button>
 <button type="button" data-dpi="150">150 DPI</button>
@@ -178,13 +153,13 @@ footer{margin-top:36px;padding:22px 15px;text-align:center;border-top:1px solid 
 <button type="button" data-dpi="600">600 DPI</button>
 </div>
 <div class="custom">
-<label for="dpiInput">Or enter custom DPI (1–1200)</label>
+<label for="dpiInput" id="t-custom-label">Or enter custom DPI (1–1200)</label>
 <div class="input-wrap">
 <input type="number" id="dpiInput" min="1" max="1200" step="1" value="300">
 <span class="dpi-unit">DPI</span>
 </div>
 </div>
-<div class="info"><strong>Important:</strong> Changing DPI does not add pixels or blur. It changes print density for high-quality printing.</div>
+<div class="info" id="t-info"><strong>Important:</strong> Changing DPI does not add pixels or blur. It changes print density for high-quality printing.</div>
 <div id="status" role="alert" aria-live="polite"></div>
 <button type="button" class="download" id="downloadBtn" disabled>Download Image - 300 DPI →</button>
 <p class="privacy">🔒 100% Private - Images processed in browser, never uploaded. E-E-A-T Verified • Made in India</p>
@@ -192,33 +167,14 @@ footer{margin-top:36px;padding:22px 15px;text-align:center;border-top:1px solid 
 </section>
 
 <div class="content-box">
-<h2>What is Image DPI Changer (Tool Name) - Worldwide No.1 Tool?</h2>
+<h2 id="t-what">What is Image DPI Changer (Tool Name) - Worldwide No.1 Tool?</h2>
 <p>NEXORA Image DPI Changer is the worldwide No.1 free online tool to change image DPI from 72 to 300 DPI instantly. DPI means Dots Per Inch - it tells printer how dense image should be printed. Unlike other tools that compress or add watermark, NEXORA keeps original pixels, quality and converts DPI metadata correctly for JPG (JFIF) and PNG (pHYs chunk). Used by 72k+ users worldwide from USA, Brazil, India, Indonesia, Nigeria, Germany for Amazon product photos, passport photos, printing shops, and government forms. 100% free, no watermark, HD quality, works on iPhone, Android, PC. Auto language support - works in all languages.</p>
 
-<h3>How to use Image DPI Changer - 3-4 Step</h3>
-<p><b>Step 1:</b> Click upload box and choose JPG, PNG or HEIC image.<br>
-<b>Step 2:</b> Select preset 72, 150, 300, 600 DPI or enter custom DPI 1-1200.<br>
+<h3 id="t-how_title">How to use Image DPI Changer - 3-4 Step</h3>
+<p><b id="t-step-label">Step 1:</b> <span id="t-step1">Upload your image</span><br>
+<b>Step 2:</b> <span id="t-step2">Select 300 DPI and Download</span><br>
 <b>Step 3:</b> Click Download Image button - your new DPI image saves instantly.<br>
 <b>Step 4:</b> Use for printing, Amazon, Shopify, passport, visa worldwide.</p>
-
-<h3>Features / Benefits - Why NEXORA Best in World?</h3>
-<ul>
-<li>✅ Change 72 DPI to 300 DPI without losing quality - No blur, original pixels safe</li>
-<li>✅ JPG, PNG, HEIC supported - Converts HEIC to JPG automatically</li>
-<li>✅ No Watermark, Free Forever, Unlimited, No Signup needed</li>
-<li>✅ 100% Private - E-E-A-T Trusted - Image never leaves your phone, processed in browser</li>
-<li>✅ Worldwide Use - For Amazon, Printing, Passport, Visa, All Countries</li>
-<li>✅ Fast & Light - Lazy loading, Core Web Vitals optimized, < 65 minute load on slow net</li>
-<li>✅ Mobile Friendly - Works on all devices</li>
-</ul>
-</div>
-
-<div class="faq">
-<h2>FAQ - Image DPI Changer</h2>
-<div class="faq-item"><h3>Q.1 Is this Image DPI Changer Free?</h3><p>Yes, 100% free forever. No watermark, no limits, no signup. Made by NEXORA Dehradun.</p></div>
-<div class="faq-item"><h3>Q.2 Is my data Safe ?</h3><p>Yes, 100% safe and private. Your image is processed locally in browser using JavaScript. We never upload to server. E-E-A-T verified safe tool.</p></div>
-<div class="faq-item"><h3>Q.3 How accurate is This tool?</h3><p>Very accurate - Uses real JFIF header for JPG and pHYs chunk for PNG. Pixels Per Meter = DPI / 0.0254 correctly calculated. Trusted by printing shops worldwide.</p></div>
-<p style="margin-top:12px;font-size:11px">Try Also: <a href="/compress-image" style="color:#d97706;font-weight:800">Compress Image</a> | <a href="/passport-size-photo" style="color:#d97706;font-weight:800">Passport Photo</a> | <a href="/background-remover" style="color:#d97706;font-weight:800">Background Remover</a> | <a href="/" style="color:#d97706;font-weight:800">All Tools</a></p>
 </div>
 
 <div class="footer-box">
@@ -227,15 +183,11 @@ footer{margin-top:36px;padding:22px 15px;text-align:center;border-top:1px solid 
 📧 Email: <a href="mailto:ayushchauhan902704@gmail.com">ayushchauhan902704@gmail.com</a><br>
 📱 Phone: <a href="tel:+919389641559">+91 9389641559</a><br>
 📍 Dehradun, Uttarakhand, India<br>
-🔗 <a href="https://www.linkedin.com/in/ayush-chauhan-0b0960444" target="_blank">LinkedIn</a> + <a href="https://instagram.com/ius.chauhan" target="_blank">Instagram - ius.chauhan</a>
-</div>
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px"><a href="/">Home</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/disclaimer">Disclaimer</a><a href="/sitemap.xml">Sitemap</a></div></div>
-<div><div>© 2026 NEXORA Tools</div><div>Made in India 🇮🇳 | 72k+ Users</div><div style="margin-top:8px"><a href="/">← Back to All Tools</a></div></div>
 </div>
 </div>
-
-<p class="last-update">Last Update: 02 Nov 2026 • Mobile Friendly • Canonical + OG Tags Added • Internal Linking • Speed + Core Web Vitals Optimized</p>
-
+<div><div>© 2026 NEXORA Tools</div><div>Made in India 🇮🇳 | 72k+ Users</div></div>
+</div>
+</div>
 </main>
 <footer>
 <p>© 2026 NEXORA Tools - Image DPI Changer - All Rights Reserved - Dehradun, India</p>
@@ -536,6 +488,38 @@ downloadBtn.addEventListener("click", async () => {
 });
 updatePreset();
 </script>
-<script src="/nexora-language.js"></script>
+
+<script>
+// NEXORA Auto Language System - Final
+async function loadNexoraLanguage(){
+  try {
+    const params = new URLSearchParams(window.location.search);
+    let lang = params.get('lang') || navigator.language.slice(0,2).toLowerCase();
+    if(!['bn','hi','pt'].includes(lang)) lang = 'en';
+    
+    if(lang === 'en') return; // English is default HTML
+
+    const res = await fetch('./locales/'+lang+'.json');
+    if(!res.ok) return;
+    const t = await res.json();
+
+    const set = (id, val) => { const el = document.getElementById(id); if(el && val) el.innerText = val; };
+
+    set('t-title', t.title);
+    set('t-desc', t.desc);
+    set('t-upload', t.upload);
+    set('t-how_title', t.how_to_title);
+    set('t-step1', t.how_step_1);
+    set('t-step2', t.how_step_2);
+    if(t.select_dpi) set('t-select', t.select_dpi);
+    if(t.custom_label) set('t-custom-label', t.custom_label);
+    if(t.important) set('t-info', t.important);
+
+    document.documentElement.lang = lang;
+  } catch(e){ console.log('Lang error', e); }
+}
+loadNexoraLanguage();
+</script>
+
 </body>
 </html>
