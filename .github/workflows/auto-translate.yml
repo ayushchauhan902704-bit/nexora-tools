@@ -1,0 +1,63 @@
+
+name: NEXORA Auto Translate
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inject-translation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add translation to all HTML pages
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          code = '''
+          <div id="google_translate_element" style="display:none"></div>
+          <script src="/auto-translate.js"></script>
+          <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+          '''
+
+          for file in Path(".").rglob("*.html"):
+              if ".git" in file.parts:
+                  continue
+
+              content = file.read_text(encoding="utf-8")
+
+              if "auto-translate.js" in content:
+                  print(f"Already connected: {file}")
+                  continue
+
+              if re.search(r"</body\s*>", content, re.IGNORECASE):
+                  content = re.sub(
+                      r"</body\s*>",
+                      lambda match: code + "\n" + match.group(0),
+                      content,
+                      count=1,
+                      flags=re.IGNORECASE
+                  )
+                  file.write_text(content, encoding="utf-8")
+                  print(f"Connected: {file}")
+              else:
+                  print(f"Skipped (no body tag): {file}")
+          PY
+
+      - name: Save changes
+        run: |
+          git config user.name "NEXORA Bot"
+          git config user.email "nexora-bot@users.noreply.github.com"
+          git add .
+          git commit -m "Automatically connect translation to all HTML pages" || echo "No changes to save"
+          git push
