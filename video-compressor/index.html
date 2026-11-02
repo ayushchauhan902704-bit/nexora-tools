@@ -161,5 +161,10 @@ $("downloadBtn").addEventListener("click",()=>{if(!outputBlob||!outputURL){showE
 resetBtn.addEventListener("click",()=>{if(isCompressing) return;selectedFile=null;outputBlob=null;if(sourceURL) URL.revokeObjectURL(sourceURL);if(outputURL) URL.revokeObjectURL(outputURL);sourceURL=null;outputURL=null;sourceVideo.pause();sourceVideo.removeAttribute("src");sourceVideo.load();$("outputPreview").pause();$("outputPreview").removeAttribute("src");$("outputPreview").style.display="none";$("fileInfo").style.display="none";$("resultBox").style.display="none";$("progressWrap").style.display="none";$("errorBox").style.display="none";videoInput.value="";compressBtn.disabled=true;$("targetSize").value="10";$("customSizeBox").style.display="none";$("customSize").value="10";$("resolution").value="720";$("format").value="auto";$("fps").value="30";$("quality").value="70";$("qualityValue").textContent="70%";$("keepAudio").checked=true;});
 })();
 </script>
+
+<div id="google_translate_element" style="display:none"></div>
+<script src="/auto-translate.js"></script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
 </body>
 </html>

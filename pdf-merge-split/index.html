@@ -155,7 +155,12 @@ document.getElementById('splitInput').onchange=async e=>{
         let win=null;
         if(isIOS){
           win=window.open('about:blank','_blank');
-          if(win){ win.document.write('<body style="font-family:sans-serif;text-align:center;padding:40px"><h2>⏳ Page '+(i+1)+' bana raha hu...</h2></body>'); }
+          if(win){ win.document.write('<body style="font-family:sans-serif;text-align:center;padding:40px"><h2>⏳ Page '+(i+1)+' bana raha hu...</h2>
+<div id="google_translate_element" style="display:none"></div>
+<script src="/auto-translate.js"></script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+</body>'); }
         }
         const newPdf=await PDFDocument.create();
         const [copied]=await newPdf.copyPages(pdf,[i]);
