@@ -75,4 +75,5 @@
 
 <script>function count(){let t=document.getElementById('txt').value; let withSpace=t.length; let withoutSpace=t.replace(/\s/g,'').length; let words=t.trim()?t.trim().split(/\s+/).length:0; let sentences=t.split(/[.!?]+/).filter(s=>s.trim()).length; document.getElementById('res').innerText=`Characters: ${withSpace} (with spaces) | ${withoutSpace} (without spaces) | Words: ${words} | Sentences: ${sentences}`}</script>
 <script src="/nexora-language.js"></script>
+</body>
 </html>
