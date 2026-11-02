@@ -42,13 +42,30 @@ export default function handler(req, res) {
     { loc: `${baseUrl}/love-calculator/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/pdf-merge-split/`, priority: '0.8', changefreq: 'weekly' },
 
-    // BLOG CLUSTER - NEW ADDED - GLOBAL
-    { loc: `${baseUrl}/blog/how-to-compress-image-to-20kb/`, priority: '0.8', changefreq: 'weekly' },
+    // BLOG MAIN PAGE
+    { loc: `${baseUrl}/blog/`, priority: '0.9', changefreq: 'daily' },
+
+    // PHOTO 6 BLOGS - CORRECTED
+    { loc: `${baseUrl}/blog/how-to-compress-photo-to-20kb-for-upsc/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/blog/how-to-compress-image-to-30kb/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/blog/how-to-compress-image-to-50kb/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/blog/how-to-compress-image-to-100kb/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/blog/how-to-compress-image-to-200kb/`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/blog/how-to-compress-image-to-500kb/`, priority: '0.8', changefreq: 'weekly' },
+
+    // VIDEO 12 BLOGS
+    { loc: `${baseUrl}/blog/best-free-video-compressor-online/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-without-losing-quality/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/compress-video-for-instagram-reels-tiktok/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-on-iphone-free/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-on-android/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-for-email-gmail/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-mp4-video-free/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-to-25mb-for-discord/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-to-50mb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/compress-video-for-whatsapp-20mb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/compress-video-for-whatsapp-16mb/`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/how-to-compress-video-to-25mb/`, priority: '0.8', changefreq: 'weekly' },
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
