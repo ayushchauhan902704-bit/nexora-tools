@@ -1,247 +1,224 @@
 
+/* ==========================================
+   NEXORA AUTO + MANUAL LANGUAGE TRANSLATOR
+   ========================================== */
+
 (function () {
-    "use strict";
+  "use strict";
 
-    const LANGUAGES = {
-        en: "English",
-        hi: "Hindi",
-        es: "Spanish",
-        fr: "French",
-        de: "German",
-        pt: "Portuguese",
-        ar: "Arabic",
-        bn: "Bengali",
-        ur: "Urdu",
-        zh-CN: "Chinese",
-        ja: "Japanese",
-        ko: "Korean",
-        ru: "Russian",
-        it: "Italian",
-        nl: "Dutch",
-        tr: "Turkish",
-        id: "Indonesian",
-        vi: "Vietnamese",
-        th: "Thai",
-        pl: "Polish",
-        uk: "Ukrainian",
-        fa: "Persian",
-        ta: "Tamil",
-        te: "Telugu",
-        mr: "Marathi",
-        gu: "Gujarati",
-        pa: "Punjabi",
-        sw: "Swahili"
-    };
+  const LANGUAGES = {
+    auto: "🌐 Automatic",
+    en: "🇬🇧 English",
+    hi: "🇮🇳 Hindi",
+    es: "🇪🇸 Spanish",
+    fr: "🇫🇷 French",
+    de: "🇩🇪 German",
+    pt: "🇵🇹 Portuguese",
+    ar: "🇸🇦 Arabic",
+    bn: "🇧🇩 Bengali",
+    ur: "🇵🇰 Urdu",
+    zh-CN: "🇨🇳 Chinese (Simplified)",
+    ja: "🇯🇵 Japanese",
+    ko: "🇰🇷 Korean",
+    ru: "🇷🇺 Russian",
+    it: "🇮🇹 Italian",
+    nl: "🇳🇱 Dutch",
+    tr: "🇹🇷 Turkish",
+    id: "🇮🇩 Indonesian",
+    vi: "🇻🇳 Vietnamese",
+    th: "🇹🇭 Thai",
+    pl: "🇵🇱 Polish",
+    uk: "🇺🇦 Ukrainian",
+    fa: "🇮🇷 Persian",
+    ta: "🇮🇳 Tamil",
+    te: "🇮🇳 Telugu",
+    mr: "🇮🇳 Marathi",
+    gu: "🇮🇳 Gujarati",
+    pa: "🇮🇳 Punjabi",
+    sw: "🇰🇪 Swahili"
+  };
 
-    const STORAGE_KEY = "nexora_language";
-    const DEFAULT_LANGUAGE = "en";
+  const STORAGE_KEY = "nexora_language";
 
-    function getCookie(name) {
-        const match = document.cookie.match(
-            new RegExp("(?:^|; )" + name + "=([^;]*)")
-        );
+  function getBrowserLanguage() {
+    const preferences = navigator.languages || [navigator.language || "en"];
 
-        return match ? decodeURIComponent(match[1]) : "";
+    for (const preference of preferences) {
+      const lang = preference.toLowerCase();
+
+      if (lang.startsWith("zh")) {
+        return lang.includes("tw") || lang.includes("hk")
+          ? "zh-TW"
+          : "zh-CN";
+      }
+
+      const code = lang.split("-")[0];
+
+      if (LANGUAGES[code]) {
+        return code;
+      }
     }
 
-    function setGoogleCookie(language) {
-        const value = language === "en" ? "" : "/en/" + language;
+    return "en";
+  }
 
-        document.cookie =
-            "googtrans=" + value +
-            "; path=/; max-age=" +
-            (language === "en" ? "0" : "31536000") +
-            "; SameSite=Lax";
+  function getSavedLanguage() {
+    try {
+      return localStorage.getItem(STORAGE_KEY) || "auto";
+    } catch (e) {
+      return "auto";
+    }
+  }
+
+  function getTargetLanguage() {
+    const saved = getSavedLanguage();
+
+    if (saved === "auto") {
+      return getBrowserLanguage();
     }
 
-    function getBrowserLanguage() {
-        const browserLanguages = navigator.languages || [
-            navigator.language || "en"
-        ];
+    return LANGUAGES[saved] ? saved : "en";
+  }
 
-        for (const browserLanguage of browserLanguages) {
-            const code = browserLanguage.toLowerCase();
+  function setGoogleCookie(language) {
+    const value = language === "en"
+      ? "/en/en"
+      : "/en/" + language;
 
-            if (LANGUAGES[code]) return code;
+    document.cookie =
+      "googtrans=" + value + ";path=/;SameSite=Lax";
+  }
 
-            const shortCode = code.split("-")[0];
+  function createLanguageSelector() {
+    if (document.getElementById("nexora-language-box")) return;
 
-            if (LANGUAGES[shortCode]) return shortCode;
+    const style = document.createElement("style");
+
+    style.textContent = `
+      #nexora-language-box {
+        position: fixed;
+        right: 15px;
+        bottom: 15px;
+        z-index: 999999;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 9px 11px;
+        box-shadow: 0 5px 25px rgba(0,0,0,.15);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: Arial, sans-serif;
+      }
+
+      #nexora-language-box label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #334155;
+      }
+
+      #nexora-language-select {
+        max-width: 165px;
+        padding: 7px 9px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: white;
+        color: #111827;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      #google_translate_element {
+        position: absolute !important;
+        left: -9999px !important;
+        top: 0 !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+      }
+
+      @media(max-width:480px) {
+        #nexora-language-box {
+          right: 10px;
+          bottom: 10px;
+          padding: 8px;
         }
-
-        return DEFAULT_LANGUAGE;
-    }
-
-    function getSelectedLanguage() {
-        try {
-            return localStorage.getItem(STORAGE_KEY) || null;
-        } catch (error) {
-            return null;
+        #nexora-language-box label {
+          font-size: 11px;
         }
-    }
-
-    function saveLanguage(language) {
-        try {
-            if (language === "auto") {
-                localStorage.removeItem(STORAGE_KEY);
-            } else {
-                localStorage.setItem(STORAGE_KEY, language);
-            }
-        } catch (error) {
-            console.warn("Language preference could not be saved.");
+        #nexora-language-select {
+          max-width: 145px;
+          font-size: 11px;
         }
-    }
+      }
+    `;
 
-    function getTargetLanguage() {
-        const saved = getSelectedLanguage();
+    document.head.appendChild(style);
 
-        if (saved && LANGUAGES[saved]) {
-            return saved;
-        }
+    const box = document.createElement("div");
+    box.id = "nexora-language-box";
 
-        return getBrowserLanguage();
-    }
+    const label = document.createElement("label");
+    label.htmlFor = "nexora-language-select";
+    label.textContent = "🌐 Language";
 
-    function getCurrentTranslation() {
-        const cookie = getCookie("googtrans");
-        const parts = cookie.split("/");
+    const select = document.createElement("select");
+    select.id = "nexora-language-select";
+    select.setAttribute("aria-label", "Choose website language");
 
-        return parts.length >= 3 ? parts[2] : "en";
-    }
+    Object.entries(LANGUAGES).forEach(([code, name]) => {
+      const option = document.createElement("option");
+      option.value = code;
+      option.textContent = name;
+      select.appendChild(option);
+    });
 
-    function applyLanguage(language) {
-        if (!LANGUAGES[language]) return;
+    select.value = getSavedLanguage();
 
-        saveLanguage(language);
-        setGoogleCookie(language);
+    select.addEventListener("change", function () {
+      const language = select.value;
 
-        if (getCurrentTranslation() !== language) {
-            location.reload();
-        }
-    }
+      try {
+        localStorage.setItem(STORAGE_KEY, language);
+      } catch (e) {}
 
-    function createLanguageSelector() {
-        if (document.getElementById("nexora-language-box")) return;
+      const target = language === "auto"
+        ? getBrowserLanguage()
+        : language;
 
-        const box = document.createElement("div");
-        box.id = "nexora-language-box";
+      setGoogleCookie(target);
 
-        box.innerHTML = `
-            <label for="nexora-language-select">
-                🌐 Language
-            </label>
-            <select id="nexora-language-select"
-                    aria-label="Choose website language">
-                <option value="auto">🌍 Auto Detect</option>
-                ${Object.entries(LANGUAGES).map(([code, name]) =>
-                    `<option value="${code}">${name}</option>`
-                ).join("")}
-            </select>
-        `;
+      // Reload so Google Translate can apply the selected language.
+      window.location.reload();
+    });
 
-        const style = document.createElement("style");
+    box.appendChild(label);
+    box.appendChild(select);
+    document.body.appendChild(box);
+  }
 
-        style.textContent = `
-            #nexora-language-box {
-                position: fixed;
-                right: 12px;
-                bottom: 15px;
-                z-index: 999999;
-                background: #ffffff;
-                color: #111827;
-                padding: 9px 11px;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                box-shadow: 0 4px 18px rgba(0,0,0,.13);
-                display: flex;
-                align-items: center;
-                gap: 7px;
-                font-family: Arial, sans-serif;
-                font-size: 12px;
-            }
+  // Choose the language before Google Translate loads.
+  setGoogleCookie(getTargetLanguage());
 
-            #nexora-language-box label {
-                font-weight: 700;
-                white-space: nowrap;
-            }
+  window.googleTranslateElementInit = function () {
+    if (!window.google || !google.translate) return;
 
-            #nexora-language-select {
-                max-width: 125px;
-                padding: 7px;
-                border: 1px solid #d1d5db;
-                border-radius: 7px;
-                background: white;
-                color: #111827;
-                font-size: 12px;
-                outline: none;
-            }
+    new google.translate.TranslateElement(
+      {
+        pageLanguage: "en",
+        includedLanguages:
+          "hi,es,fr,de,pt,ar,bn,ur,zh-CN,zh-TW,ja,ko,ru,it,nl,tr,id,vi,th,pl,uk,fa,ta,te,mr,gu,pa,sw",
+        autoDisplay: false
+      },
+      "google_translate_element"
+    );
+  };
 
-            #nexora-language-select:focus {
-                border-color: #6366f1;
-            }
-
-            @media(max-width:480px) {
-                #nexora-language-box {
-                    right: 8px;
-                    bottom: 10px;
-                    padding: 7px;
-                }
-            }
-        `;
-
-        document.head.appendChild(style);
-        document.body.appendChild(box);
-
-        const select = document.getElementById(
-            "nexora-language-select"
-        );
-
-        const saved = getSelectedLanguage();
-
-        select.value = saved && LANGUAGES[saved]
-            ? saved
-            : "auto";
-
-        select.addEventListener("change", function () {
-            const language = this.value === "auto"
-                ? getBrowserLanguage()
-                : this.value;
-
-            applyLanguage(language);
-        });
-    }
-
-    // Google Translate callback
-    window.googleTranslateElementInit = function () {
-        if (!window.google || !google.translate) return;
-
-        new google.translate.TranslateElement(
-            {
-                pageLanguage: "en",
-                includedLanguages: Object.keys(LANGUAGES).join(","),
-                autoDisplay: false,
-                multilanguagePage: true
-            },
-            "google_translate_element"
-        );
-    };
-
-    function initialize() {
-        createLanguageSelector();
-
-        const target = getTargetLanguage();
-        const current = getCurrentTranslation();
-
-        if (target !== current) {
-            setGoogleCookie(target);
-            location.reload();
-        }
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initialize);
-    } else {
-        initialize();
-    }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", createLanguageSelector);
+  } else {
+    createLanguageSelector();
+  }
 
 })();
