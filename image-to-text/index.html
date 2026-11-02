@@ -93,6 +93,6 @@ document.getElementById('clearBtn').addEventListener('click',()=>{imageInput.val
 document.getElementById('copyBtn').addEventListener('click',()=>{navigator.clipboard.writeText(resultText.value);const b=document.getElementById('copyBtn');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy Text',1500);});
 document.getElementById('downloadBtn').addEventListener('click',()=>{const blob=new Blob([resultText.value],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='nexora-extracted-text.txt';a.click();URL.revokeObjectURL(url);});
 </script>
-<div id="google_translate_element" style="display:none"></div><script src="/auto-translate.js"></script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script src="/nexora-language.js"></script>
 </body>
 </html>
