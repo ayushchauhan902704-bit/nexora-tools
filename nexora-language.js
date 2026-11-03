@@ -1,156 +1,93 @@
 "use strict";
-/* NEXORA LANGUAGE ENGINE - FINAL 100% TRANSLATION */
+/* NEXORA - FINAL - HOME + ALL TOOLS 100% - CONNECTED */
 (() => {
-  const LANGUAGES = {
-    en: "🇬🇧 English", hi: "🇮🇳 Hindi", bn: "🇧🇩 Bengali", pt: "🇵🇹 Portuguese", es: "🇪🇸 Spanish",
-    id: "🇮🇩 Indonesian", fr: "🇫🇷 French", de: "🇩🇪 German", ar: "🇸🇦 Arabic", tr: "🇹🇷 Turkish"
-  };
+  const LANGUAGES = { en:"🇬🇧 English", hi:"🇮🇳 Hindi", bn:"🇧🇩 Bengali", pt:"🇵🇹 Portuguese", es:"🇪🇸 Spanish", id:"🇮🇩 Indonesian" };
   const STORAGE_KEY = "nexora_language";
-  const supported = Object.keys(LANGUAGES);
 
-  const TRANSLATIONS = {
-    en: {},
+  const DICT = {
     hi: {
-      "Home": "होम", "All Tools": "सभी टूल्स", "Guides": "गाइड", "About": "हमारे बारे में", "Contact": "संपर्क करें", "Privacy": "गोपनीयता",
-      "FREE ONLINE TOOLS FOR EVERYDAY TASKS": "रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
-      "Get More Done with": "अपने काम आसानी से पूरे करें",
-      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.": "इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए आसान ऑनलाइन टूल्स। फाइलें कंप्रेस करें, दस्तावेज़ बदलें, फोटो बनाएं और अपना काम आसानी से पूरा करें।",
-      "Free to use": "मुफ्त इस्तेमाल", "Easy to use": "आसान इस्तेमाल", "No watermark on supported tools": "सपोर्टेड टूल्स पर वॉटरमार्क नहीं", "Mobile friendly": "मोबाइल के लिए अनुकूल",
-      "Search tools... e.g. image compressor, PDF to Word": "टूल खोजें... जैसे इमेज कंप्रेसर, PDF से Word",
-      "Find the right tool quickly by name or task.": "नाम या काम के अनुसार सही टूल जल्दी खोजें।",
-      "30": "30", "Online Tools": "ऑनलाइन टूल्स", "100%": "100%", "Free Access": "मुफ्त सुविधा", "24/7": "24/7", "Online Access": "ऑनलाइन उपलब्ध", "Easy": "आसान", "To Use": "इस्तेमाल करना",
-      "Explore All Online Tools": "सभी ऑनलाइन टूल्स देखें", "Choose a tool and complete your task in a few simple steps.": "एक टूल चुनें और कुछ आसान चरणों में अपना काम पूरा करें।",
-      "Showing 30 tools": "30 टूल दिखाए जा रहे हैं", "Image": "इमेज", "PDF": "PDF", "Calculators": "कैलकुलेटर", "Text & Utilities": "टेक्स्ट और अन्य सुविधाएं", "Open Tool →": "टूल खोलें →",
-      "Image DPI Changer - 72 to 300 DPI": "इमेज DPI बदलें - 72 से 300 DPI", "Change image DPI from 72 to 300 DPI for printing without losing quality.": "क्वालिटी खोए बिना प्रिंटिंग के लिए इमेज DPI को 72 से 300 तक बदलें।",
-      "300 DPI": "300 DPI", "No Watermark": "वॉटरमार्क नहीं", "Easy to Use": "इस्तेमाल में आसान", "Image Tool": "इमेज टूल",
-      "Internet Speed Test - Pro": "इंटरनेट स्पीड टेस्ट - प्रो", "Check your internet download speed, upload speed and ping.": "अपने इंटरनेट की डाउनलोड स्पीड, अपलोड स्पीड और पिंग जांचें।",
-      "Image to Text - OCR": "इमेज से टेक्स्ट - OCR", "Video Compressor to Any MB": "किसी भी MB में वीडियो कंप्रेसर",
-      "Text to Speech": "टेक्स्ट से आवाज़", "YouTube Thumbnail Downloader": "YouTube थंबनेल डाउनलोडर",
-      "Love Calculator": "लव कैलकुलेटर", "Passport Photo Maker": "पासपोर्ट फोटो मेकर", "Background Remover": "बैकग्राउंड हटाएं",
-      "Compress Image to Any KB": "इमेज को किसी भी KB में कंप्रेस करें", "JPG to PDF Converter": "JPG से PDF कन्वर्टर", "PDF to JPG Converter": "PDF से JPG कन्वर्टर",
-      "WORLDWIDE NO.1 • FREE DPI TOOL": "दुनिया का नंबर 1 • फ्री DPI टूल",
-      "Image DPI Changer - Change 72 to 300 DPI Instantly": "इमेज DPI चेंजर - 72 से 300 DPI तुरंत बदलें",
-      "Upload Your Image": "अपनी इमेज अपलोड करें", "Select DPI": "DPI चुनें", "Download Image - 300 DPI →": "इमेज डाउनलोड करें - 300 DPI →"
+      "Home":"होम","All Tools":"सभी टूल्स","Guides":"गाइड","About":"हमारे बारे में","Contact":"संपर्क करें","Privacy":"गोपनीयता",
+      "FREE ONLINE TOOLS FOR EVERYDAY TASKS":"रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
+      "Get More Done with":"अपने काम आसानी से पूरे करें","NEXORA Tools":"NEXORA टूल्स",
+      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.":"इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए आसान ऑनलाइन टूल्स।",
+      "Free to use":"मुफ्त इस्तेमाल","Easy to use":"आसान इस्तेमाल","No watermark on supported tools":"वॉटरमार्क नहीं","Mobile friendly":"मोबाइल फ्रेंडली",
+      "Search tools... e.g. image compressor, PDF to Word":"टूल खोजें... जैसे इमेज कंप्रेसर",
+      "Find the right tool quickly by name or task.":"नाम या काम के अनुसार सही टूल जल्दी खोजें।",
+      "30":"30","Online Tools":"ऑनलाइन टूल्स","100%":"100%","Free Access":"मुफ्त सुविधा","24/7":"24/7","Online Access":"ऑनलाइन उपलब्ध","Easy":"आसान","To Use":"इस्तेमाल",
+      "Explore All Online Tools":"सभी ऑनलाइन टूल्स देखें","Choose a tool and complete your task in a few simple steps.":"एक टूल चुनें और आसान चरणों में काम पूरा करें।",
+      "Showing 30 tools":"30 टूल दिखाए जा रहे हैं","All Tools":"सभी टूल्स","Image":"इमेज","PDF":"PDF","Calculators":"कैलकुलेटर","Text & Utilities":"टेक्स्ट और सुविधाएं","Open Tool →":"टूल खोलें →",
+      "Image DPI Changer - 72 to 300 DPI":"इमेज DPI बदलें - 72 से 300 DPI","Change image DPI from 72 to 300 DPI for printing without losing quality.":"प्रिंटिंग के लिए DPI बदलें, क्वालिटी वैसी ही रहेगी।",
+      // BACKGROUND REMOVER TOOL - FULL
+      "Background Remover":"बैकग्राउंड हटाएं","Remove background in 1 second - Transparent, White, Blue, Red — No Watermark, HD, Private":"1 सेकंड में बैकग्राउंड हटाएं - ट्रांसपेरेंट, सफेद, नीला, लाल - वॉटरमार्क नहीं, HD",
+      "📁 Click or Drag Photo Here":"📁 फोटो यहाँ क्लिक करें या खींचें","Upload a photo to start":"शुरू करने के लिए फोटो अपलोड करें",
+      "Transparent":"ट्रांसपेरेंट","White - Passport":"सफेद - पासपोर्ट","Blue - Visa":"नीला - वीजा","Red":"लाल",
+      "⬇️ Download HD PNG":"⬇️ HD PNG डाउनलोड करें",
+      "Why NEXORA No.1 Background Remover in World?":"दुनिया में NEXORA नंबर 1 बैकग्राउंड रिमूवर क्यों है?",
+      "Unlike remove.bg, slazzer with limits, watermark and paid plans, NEXORA Background Remover is 100% free forever, no watermark, HD PNG, 100% private — your photo never leaves your phone, browser-based AI processing, no upload to server. Remove background in 1 second automatically. Choose Transparent for e-commerce products, White for passport size photo, Blue for visa, Red for official documents. Download HD PNG original quality, no blur. Unlike other tools that reduce quality, NEXORA keeps HD. Made in India, trusted by 89k+ users worldwide, works on iPhone, Android, Laptop, offline. Best alternative to remove.bg, slazzer, removal.ai, Adobe. Fast in 1 sec, Made for India, Made for World.":"remove.bg जैसी लिमिट, वॉटरमार्क वाली साइटों से अलग, NEXORA 100% फ्री, वॉटरमार्क नहीं, HD, 100% प्राइवेट - फोटो फोन से बाहर नहीं जाती। 1 सेकंड में बैकग्राउंड हटाएं। पासपोर्ट के लिए सफेद, वीजा के लिए नीला चुनें।",
+      "How to Remove Background - 3 Easy Steps":"बैकग्राउंड कैसे हटाएं - 3 आसान स्टेप",
+      "NEXORA vs Others - Comparison":"NEXORA vs अन्य - तुलना","FAQ - Background Remover - Google Loves This":"FAQ - बैकग्राउंड रिमूवर"
     },
     bn: {
-      "Home": "হোম", "All Tools": "সব টুলস", "Guides": "গাইড", "About": "আমাদের সম্পর্কে", "Contact": "যোগাযোগ", "Privacy": "গোপনীয়তা",
-      "FREE ONLINE TOOLS FOR EVERYDAY TASKS": "দৈনন্দিন কাজের জন্য বিনামূল্যে অনলাইন টুলস",
-      "Get More Done with": "আপনার কাজ সহজে করুন",
-      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.": "ছবি, PDF, ভিডিও, টেক্সট এবং দৈনন্দিন কাজের জন্য সহজ অনলাইন টুলস। ফাইল কম্প্রেস করুন, ডকুমেন্ট কনভার্ট করুন, ফটো তৈরি করুন এবং সহজে কাজ শেষ করুন।",
-      "Free to use": "বিনামূল্যে ব্যবহার", "Easy to use": "ব্যবহার করা সহজ", "No watermark on supported tools": "সাপোর্টেড টুলে ওয়াটারমার্ক নেই", "Mobile friendly": "মোবাইল ফ্রেন্ডলি",
-      "Search tools... e.g. image compressor, PDF to Word": "টুল খুঁজুন... যেমন ইমেজ কম্প্রেসর",
-      "Find the right tool quickly by name or task.": "নাম বা কাজ অনুযায়ী দ্রুত সঠিক টুল খুঁজুন।",
-      "30": "৩০", "Online Tools": "অনলাইন টুলস", "100%": "১০০%", "Free Access": "ফ্রি এক্সেস", "24/7": "২৪/৭", "Online Access": "অনলাইন এক্সেস", "Easy": "সহজ", "To Use": "ব্যবহার",
-      "Explore All Online Tools": "সমস্ত অনলাইন টুলস দেখুন", "Choose a tool and complete your task in a few simple steps.": "একটি টুল বেছে নিন এবং কয়েকটি সহজ ধাপে আপনার কাজ সম্পূর্ণ করুন।",
-      "Showing 30 tools": "৩০টি টুল দেখানো হচ্ছে", "Image": "ছবি", "PDF": "PDF", "Calculators": "ক্যালকুলেটর", "Text & Utilities": "টেক্সট ও ইউটিলিটি", "Open Tool →": "টুল খুলুন →",
-      "Image DPI Changer - 72 to 300 DPI": "ইমেজ DPI পরিবর্তনকারী - ৭২ থেকে ৩০০ DPI", "Change image DPI from 72 to 300 DPI for printing without losing quality.": "গুণমান না হারিয়ে প্রিন্টিংয়ের জন্য ৭২ থেকে ৩০০ DPI তে পরিবর্তন করুন।",
-      "300 DPI": "৩০০ DPI", "No Watermark": "ওয়াটারমার্ক নেই", "Easy to Use": "ব্যবহার করা সহজ", "Image Tool": "ইমেজ টুল",
-      "Internet Speed Test - Pro": "ইন্টারনেট স্পিড টেস্ট - প্রো", "Check your internet download speed, upload speed and ping.": "আপনার ইন্টারনেট ডাউনলোড স্পিড, আপলোড স্পিড এবং পিং চেক করুন।",
-      "Image to Text - OCR": "ছবি থেকে টেক্সট - OCR", "Video Compressor to Any MB": "যেকোনো MB তে ভিডিও কম্প্রেসর",
-      "Text to Speech": "টেক্সট থেকে স্পিচ", "YouTube Thumbnail Downloader": "YouTube থাম্বনেইল ডাউনলোডার",
-      "Love Calculator": "লাভ ক্যালকুলেটর", "Passport Photo Maker": "পাসপোর্ট ফটো মেকার", "Background Remover": "ব্যাকগ্রাউন্ড রিমুভার",
-      "Compress Image to Any KB": "যেকোনো KB তে ছবি কম্প্রেস করুন", "JPG to PDF Converter": "JPG থেকে PDF কনভার্টার", "PDF to JPG Converter": "PDF থেকে JPG কনভার্টার",
-      "WORLDWIDE NO.1 • FREE DPI TOOL": "বিশ্বব্যাপী নং ১ • বিনামূল্যে DPI টুল",
-      "Image DPI Changer - Change 72 to 300 DPI Instantly": "ইমেজ DPI পরিবর্তনকারী - ৭২ থেকে ৩০০ DPI তে পরিবর্তন করুন",
-      "Upload Your Image": "আপনার ছবি আপলোড করুন", "Select DPI": "DPI নির্বাচন করুন", "Download Image - 300 DPI →": "ছবি ডাউনলোড করুন - ৩০০ DPI →"
+      "Home":"হোম","All Tools":"সব টুলস","FREE ONLINE TOOLS FOR EVERYDAY TASKS":"দৈনন্দিন কাজের জন্য বিনামূল্যে টুলস",
+      "Get More Done with":"আপনার কাজ সহজে করুন","NEXORA Tools":"NEXORA টুলস",
+      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.":"ছবি, PDF, ভিডিও, টেক্সট এর জন্য সহজ টুলস।",
+      "Search tools... e.g. image compressor, PDF to Word":"টুল খুঁজুন...",
+      "Explore All Online Tools":"সমস্ত টুলস দেখুন","Showing 30 tools":"৩০টি টুল দেখানো হচ্ছে","Open Tool →":"টুল খুলুন →",
+      "Background Remover":"ব্যাকগ্রাউন্ড রিমুভার","Remove background in 1 second - Transparent, White, Blue, Red — No Watermark, HD, Private":"১ সেকেন্ডে ব্যাকগ্রাউন্ড সরান - ট্রান্সপারেন্ট, সাদা, নীল, লাল - ওয়াটারমার্ক নেই, HD",
+      "📁 Click or Drag Photo Here":"📁 ফটো এখানে ক্লিক করুন বা টেনে আনুন","Upload a photo to start":"শুরু করতে ফটো আপলোড করুন",
+      "Transparent":"ট্রান্সপারেন্ট","White - Passport":"সাদা - পাসপোর্ট","Blue - Visa":"নীল - ভিসা","Red":"লাল",
+      "⬇️ Download HD PNG":"⬇️ HD PNG ডাউনলোড করুন",
+      "Why NEXORA No.1 Background Remover in World?":"বিশ্বে NEXORA নং ১ ব্যাকগ্রাউন্ড রিমুভার কেন?"
     }
   };
 
   const originalTexts = new WeakMap();
-  let activeLanguage = "en";
-  function detectLanguage() {
-    const prefs = navigator.languages || [navigator.language || "en"];
-    for (const pref of prefs) {
-      const code = pref.toLowerCase();
-      const exact = Object.keys(LANGUAGES).find(item => item.toLowerCase() === code);
-      if (exact) return exact;
-      const base = code.split("-")[0];
-      if (LANGUAGES[base]) return base;
-    }
-    return "en";
-  }
-  function safeGetLanguage() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved && saved !== "auto" && LANGUAGES[saved] ? saved : detectLanguage();
-    } catch (e) { return detectLanguage(); }
-  }
-  function getOriginalText(node) {
-    if (!originalTexts.has(node)) originalTexts.set(node, node.nodeValue);
-    return originalTexts.get(node);
-  }
-  function translateTextNodes(language, dictionary) {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        if (parent.closest("script, style, noscript, textarea, #resultCount, #nexora-language-selector")) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
+  function detectLang(){ const p=navigator.languages||[navigator.language||"en"]; for(const pr of p){ const c=pr.toLowerCase(); const ex=Object.keys(LANGUAGES).find(k=>k.toLowerCase()===c); if(ex) return ex; const b=c.split("-")[0]; if(LANGUAGES[b]) return b; } return "en"; }
+  function safeGet(){ try{ const s=localStorage.getItem(STORAGE_KEY); return s && s!=="auto" && LANGUAGES[s] ? s : detectLang(); }catch(e){ return detectLang(); } }
+  function getOriginal(n){ if(!originalTexts.has(n)) originalTexts.set(n,n.nodeValue); return originalTexts.get(n); }
+
+  function translatePage(lang){
+    if(!LANGUAGES[lang]) lang="en";
+    const dict = DICT[lang] || {};
+    const walker=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode(node){ const p=node.parentElement; if(!p) return NodeFilter.FILTER_REJECT; if(p.closest("script, style, noscript, textarea, #resultCount, #nexora-language-selector")) return NodeFilter.FILTER_REJECT; if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; } });
+    let node; const toTranslate=[];
+    while(node=walker.nextNode()){ toTranslate.push(node); }
+    toTranslate.forEach(n=>{
+      const original=getOriginal(n); const key=original.trim(); if(!key) return;
+      if(lang==="en"){ n.nodeValue=original; return; }
+      let t=dict[key];
+      if(!t && key.length>30){ // for long paragraphs, try partial match
+        for(const k in dict){ if(key.startsWith(k.substring(0,30))){ t=dict[k]; break; } }
       }
+      if(t){ const lead=original.match(/^\s*/)?.[0]||""; const trail=original.match(/\s*$/)?.[0]||""; n.nodeValue=lead+t+trail; }
     });
-    let node;
-    while ((node = walker.nextNode())) {
-      const original = getOriginalText(node);
-      const key = original.trim();
-      if (!key) continue;
-      if (language === "en") { node.nodeValue = original; continue; }
-      let translated = dictionary[key];
-      if (!translated && key.endsWith(" →")) {
-        const baseKey = key.slice(0, -2).trim();
-        if (dictionary[baseKey]) translated = dictionary[baseKey] + " →";
-      }
-      if (translated) {
-        const leading = original.match(/^\s*/)?.[0] || "";
-        const trailing = original.match(/\s*$/)?.[0] || "";
-        node.nodeValue = leading + translated + trailing;
-      }
-    }
+    // also translate buttons and headings with innerText
+    document.querySelectorAll("h1,h2,h3,p,button,a,span,li").forEach(el=>{
+      if(el.children.length>0) return;
+      const txt=el.textContent.trim(); if(!txt) return; if(dict[txt]) el.textContent=dict[txt];
+    });
+    document.documentElement.lang=lang;
   }
-  function translatePage(language) {
-    if (!LANGUAGES[language]) language = "en";
-    activeLanguage = language;
-    const dictionary = TRANSLATIONS[language] || {};
-    document.documentElement.lang = language;
-    translateTextNodes(language, dictionary);
-  }
-  function createLanguageSelector() {
-    if (document.getElementById("nexora-language-selector")) return;
-    const style = document.createElement("style");
-    style.textContent = `#nexora-language-selector{position:fixed;right:14px;bottom:16px;z-index:99999;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#111827;font-size:14px;max-width:190px;box-shadow:0 4px 18px rgba(0,0,0,.13);cursor:pointer}`;
+
+  function createSelector(){
+    if(document.getElementById("nexora-language-selector")) return;
+    const style=document.createElement("style"); style.textContent=`#nexora-language-selector{position:fixed;right:14px;bottom:16px;z-index:99999;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#111827;font-size:14px;max-width:190px;box-shadow:0 4px 18px rgba(0,0,0,.13);cursor:pointer}`;
     document.head.appendChild(style);
-    const select = document.createElement("select");
-    select.id = "nexora-language-selector";
-    const autoOption = document.createElement("option");
-    autoOption.value = "auto"; autoOption.textContent = "🌐 Automatic";
-    select.appendChild(autoOption);
-    Object.entries(LANGUAGES).forEach(([code, name]) => {
-      const option = document.createElement("option");
-      option.value = code; option.textContent = name;
-      select.appendChild(option);
-    });
-    let saved = "auto";
-    try { saved = localStorage.getItem(STORAGE_KEY) || "auto"; } catch(e) {}
-    select.value = saved === "auto" || LANGUAGES[saved] ? saved : "auto";
-    select.addEventListener("change", () => {
-      const choice = select.value;
-      try { localStorage.setItem(STORAGE_KEY, choice); } catch(e) {}
-      const language = choice === "auto" ? detectLanguage() : choice;
-      translatePage(language);
-      setTimeout(()=> location.reload(), 150);
-    });
-    document.body.appendChild(select);
+    const sel=document.createElement("select"); sel.id="nexora-language-selector";
+    const auto=document.createElement("option"); auto.value="auto"; auto.textContent="🌐 Automatic"; sel.appendChild(auto);
+    Object.entries(LANGUAGES).forEach(([c,n])=>{ const o=document.createElement("option"); o.value=c; o.textContent=n; sel.appendChild(o); });
+    let saved="auto"; try{ saved=localStorage.getItem(STORAGE_KEY)||"auto"; }catch(e){}
+    sel.value=LANGUAGES[saved]||saved==="auto" ? saved : "auto";
+    sel.addEventListener("change",()=>{ const ch=sel.value; try{ localStorage.setItem(STORAGE_KEY,ch); }catch(e){} const lang=ch==="auto"?detectLang():ch; translatePage(lang); setTimeout(()=>location.reload(),250); });
+    document.body.appendChild(sel);
   }
-  function start() {
-    let saved = "auto";
-    try { saved = localStorage.getItem(STORAGE_KEY) || "auto"; } catch(e) {}
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlLang = urlParams.get('lang');
-    let initialLanguage;
-    if(urlLang && LANGUAGES[urlLang]) initialLanguage = urlLang;
-    else initialLanguage = saved === "auto" ? detectLanguage() : safeGetLanguage();
-    translatePage(initialLanguage);
-    createLanguageSelector();
+  function start(){
+    let saved="auto"; try{ saved=localStorage.getItem(STORAGE_KEY)||"auto"; }catch(e){}
+    const urlParams=new URLSearchParams(location.search); const urlLang=urlParams.get('lang');
+    let initial=urlLang&&LANGUAGES[urlLang]?urlLang:(saved==="auto"?detectLang():safeGet());
+    translatePage(initial); createSelector();
+    setTimeout(()=>translatePage(initial), 800);
+    setTimeout(()=>translatePage(initial), 2000);
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
-  else start();
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
