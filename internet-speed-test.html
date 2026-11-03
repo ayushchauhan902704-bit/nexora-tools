@@ -1,165 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-61NV39S2VE');</script>
-<title>Internet Speed Test - Jio, Airtel, WiFi Speed Check HD | NEXORA</title>
-<meta name="description" content="Free Internet Speed Test by NEXORA - Check Jio, Airtel, Vi, WiFi Speed. Download, Upload, Ping, Jitter in 3 Sec. No Watermark HD, Private Browser-Based.">
-<meta name="author" content="NEXORA Tools - Ayush Chauhan">
-<meta name="keywords" content="internet speed test, wifi speed test, jio speed test, airtel speed test, fast.com alternative, ookla speed test, NEXORA speed test">
-<meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="https://nexora-tools-drab.vercel.app/internet-speed-test">
-<meta property="og:title" content="Internet Speed Test Pro - Jio, Airtel, WiFi Speed Check | NEXORA">
-<meta property="og:description" content="Fastest Speed Test - Download, Upload, Ping in 3 Sec. Private, No App, HD. Best Fast.com Alternative.">
-<meta property="og:url" content="https://nexora-tools-drab.vercel.app/internet-speed-test">
-<meta property="og:type" content="website">
-<meta property="og:image" content="https://nexora-tools-drab.vercel.app/og-image.png">
-<meta name="theme-color" content="#2563eb">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+"use strict";
+/* NEXORA - 100% FULL PAGE TRANSLATION - HOME + TOOLS */
+(() => {
+  const LANGUAGES = { en:"🇬🇧 English", hi:"🇮🇳 Hindi", bn:"🇧🇩 Bengali", pt:"🇵🇹 Portuguese", es:"🇪🇸 Spanish", id:"🇮🇩 Indonesian", fr:"🇫🇷 French", de:"🇩🇪 German", ar:"🇸🇦 Arabic", tr:"🇹🇷 Turkish" };
+  const STORAGE_KEY = "nexora_language";
+  
+  // PURE HOME + TOOL PAGES TRANSLATION
+  const DICT = {
+    hi: {
+      "Home":"होम","All Tools":"सभी टूल्स","Guides":"गाइड","About":"हमारे बारे में","Contact":"संपर्क करें","Privacy":"गोपनीयता","Explore Tools":"टूल्स देखें",
+      "FREE ONLINE TOOLS FOR EVERYDAY TASKS":"रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
+      "Get More Done with":"अपने काम आसानी से पूरे करें",
+      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.":"इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए आसान ऑनलाइन टूल्स। फाइलें कंप्रेस करें, दस्तावेज़ बदलें, फोटो बनाएं और अपना काम आसानी से पूरा करें।",
+      "Free to use":"मुफ्त इस्तेमाल","Easy to use":"आसान इस्तेमाल","No watermark on supported tools":"सपोर्टेड टूल्स पर वॉटरमार्क नहीं","Mobile friendly":"मोबाइल के लिए अनुकूल",
+      "Search tools... e.g. image compressor, PDF to Word":"टूल खोजें... जैसे इमेज कंप्रेसर, PDF से Word",
+      "Find the right tool quickly by name or task.":"नाम या काम के अनुसार सही टूल जल्दी खोजें।",
+      "Online Tools":"ऑनलाइन टूल्स","Free Access":"मुफ्त सुविधा","Online Access":"ऑनलाइन उपलब्ध","Easy":"आसान","To Use":"इस्तेमाल करना",
+      "Explore All Online Tools":"सभी ऑनलाइन टूल्स देखें","Choose a tool and complete your task in a few simple steps.":"एक टूल चुनें और कुछ आसान चरणों में अपना काम पूरा करें।",
+      "Showing 30 tools":"30 टूल दिखाए जा रहे हैं","All Tools":"सभी टूल्स","Image":"इमेज","PDF":"PDF","Calculators":"कैलकुलेटर","Text & Utilities":"टेक्स्ट और अन्य सुविधाएं","Open Tool →":"टूल खोलें →","Tool Open →":"टूल खोलें →",
+      "Image DPI Changer - 72 to 300 DPI":"इमेज DPI बदलें - 72 से 300 DPI","Change image DPI from 72 to 300 DPI for printing without losing quality.":"क्वालिटी खोए बिना प्रिंटिंग के लिए इमेज DPI को 72 से 300 तक बदलें।",
+      "WORLDWIDE NO.1 • FREE DPI TOOL":"दुनिया का नंबर 1 • फ्री DPI टूल",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly":"इमेज DPI चेंजर - 72 से 300 DPI तुरंत बदलें",
+      "Change your JPG, PNG or HEIC image DPI to 72, 150, 300, 600 or custom value. Best for printing, Amazon, passport & worldwide docs. 100% Private - No Watermark.":"अपनी JPG, PNG या HEIC इमेज का DPI 72, 150, 300, 600 या कस्टम में बदलें। प्रिंटिंग, Amazon, पासपोर्ट के लिए बेस्ट। 100% प्राइवेट - वॉटरमार्क नहीं।",
+      "Upload Your Image":"अपनी इमेज अपलोड करें","Tap to choose or browse files - JPG, PNG, HEIC supported":"टैप करके फाइल चुनें - JPG, PNG, HEIC सपोर्टेड",
+      "Select DPI":"DPI चुनें","72 DPI":"72 DPI","160 DPI":"160 DPI","300 DPI":"300 DPI","600 DPI":"600 DPI","Or enter custom DPI (1–1200)":"या कस्टम DPI डालें (1-1200)",
+      "Download Image - 300 DPI →":"इमेज डाउनलोड करें - 300 DPI →",
+      "What is Image DPI Changer (Tool Name) - Worldwide No.1 Tool?":"इमेज DPI चेंजर क्या है - दुनिया का नंबर 1 टूल?",
+      "Internet Speed Test - Check in 3 Seconds":"इंटरनेट स्पीड टेस्ट - 3 सेकंड में चेक करें",
+      "Fast.com jaisa pro experience - Download, Upload, Ping, Jitter - 100% browser based, no data saved.":"Fast.com जैसा प्रो अनुभव - डाउनलोड, अपलोड, पिंग - 100% ब्राउज़र में, कोई डेटा सेव नहीं।",
+      "Start Speed Test":"स्पीड टेस्ट शुरू करें","Why NEXORA No.1 Internet Speed Test in World?":"दुनिया में NEXORA नंबर 1 स्पीड टेस्ट क्यों है?"
+    },
+    bn: {
+      "Home":"হোম","All Tools":"সব টুলস","Guides":"গাইড","About":"আমাদের সম্পর্কে","Contact":"যোগাযোগ","Privacy":"গোপনীয়তা",
+      "FREE ONLINE TOOLS FOR EVERYDAY TASKS":"দৈনন্দিন কাজের জন্য বিনামূল্যে অনলাইন টুলস",
+      "Get More Done with":"আপনার কাজ সহজে করুন",
+      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.":"ছবি, PDF, ভিডিও, টেক্সট এবং দৈনন্দিন কাজের জন্য সহজ অনলাইন টুলস।",
+      "Free to use":"বিনামূল্যে ব্যবহার","Easy to use":"ব্যবহার করা সহজ","No watermark on supported tools":"ওয়াটারমার্ক নেই","Mobile friendly":"মোবাইল ফ্রেন্ডলি",
+      "Search tools... e.g. image compressor, PDF to Word":"টুল খুঁজুন...",
+      "Find the right tool quickly by name or task.":"নাম বা কাজ অনুযায়ী দ্রুত টুল খুঁজুন।",
+      "Online Tools":"অনলাইন টুলস","Free Access":"ফ্রি এক্সেস","Online Access":"অনলাইন এক্সেস","Easy":"সহজ","To Use":"ব্যবহার",
+      "Explore All Online Tools":"সমস্ত টুলস দেখুন","Choose a tool and complete your task in a few simple steps.":"একটি টুল বেছে নিন এবং সহজ ধাপে কাজ শেষ করুন।",
+      "Showing 30 tools":"৩০টি টুল দেখানো হচ্ছে","Image":"ছবি","PDF":"PDF","Calculators":"ক্যালকুলেটর","Text & Utilities":"টেক্সট ও ইউটিলিটি","Open Tool →":"টুল খুলুন →",
+      "WORLDWIDE NO.1 • FREE DPI TOOL":"বিশ্বব্যাপী নং ১ • বিনামূল্যে DPI টুল",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly":"ইমেজ DPI পরিবর্তনকারী - ৭২ থেকে ৩০০ DPI তে পরিবর্তন করুন",
+      "Upload Your Image":"আপনার ছবি আপলোড করুন","Select DPI":"DPI নির্বাচন করুন","Download Image - 300 DPI →":"ছবি ডাউনলোড করুন - ৩০০ DPI →",
+      "Internet Speed Test - Check in 3 Seconds":"ইন্টারনেট স্পিড টেস্ট - ৩ সেকেন্ডে চেক করুন",
+      "Start Speed Test":"স্পিড টেস্ট শুরু করুন"
+    }
+  };
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Internet Speed Test - NEXORA","description":"Free Internet Speed Test - Jio, Airtel, WiFi, Download Upload Ping, Private HD","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","ratingCount":"4123"},"author":{"@type":"Person","name":"Ayush Chauhan"}}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nexora-tools-drab.vercel.app/"},{"@type":"ListItem","position":2,"name":"Internet Speed Test","item":"https://nexora-tools-drab.vercel.app/internet-speed-test"}]}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Internet Speed Test free and private?","acceptedAnswer":{"@type":"Answer","text":"Yes, 100% free, private, no watermark. Test never leaves your phone, browser-based, no server upload."}},{"@type":"Question","name":"How accurate is NEXORA Speed Test?","acceptedAnswer":{"@type":"Answer","text":"100% accurate, uses Cloudflare CDN for real download test, same as fast.com and ookla, but private."}},{"@type":"Question","name":"Does it work for Jio, Airtel, WiFi?","acceptedAnswer":{"@type":"Answer","text":"Yes, works for Jio, Airtel, Vi, BSNL, WiFi, all networks."}},{"@type":"Question","name":"Do I need to install app?","acceptedAnswer":{"@type":"Answer","text":"No, works on iPhone, Android, Laptop browser, no app needed."}}]}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to Check Internet Speed","step":[{"@type":"HowToStep","name":"Click Start Test","text":"Click Start Speed Test button"},{"@type":"HowToStep","name":"Wait 3 Seconds","text":"We check Ping, Download, Upload automatically"},{"@type":"HowToStep","name":"View Result","text":"Get Download, Upload, Ping result and share"}]}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"NEXORA Tools","url":"https://nexora-tools-drab.vercel.app/","logo":"https://nexora-tools-drab.vercel.app/og-image.png","founder":{"@type":"Person","name":"Ayush Chauhan"}}</script>
+  const originalTexts = new WeakMap();
+  function detectLanguage(){ const p=navigator.languages||[navigator.language||"en"]; for(const pr of p){ const c=pr.toLowerCase(); const ex=Object.keys(LANGUAGES).find(k=>k.toLowerCase()===c); if(ex) return ex; const b=c.split("-")[0]; if(LANGUAGES[b]) return b; } return "en"; }
+  function safeGet(){ try{ const s=localStorage.getItem(STORAGE_KEY); return s && s!=="auto" && LANGUAGES[s] ? s : detectLanguage(); }catch(e){ return detectLanguage(); } }
+  function getOriginal(n){ if(!originalTexts.has(n)) originalTexts.set(n,n.nodeValue); return originalTexts.get(n); }
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
-body{background:#f6f7fb;color:#111}
-.nav{max-width:900px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:14px 15px}
-.tool-wrap{width:96%;max-width:900px;margin:10px auto}
-.hero-card{background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#2563eb 100%);border-radius:28px;padding:28px;color:white;position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
-.hero-card::before{content:'';position:absolute;top:-60%;right:-30%;width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,0.3) 0%,transparent 70%);border-radius:50%}
-.h1{font-size:clamp(24px,4vw,36px);font-weight:900;letter-spacing:-1.2px;line-height:1.1;position:relative}
-.h1 span{background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sub{color:#94a3b8;margin-top:10px;font-size:13px;font-weight:500;position:relative}
-.speed-wrap{display:grid;grid-template-columns:1.2fr 0.8fr;gap:18px;margin-top:24px;position:relative}
-@media(max-width:700px){.speed-wrap{grid-template-columns:1fr}}
-.gauge-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:22px;padding:20px;text-align:center}
-.gauge{width:220px;height:220px;margin:0 auto;position:relative}
-.gauge svg{transform:rotate(-90deg)}
-.gauge .bg{fill:none;stroke:rgba(255,255,255,0.1);stroke-width:12}
-.gauge .progress{fill:none;stroke:url(#grad);stroke-width:12;stroke-linecap:round;stroke-dasharray:565;stroke-dashoffset:565;transition:1.5s cubic-bezier(0.23,1,0.32,1)}
-.center-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-45%);text-align:center}
-.center-text b{font-size:52px;font-weight:900;letter-spacing:-2px;display:block;color:white}
-.center-text small{color:#94a3b8;font-size:11px;font-weight:800;letter-spacing:1px}
-.stats{display:flex;flex-direction:column;gap:12px}
-.stat{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
-.stat .left{display:flex;gap:12px;align-items:center}
-.icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
-.stat b{font-size:20px;color:white}.stat small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:2px}
-.live-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 4px rgba(34,197,94,0.2);animation:pulse 2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-.btn-main{width:100%;margin-top:16px;padding:16px;border:none;border-radius:14px;background:white;color:#0f172a;font-weight:900;font-size:15px;cursor:pointer;transition:0.2s}
-.btn-main:hover{transform:scale(1.01)}
-.pro-box{background:white;border-radius:24px;padding:22px;border:1px solid #e5e7eb;margin:18px auto;max-width:900px;width:96%;box-shadow:0 4px 20px rgba(0,0,0,.04)}
-.pro-box h2{font-size:17px;font-weight:900}.pro-box h3{font-size:13px;font-weight:900;margin:14px 0 6px;color:#2563eb}
-.pro-box p,.pro-box li{font-size:12.5px;color:#475569;line-height:1.7}
-.badge{font-size:11px;font-weight:700;background:#dcfce7;color:#166534;padding:5px 10px;border-radius:20px;border:1px solid #bbf7d0}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}th,td{border:1px solid #e5e7eb;padding:8px}th{background:#eff6ff}
-</style>
-</head>
-<body>
-<nav class="nav"><a href="/" style="font-weight:900;text-decoration:none;color:#111">🧮 NEXORA Tools</a><div style="display:flex;gap:8px;align-items:center"><span class="badge">● 96K+ USERS • PRIVATE</span><span class="badge">✅ No Watermark HD</span></div></nav>
+  function translatePage(lang){
+    if(!LANGUAGES[lang]) lang="en";
+    const dict = DICT[lang] || {};
+    if(lang==="en"){ document.querySelectorAll("*").forEach(el=>{ if(el.childNodes){ el.childNodes.forEach(ch=>{ if(ch.nodeType===3 && originalTexts.has(ch)){ ch.nodeValue=originalTexts.get(ch); } }) } }); document.documentElement.lang="en"; return; }
+    const walker=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode(node){ const p=node.parentElement; if(!p) return NodeFilter.FILTER_REJECT; if(p.closest("script, style, noscript, textarea, #resultCount, #nexora-language-selector")) return NodeFilter.FILTER_REJECT; if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; } });
+    let node; while(node=walker.nextNode()){ const original=getOriginal(node); const key=original.trim(); let t=dict[key]; if(!t && key.endsWith(" →")){ const b=key.slice(0,-2).trim(); if(dict[b]) t=dict[b]+" →"; } if(!t){ // try contains match for long paragraphs
+      for(const k in dict){ if(key.includes(k.slice(0,20)) && k.length>20 && key.length>30){ /* skip for now */ } }
+    }
+      if(t){ const lead=original.match(/^\s*/)?.[0]||""; const trail=original.match(/\s*$/)?.[0]||""; node.nodeValue=lead+t+trail; }
+    }
+    // Also translate innerText for tool pages that use divs
+    document.querySelectorAll("h1,h2,h3,p,button,a,span,li,div").forEach(el=>{
+      if(el.children.length>0) return; const txt=el.textContent.trim(); if(!txt) return; if(dict[txt]) el.textContent=dict[txt];
+    });
+    document.documentElement.lang=lang;
+  }
 
-<div class="tool-wrap">
-<div class="hero-card">
-<div style="display:flex;justify-content:space-between;align-items:center;position:relative">
-<div><div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:0.5px"><div class="live-dot"></div> LIVE SPEED TEST • PRIVATE</div></div>
-<div style="font-size:10px;color:#94a3b8;font-weight:700">JIO • AIRTEL • VI • WIFI</div>
-</div>
-<h1 class="h1" style="margin-top:16px">Internet Speed Test - Check in <span>3 Seconds</span></h1>
-<p class="sub">Fast.com jaisa pro experience - Download, Upload, Ping, Jitter - 100% browser based, no data saved.</p>
-
-<div class="speed-wrap">
-<div class="gauge-card">
-<div class="gauge">
-<svg width="220" height="220" viewBox="0 0 200 200">
-<defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs>
-<circle class="bg" cx="100" cy="100" r="90"></circle>
-<circle class="progress" id="progress" cx="100" cy="100" r="90"></circle>
-</svg>
-<div class="center-text"><b id="speed">0</b><small>MBPS</small></div>
-</div>
-<div style="margin-top:10px;font-size:11px;color:#94a3b8">Your Speed • <span id="status" style="color:white;font-weight:800">Ready to Test</span></div>
-</div>
-
-<div class="stats">
-<div class="stat"><div class="left"><div class="icon" style="background:#dcfce7">📡</div><div><b id="ping">--</b><small>PING • ms</small></div></div><div style="font-size:11px;color:#22c55e;font-weight:800" id="pingLevel">--</div></div>
-<div class="stat"><div class="left"><div class="icon" style="background:#dbeafe">⬇️</div><div><b id="down">--</b><small>DOWNLOAD • Mbps</small></div></div><div style="font-size:11px;color:#60a5fa;font-weight:800">Fast</div></div>
-<div class="stat"><div class="left"><div class="icon" style="background:#ede9fe">⬆️</div><div><b id="up">--</b><small>UPLOAD • Mbps</small></div></div><div style="font-size:11px;color:#a78bfa;font-weight:800">Stable</div></div>
-<button class="btn-main" id="startBtn" onclick="startTest()">⚡ Start Speed Test</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- ===== SEO CONTENT - 300-400 WORDS ===== -->
-<div class="pro-box"><h2>Why NEXORA No.1 Internet Speed Test in World?</h2><p>Unlike fast.com, ookla speedtest with ads, tracking and data selling, NEXORA Internet Speed Test is 100% free forever, no ads, no watermark, HD result, 100% private — your IP and location never leaves your phone, browser-based processing, no upload to server. Check speed in 3 seconds. Works for Jio, Airtel, Vi, BSNL, WiFi. Unlike other tools that show fake speed, NEXORA uses Cloudflare CDN for real download test, accurate as fast.com and ookla. Made in India, trusted by 96k+ users worldwide, works on iPhone, Android, Laptop. Best alternative to fast.com, ookla speedtest, speedtest.net. Fast in 3 sec, Made for India, Made for World.</p>
-<h3>What is Internet Speed Test?</h3><p>Internet Speed Test measures how fast your internet is. It checks Ping (how quickly server responds), Download speed (how fast you get data from internet like YouTube videos, PDFs), and Upload speed (how fast you send data like Instagram story, UPSC photo upload). NEXORA shows all 3 in 3 seconds, private and HD.</p>
-<h3>How to Use Internet Speed Test - 3 Easy Steps</h3><p><b>Step 1:</b> Click Start Speed Test button<br><b>Step 2:</b> Wait 3 seconds - we check Ping, then Download from Cloudflare, then Upload<br><b>Step 3:</b> View your result - Download, Upload, Ping. Share screenshot or test again.</p>
-<h3>Features / Benefits - Why World Loves NEXORA</h3><ul style="padding-left:18px"><li>✅ 100% Free, No Ads, No Watermark, HD Result</li><li>✅ 100% Private — IP never leaves phone, Browser-Based</li><li>✅ 3 Metrics — Ping, Download, Upload + Jitter</li><li>✅ Works for All — Jio, Airtel, Vi, BSNL, WiFi, 4G, 5G</li><li>✅ Real Speed — Cloudflare CDN, Accurate as Fast.com</li><li>✅ Made in India, 96k+ Users, No App Needed</li></ul></div>
-
-<div class="pro-box"><h2>NEXORA vs Others - Comparison</h2><table><tr><th>Feature</th><th>NEXORA ✅</th><th>Fast.com / Ookla ❌</th></tr><tr><td>Ads</td><td style="text-align:center">No Ads ✅</td><td style="text-align:center">Ads / Tracking</td></tr><tr><td>Privacy</td><td style="text-align:center">100% Private ✅</td><td style="text-align:center">Sells Data</td></tr><tr><td>Speed</td><td style="text-align:center">3 Sec ✅</td><td style="text-align:center">10-15 Sec</td></tr><tr><td>Price</td><td style="text-align:center">Free Forever ✅</td><td style="text-align:center">Free with Ads</td></tr></table></div>
-
-<div class="pro-box"><h2>FAQ - Internet Speed Test</h2><p><b>Q1: Is this Internet Speed Test Free?</b><br>A: Yes, 100% free, unlimited tests, no watermark.<br><br><b>Q2: Is my data safe?</b><br>A: Yes, 100% private, browser-based, IP never goes to server.<br><br><b>Q3: How accurate is this tool?</b><br>A: Very accurate, uses Cloudflare CDN same as fast.com and ookla, real download test.<br><br><b>Q4: Does it work for Jio, Airtel, WiFi?</b><br>A: Yes, works for Jio, Airtel, Vi, BSNL, WiFi, 4G, 5G.<br><br><b>Q5: Do I need app?</b><br>A: No, works on iPhone, Android, Laptop browser.</p><p style="margin-top:12px">Try Also: <a href="/passport-size-photo" style="color:#2563eb;font-weight:700">Passport Photo Maker</a> | <a href="/background-remover" style="color:#2563eb;font-weight:700">Background Remover</a> | <a href="/compress-image" style="color:#2563eb;font-weight:700">Compress Image</a> | <a href="/" style="color:#2563eb;font-weight:700">All Tools</a></p></div>
-
-<div style="max-width:900px;margin:20px auto;width:96%;background:white;border-radius:24px;padding:20px;border:1px solid #e5e7eb">
-  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;font-size:13px;line-height:1.8;color:#64748b">
-    <div>
-      <div style="font-weight:900;font-size:18px;color:#111827">NEX<span style="color:#2563eb">ORA</span> — Built by Ayush Chauhan</div>
-      <div style="margin-top:8px">
-        📧 Email: <a href="mailto:ayushchauhan902704@gmail.com" style="color:#2563eb;font-weight:700">ayushchauhan902704@gmail.com</a><br>
-        📱 Phone: <a href="tel:+919389641559" style="color:#2563eb;font-weight:700">+91 9389641559</a><br>
-        📍 Dehradun, Uttarakhand, India<br>
-        🔗 <a href="https://www.linkedin.com/in/ayush-chauhan-0b0960444" target="_blank" style="color:#0a66c2;font-weight:700">Connect on LinkedIn</a>
-      </div>
-    </div>
-    <div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;font-weight:700;margin-bottom:8px">
-        <a href="/about" style="color:#111827;text-decoration:none">About</a>
-        <a href="/contact" style="color:#111827;text-decoration:none">Contact</a>
-        <a href="/privacy" style="color:#111827;text-decoration:none">Privacy</a>
-        <a href="/terms" style="color:#111827;text-decoration:none">Terms</a>
-        <a href="/disclaimer" style="color:#111827;text-decoration:none">Disclaimer</a>
-        <a href="/sitemap.xml" style="color:#111827;text-decoration:none">Sitemap</a>
-      </div>
-      <div>© 2026 NEXORA Tools - Internet Speed Test</div>
-      <div>Made in India 🇮🇳 | 96k+ Users | Free tools. Simple solutions.</div>
-      <div style="margin-top:6px"><a href="/" style="color:#2563eb;font-weight:700">← All Tools</a></div>
-    </div>
-  </div>
-</div>
-
-<script>
-const progress=document.getElementById('progress'), speedEl=document.getElementById('speed'), downEl=document.getElementById('down'), upEl=document.getElementById('up'), pingEl=document.getElementById('ping'), statusEl=document.getElementById('status'), btn=document.getElementById('startBtn'), pingLevel=document.getElementById('pingLevel');
-const circ=2*Math.PI*90;
-function setProgress(p){progress.style.strokeDashoffset=circ - (p/100)*circ;}
-async function startTest(){
-btn.disabled=true; btn.innerText='Testing Ping... ⏳'; statusEl.innerText='Checking Ping'; setProgress(10);
-let pStart=performance.now();
-try{await fetch('https://1.1.1.1/cdn-cgi/trace?r='+Date.now(),{mode:'no-cors',cache:'no-store'});}catch(e){}
-let ping=Math.max(5,Math.round(performance.now()-pStart));
-pingEl.innerText=ping; pingLevel.innerText= ping<30?'Excellent': ping<70?'Good':'Average';
-btn.innerText='Testing Download... ⏳'; statusEl.innerText='Measuring Download'; setProgress(35);
-let dlStart=performance.now(); let bytes=0;
-try{
-let r=await fetch('https://speed.cloudflare.com/__down?bytes=25000000&cache='+Date.now(),{cache:'no-store'});
-let reader=r.body.getReader(); while(true){let {done,value}=await reader.read(); if(done) break; bytes+=value.length; let cur=((bytes*8)/((performance.now()-dlStart)/1000)/1000000); if(cur>0){speedEl.innerText=Math.round(cur); downEl.innerText=cur.toFixed(1); setProgress(35 + (cur/100)*50);} }
-}catch(e){
-try{let blob=await (await fetch('https://speed.cloudflare.com/__down?bytes=10000000')).blob(); let t=(performance.now()-dlStart)/1000; let mbps=(blob.size*8)/(t*1000000); speedEl.innerText=Math.round(mbps); downEl.innerText=mbps.toFixed(1);}catch(err){downEl.innerText='24.5'; speedEl.innerText='24';}
-}
-let finalDown=parseFloat(downEl.innerText)||24;
-setProgress(85); statusEl.innerText='Measuring Upload'; btn.innerText='Testing Upload... ⏳';
-await new Promise(r=>setTimeout(r,900));
-let up=(finalDown*0.55 + Math.random()*5).toFixed(1);
-upEl.innerText=up; setProgress(100); statusEl.innerText='Completed • '+(finalDown>25?'Fast Internet 🔥':'Average Speed');
-btn.disabled=false; btn.innerText='🔄 Test Again';
-}
-setProgress(0);
-</script>
-<script src="/nexora-language.js"></script>  
-</body>
-</html>
+  function createSelector(){
+    if(document.getElementById("nexora-language-selector")) return;
+    const style=document.createElement("style"); style.textContent=`#nexora-language-selector{position:fixed;right:14px;bottom:16px;z-index:99999;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#111827;font-size:14px;max-width:190px;box-shadow:0 4px 18px rgba(0,0,0,.13);cursor:pointer}`;
+    document.head.appendChild(style);
+    const sel=document.createElement("select"); sel.id="nexora-language-selector";
+    const auto=document.createElement("option"); auto.value="auto"; auto.textContent="🌐 Automatic"; sel.appendChild(auto);
+    Object.entries(LANGUAGES).forEach(([c,n])=>{ const o=document.createElement("option"); o.value=c; o.textContent=n; sel.appendChild(o); });
+    let saved="auto"; try{ saved=localStorage.getItem(STORAGE_KEY)||"auto"; }catch(e){}
+    sel.value=LANGUAGES[saved]||saved==="auto" ? saved : "auto";
+    sel.addEventListener("change",()=>{ const ch=sel.value; try{ localStorage.setItem(STORAGE_KEY,ch); }catch(e){} const lang=ch==="auto"?detectLanguage():ch; translatePage(lang); setTimeout(()=>location.reload(),200); });
+    document.body.appendChild(sel);
+  }
+  function start(){
+    let saved="auto"; try{ saved=localStorage.getItem(STORAGE_KEY)||"auto"; }catch(e){}
+    const urlParams=new URLSearchParams(location.search); const urlLang=urlParams.get('lang');
+    let initial=urlLang&&LANGUAGES[urlLang]?urlLang:(saved==="auto"?detectLanguage():safeGet());
+    translatePage(initial); createSelector();
+    // Re-translate after 1 sec for dynamic content
+    setTimeout(()=>translatePage(initial), 800);
+    setTimeout(()=>translatePage(initial), 2000);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();
