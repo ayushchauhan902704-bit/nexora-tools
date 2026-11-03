@@ -44,9 +44,11 @@
   };
 
   const STORAGE_KEY = "nexora_language";
+  const supported = Object.keys(LANGUAGES);
 
   const TRANSLATIONS = {
     en: {},
+
     hi: {
       "Home": "होम",
       "All Tools": "सभी टूल्स",
@@ -55,6 +57,7 @@
       "Contact": "संपर्क करें",
       "Privacy": "गोपनीयता",
       "Explore Tools": "टूल्स देखें",
+      "Explore Tools →": "टूल्स देखें →",
       "FREE ONLINE TOOLS FOR EVERYDAY TASKS": "रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
       "Get More Done with": "अपने काम आसानी से पूरे करें",
       "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.": "इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए आसान ऑनलाइन टूल्स। फाइलें कंप्रेस करें, दस्तावेज़ बदलें, फोटो बनाएं और गणनाएं आसानी से करें।",
@@ -63,6 +66,11 @@
       "No watermark on supported tools": "सपोर्टेड टूल्स पर वॉटरमार्क नहीं",
       "Mobile friendly": "मोबाइल के लिए अनुकूल",
       "Search tools... e.g. image compressor, PDF to Word": "टूल खोजें... जैसे इमेज कंप्रेसर, PDF से Word",
+      "Search online tools": "ऑनलाइन टूल खोजें",
+      "Clear search": "खोज साफ़ करें",
+      "Filter tools by category": "कैटेगरी के अनुसार टूल छांटें",
+      "Choose website language": "वेबसाइट की भाषा चुनें",
+      "Automatic": "स्वचालित",
       "Find the right tool quickly by name or task.": "नाम या काम के अनुसार सही टूल जल्दी खोजें।",
       "Online Tools": "ऑनलाइन टूल्स",
       "Free Access": "मुफ्त सुविधा",
@@ -220,29 +228,48 @@
       "MEDIA": "मीडिया",
       "QR": "QR",
       "DOCUMENT": "दस्तावेज़",
-      "PDF": "PDF",
       "OCR": "OCR",
       "INSTANT": "तुरंत",
       "TEXT": "टेक्स्ट"
     }
   };
 
-  const supported = Object.keys(LANGUAGES);
+  // Keep the original text so language switching is reversible.
+  const originalTexts = new WeakMap();
+  const originalPlaceholders = new WeakMap();
+  const originalTitles = new WeakMap();
+  const originalAriaLabels = new WeakMap();
+
+  let activeLanguage = "en";
+  let resultCountObserver = null;
 
   function detectLanguage() {
-    const preferences = navigator.languages || [navigator.language || "en"];
+    const preferences = navigator.languages || [
+      navigator.language || "en"
+    ];
 
     for (const preference of preferences) {
       const code = preference.toLowerCase();
 
-      if (code.startsWith("zh-tw") || code.startsWith("zh-hk")) return "zh-TW";
-      if (code.startsWith("zh")) return "zh-CN";
+      if (code.startsWith("zh-tw") || code.startsWith("zh-hk")) {
+        return "zh-TW";
+      }
 
-      const exact = supported.find(item => item.toLowerCase() === code);
+      if (code.startsWith("zh")) {
+        return "zh-CN";
+      }
+
+      const exact = supported.find(
+        item => item.toLowerCase() === code
+      );
+
       if (exact) return exact;
 
       const base = code.split("-")[0];
-      if (supported.includes(base)) return base;
+
+      if (supported.includes(base)) {
+        return base;
+      }
     }
 
     return "en";
@@ -251,45 +278,232 @@
   function safeGetLanguage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved && saved !== "auto" && LANGUAGES[saved] ? saved : detectLanguage();
+
+      return saved && saved !== "auto" && LANGUAGES[saved]
+        ? saved
+        : detectLanguage();
     } catch (error) {
       return detectLanguage();
     }
   }
 
-  function translatePage(language) {
-    const dictionary = TRANSLATIONS[language] || {};
+  function getOriginalText(node) {
+    if (!originalTexts.has(node)) {
+      originalTexts.set(node, node.nodeValue);
+    }
 
-    document.documentElement.lang = language;
-    document.documentElement.dir =
-      ["ar", "ur", "fa"].includes(language) ? "rtl" : "ltr";
+    return originalTexts.get(node);
+  }
 
-    document.querySelectorAll("[data-i18n]").forEach(element => {
-      const key = element.getAttribute("data-i18n");
-      if (Object.prototype.hasOwnProperty.call(dictionary, key)) {
-        element.textContent = dictionary[key];
+  function translateTextNodes(language, dictionary) {
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+
+          if (!parent) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          if (
+            parent.closest(
+              "script, style, noscript, textarea, #resultCount, #nexora-language-selector"
+            )
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          return NodeFilter.FILTER_ACCEPT;
+        }
       }
-    });
+    );
 
+    let node;
+
+    while ((node = walker.nextNode())) {
+      const original = getOriginalText(node);
+      const key = original.trim();
+
+      if (!key) continue;
+
+      if (language === "en") {
+        node.nodeValue = original;
+        continue;
+      }
+
+      let translated = dictionary[key];
+
+      // Handle text such as "Explore Tools →".
+      if (!translated && key.endsWith(" →")) {
+        const baseKey = key.slice(0, -2).trim();
+
+        if (dictionary[baseKey]) {
+          translated = dictionary[baseKey] + " →";
+        }
+      }
+
+      if (translated) {
+        const leading = original.match(/^\s*/)?.[0] || "";
+        const trailing = original.match(/\s*$/)?.[0] || "";
+
+        node.nodeValue = leading + translated + trailing;
+      } else {
+        node.nodeValue = original;
+      }
+    }
+  }
+
+  function translateAttributes(language, dictionary) {
+    // Placeholders
     document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
-      const key = element.getAttribute("data-i18n-placeholder");
-      if (Object.prototype.hasOwnProperty.call(dictionary, key)) {
-        element.placeholder = dictionary[key];
+      if (!originalPlaceholders.has(element)) {
+        originalPlaceholders.set(
+          element,
+          element.getAttribute("placeholder") || ""
+        );
       }
+
+      const original = originalPlaceholders.get(element);
+      const key = element.getAttribute("data-i18n-placeholder");
+
+      element.setAttribute(
+        "placeholder",
+        language === "en"
+          ? original
+          : (dictionary[key] || original)
+      );
     });
 
+    // Title attributes
     document.querySelectorAll("[data-i18n-title]").forEach(element => {
-      const key = element.getAttribute("data-i18n-title");
-      if (Object.prototype.hasOwnProperty.call(dictionary, key)) {
-        element.title = dictionary[key];
+      if (!originalTitles.has(element)) {
+        originalTitles.set(
+          element,
+          element.getAttribute("title") || ""
+        );
       }
+
+      const original = originalTitles.get(element);
+      const key = element.getAttribute("data-i18n-title");
+
+      element.setAttribute(
+        "title",
+        language === "en"
+          ? original
+          : (dictionary[key] || original)
+      );
+    });
+
+    // Accessibility labels
+    const ariaTranslations = {
+      "Search online tools": "ऑनलाइन टूल खोजें",
+      "Clear search": "खोज साफ़ करें",
+      "Filter tools by category": "कैटेगरी के अनुसार टूल छांटें",
+      "Choose website language": "वेबसाइट की भाषा चुनें"
+    };
+
+    document.querySelectorAll("[aria-label]").forEach(element => {
+      if (!originalAriaLabels.has(element)) {
+        originalAriaLabels.set(
+          element,
+          element.getAttribute("aria-label") || ""
+        );
+      }
+
+      const original = originalAriaLabels.get(element);
+
+      element.setAttribute(
+        "aria-label",
+        language === "en"
+          ? original
+          : (ariaTranslations[original] || original)
+      );
     });
   }
 
+  // Dynamic search result count.
+  function updateResultCount(language) {
+    const resultCount = document.getElementById("resultCount");
+
+    if (!resultCount) return;
+
+    const currentText = resultCount.textContent.trim();
+
+    let countMatch = currentText.match(
+      /^Showing\s+(\d+)\s+tools?$/i
+    );
+
+    if (!countMatch) {
+      countMatch = currentText.match(
+        /^(\d+)\s+टूल(?:\s+दिखाए जा रहे हैं|\s+दिखाया जा रहा है)?$/
+      );
+    }
+
+    if (!countMatch) return;
+
+    const count = Number(countMatch[1]);
+    let newText;
+
+    if (language === "hi") {
+      newText = count === 1
+        ? "1 टूल दिखाया जा रहा है"
+        : count + " टूल दिखाए जा रहे हैं";
+    } else {
+      newText = "Showing " + count +
+        (count === 1 ? " tool" : " tools");
+    }
+
+    if (resultCount.textContent.trim() !== newText) {
+      resultCount.textContent = newText;
+    }
+  }
+
+  function watchResultCount() {
+    const resultCount = document.getElementById("resultCount");
+
+    if (!resultCount || resultCountObserver) return;
+
+    resultCountObserver = new MutationObserver(() => {
+      updateResultCount(activeLanguage);
+    });
+
+    resultCountObserver.observe(resultCount, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  }
+
+  function translatePage(language) {
+    if (!LANGUAGES[language]) {
+      language = "en";
+    }
+
+    activeLanguage = language;
+
+    const dictionary = TRANSLATIONS[language] || {};
+
+    document.documentElement.lang = language;
+
+    document.documentElement.dir =
+      ["ar", "ur", "fa"].includes(language)
+        ? "rtl"
+        : "ltr";
+
+    translateTextNodes(language, dictionary);
+    translateAttributes(language, dictionary);
+    updateResultCount(language);
+  }
+
   function createLanguageSelector() {
-    if (document.getElementById("nexora-language-selector")) return;
+    if (document.getElementById("nexora-language-selector")) {
+      return;
+    }
 
     const style = document.createElement("style");
+
     style.textContent = `
       #nexora-language-selector {
         position: fixed;
@@ -304,44 +518,66 @@
         font-size: 14px;
         max-width: 190px;
         box-shadow: 0 4px 18px rgba(0,0,0,.13);
+        cursor: pointer;
       }
+
       #nexora-language-selector:focus {
         outline: 2px solid #6366f1;
+      }
+
+      html[dir="rtl"] #nexora-language-selector {
+        right: auto;
+        left: 14px;
       }
     `;
 
     document.head.appendChild(style);
 
     const select = document.createElement("select");
+
     select.id = "nexora-language-selector";
     select.setAttribute("aria-label", "Choose website language");
 
     const autoOption = document.createElement("option");
+
     autoOption.value = "auto";
     autoOption.textContent = "🌐 Automatic";
+
     select.appendChild(autoOption);
 
     Object.entries(LANGUAGES).forEach(([code, name]) => {
       const option = document.createElement("option");
+
       option.value = code;
       option.textContent = name;
+
       select.appendChild(option);
     });
 
     let saved = "auto";
+
     try {
       saved = localStorage.getItem(STORAGE_KEY) || "auto";
     } catch (error) {}
 
-    select.value = LANGUAGES[saved] || saved === "auto" ? saved : "auto";
+    select.value =
+      saved === "auto" || LANGUAGES[saved]
+        ? saved
+        : "auto";
 
     select.addEventListener("change", () => {
       const choice = select.value;
+
       try {
         localStorage.setItem(STORAGE_KEY, choice);
       } catch (error) {}
 
-      translatePage(choice === "auto" ? detectLanguage() : choice);
+      const language =
+        choice === "auto"
+          ? detectLanguage()
+          : choice;
+
+      translatePage(language);
     });
 
     document.body.appendChild(select);
@@ -349,12 +585,19 @@
 
   function start() {
     let saved = "auto";
+
     try {
       saved = localStorage.getItem(STORAGE_KEY) || "auto";
     } catch (error) {}
 
-    translatePage(saved === "auto" ? detectLanguage() : safeGetLanguage());
+    const initialLanguage =
+      saved === "auto"
+        ? detectLanguage()
+        : safeGetLanguage();
+
+    translatePage(initialLanguage);
     createLanguageSelector();
+    watchResultCount();
   }
 
   if (document.readyState === "loading") {
