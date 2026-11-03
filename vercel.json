@@ -1,5 +1,16 @@
 {
   "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/xml"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/love-calculator", "destination": "/app/love-calculator.html" },
