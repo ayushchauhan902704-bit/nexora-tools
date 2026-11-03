@@ -1,615 +1,180 @@
-
 "use strict";
-
-/* NEXORA LANGUAGE ENGINE */
-
+/* NEXORA LANGUAGE ENGINE - FINAL WORLDWIDE AUTO - SINGLE FILE */
 (() => {
   const LANGUAGES = {
     en: "🇬🇧 English",
     hi: "🇮🇳 Hindi",
+    bn: "🇧🇩 Bengali",
+    pt: "🇵🇹 Portuguese",
     es: "🇪🇸 Spanish",
+    id: "🇮🇩 Indonesian",
     fr: "🇫🇷 French",
     de: "🇩🇪 German",
-    pt: "🇵🇹 Portuguese",
     ar: "🇸🇦 Arabic",
-    bn: "🇧🇩 Bengali",
-    ur: "🇵🇰 Urdu",
-    "zh-CN": "🇨🇳 Chinese (Simplified)",
-    "zh-TW": "🇹🇼 Chinese (Traditional)",
-    ja: "🇯🇵 Japanese",
-    ko: "🇰🇷 Korean",
-    ru: "🇷🇺 Russian",
-    it: "🇮🇹 Italian",
-    nl: "🇳🇱 Dutch",
     tr: "🇹🇷 Turkish",
-    id: "🇮🇩 Indonesian",
-    vi: "🇻🇳 Vietnamese",
-    th: "🇹🇭 Thai",
-    pl: "🇵🇱 Polish",
-    uk: "🇺🇦 Ukrainian",
-    fa: "🇮🇷 Persian",
-    ta: "🇮🇳 Tamil",
-    te: "🇮🇳 Telugu",
-    mr: "🇮🇳 Marathi",
-    gu: "🇮🇳 Gujarati",
-    pa: "🇮🇳 Punjabi",
-    sw: "🇰🇪 Swahili",
-    ms: "🇲🇾 Malay",
-    fil: "🇵🇭 Filipino",
-    ro: "🇷🇴 Romanian",
-    el: "🇬🇷 Greek",
-    cs: "🇨🇿 Czech",
-    hu: "🇭🇺 Hungarian",
-    sv: "🇸🇪 Swedish"
   };
-
   const STORAGE_KEY = "nexora_language";
   const supported = Object.keys(LANGUAGES);
 
   const TRANSLATIONS = {
     en: {},
-
     hi: {
-      "Home": "होम",
-      "All Tools": "सभी टूल्स",
-      "Guides": "गाइड",
-      "About": "हमारे बारे में",
-      "Contact": "संपर्क करें",
-      "Privacy": "गोपनीयता",
-      "Explore Tools": "टूल्स देखें",
-      "Explore Tools →": "टूल्स देखें →",
+      "Home": "होम", "All Tools": "सभी टूल्स", "About": "हमारे बारे में", "Contact": "संपर्क करें", "Privacy": "गोपनीयता",
       "FREE ONLINE TOOLS FOR EVERYDAY TASKS": "रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
-      "Get More Done with": "अपने काम आसानी से पूरे करें",
-      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.": "इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए आसान ऑनलाइन टूल्स। फाइलें कंप्रेस करें, दस्तावेज़ बदलें, फोटो बनाएं और गणनाएं आसानी से करें।",
-      "Free to use": "मुफ्त इस्तेमाल",
-      "Easy to use": "आसान इस्तेमाल",
-      "No watermark on supported tools": "सपोर्टेड टूल्स पर वॉटरमार्क नहीं",
-      "Mobile friendly": "मोबाइल के लिए अनुकूल",
-      "Search tools... e.g. image compressor, PDF to Word": "टूल खोजें... जैसे इमेज कंप्रेसर, PDF से Word",
-      "Search online tools": "ऑनलाइन टूल खोजें",
-      "Clear search": "खोज साफ़ करें",
-      "Filter tools by category": "कैटेगरी के अनुसार टूल छांटें",
-      "Choose website language": "वेबसाइट की भाषा चुनें",
-      "Automatic": "स्वचालित",
-      "Find the right tool quickly by name or task.": "नाम या काम के अनुसार सही टूल जल्दी खोजें।",
-      "Online Tools": "ऑनलाइन टूल्स",
-      "Free Access": "मुफ्त सुविधा",
-      "Online Access": "ऑनलाइन उपलब्ध",
-      "Easy": "आसान",
-      "To Use": "इस्तेमाल करना",
-      "Explore All Online Tools": "सभी ऑनलाइन टूल्स देखें",
-      "Choose a tool and complete your task in a few simple steps.": "एक टूल चुनें और कुछ आसान चरणों में अपना काम पूरा करें।",
-      "Showing 30 tools": "30 टूल दिखाए जा रहे हैं",
-      "All Tools": "सभी टूल्स",
-      "Image": "इमेज",
-      "PDF": "PDF",
-      "Calculators": "कैलकुलेटर",
-      "Text & Utilities": "टेक्स्ट और अन्य सुविधाएं",
-      "Open Tool →": "टूल खोलें →",
-      "No tools found": "कोई टूल नहीं मिला",
-      "Try another search term or select a different category.": "दूसरा शब्द खोजें या कोई दूसरी कैटेगरी चुनें।",
-      "Image Compression Guides": "इमेज कंप्रेशन गाइड",
-      "Learn how to prepare images for different file-size requirements using simple step-by-step guides.": "आसान चरणों वाली गाइड से अलग-अलग फाइल साइज के लिए इमेज तैयार करना सीखें।",
-      "Photo to 20KB - UPSC Guide": "फोटो 20KB करें - UPSC गाइड",
-      "Compress Image to 30KB": "इमेज 30KB करें",
-      "Compress Image to 50KB": "इमेज 50KB करें",
-      "Compress Image to 100KB": "इमेज 100KB करें",
-      "Compress Image to 200KB": "इमेज 200KB करें",
-      "Compress Image to 500KB": "इमेज 500KB करें",
-      "Free Online Tools for Everyday Tasks": "रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
-      "Free Online Tools": "मुफ्त ऑनलाइन टूल्स",
-      "Simple Interface": "आसान इंटरफेस",
-      "Image & PDF Utilities": "इमेज और PDF सुविधाएं",
-      "Everyday Calculators": "रोज़मर्रा के कैलकुलेटर",
-      "Popular Tools": "लोकप्रिय टूल्स",
-      "PDF & Document Tools": "PDF और दस्तावेज़ टूल्स",
-      "Information": "जानकारी",
-      "Guides & Articles": "गाइड और लेख",
-      "About Us": "हमारे बारे में",
-      "Privacy Policy": "गोपनीयता नीति",
-      "Terms & Conditions": "नियम और शर्तें",
-      "Disclaimer": "अस्वीकरण",
-      "XML Sitemap": "XML साइटमैप",
+      "Get More Done with": "अपने काम आसानी से पूरे करें", "Search tools... e.g. image compressor, PDF to Word": "टूल खोजें...",
+      "All Tools": "सभी टूल्स", "Image": "इमेज", "PDF": "PDF", "Calculators": "कैलकुलेटर", "Open Tool →": "टूल खोलें →",
       "Image DPI Changer - 72 to 300 DPI": "इमेज DPI बदलें - 72 से 300 DPI",
-      "Change image DPI from 72 to 300 DPI for printing without losing quality.": "क्वालिटी खोए बिना प्रिंटिंग के लिए इमेज DPI को 72 से 300 तक बदलें।",
-      "Internet Speed Test - Pro": "इंटरनेट स्पीड टेस्ट - प्रो",
-      "Check your internet download speed, upload speed and ping.": "अपने इंटरनेट की डाउनलोड स्पीड, अपलोड स्पीड और पिंग जांचें।",
-      "Image to Text - OCR": "इमेज से टेक्स्ट - OCR",
-      "Extract readable text from supported JPG and PNG images.": "सपोर्टेड JPG और PNG इमेज से टेक्स्ट निकालें।",
-      "Video Compressor to Any MB": "किसी भी MB में वीडियो कंप्रेसर",
-      "Compress videos with custom target file-size options.": "अपनी पसंद के फाइल साइज में वीडियो कंप्रेस करें।",
-      "Text to Speech": "टेक्स्ट से आवाज़",
-      "Convert written text into speech using supported browser voices.": "लिखे हुए टेक्स्ट को आवाज़ में बदलें।",
-      "YouTube Thumbnail Downloader": "YouTube थंबनेल डाउनलोडर",
-      "Get available YouTube video thumbnail images.": "YouTube वीडियो के उपलब्ध थंबनेल प्राप्त करें।",
-      "Love Calculator": "लव कैलकुलेटर",
-      "Try a fun name-based compatibility calculation.": "नाम के आधार पर मजेदार अनुकूलता जांचें।",
-      "Passport Photo Maker": "पासपोर्ट फोटो मेकर",
-      "Prepare passport and document photos in supported sizes.": "सपोर्टेड साइज में पासपोर्ट और दस्तावेज़ फोटो तैयार करें।",
-      "Background Remover": "बैकग्राउंड हटाएं",
-      "Remove or change image backgrounds with available options.": "इमेज का बैकग्राउंड हटाएं या बदलें।",
-      "Compress Image to Any KB": "इमेज को किसी भी KB में कंप्रेस करें",
-      "Reduce image file size for different upload requirements.": "अलग-अलग अपलोड जरूरतों के लिए इमेज का साइज कम करें।",
-      "JPG to PDF Converter": "JPG से PDF कन्वर्टर",
-      "Combine supported image files into a PDF document.": "इमेज फाइलों को एक PDF दस्तावेज़ में जोड़ें।",
-      "PDF to JPG Converter": "PDF से JPG कन्वर्टर",
-      "Convert PDF pages into downloadable JPG images.": "PDF पेज को डाउनलोड करने योग्य JPG इमेज में बदलें।",
-      "Instagram Reels Downloader": "Instagram Reels डाउनलोडर",
-      "Access available Instagram Reels download functionality.": "Instagram Reels डाउनलोड करने की सुविधा इस्तेमाल करें।",
-      "QR Code Generator": "QR कोड जनरेटर",
-      "Create QR codes for supported links, text and Wi-Fi details.": "लिंक, टेक्स्ट और Wi-Fi जानकारी के लिए QR कोड बनाएं।",
-      "PDF to Word": "PDF से Word",
-      "Convert supported PDF documents into editable Word files.": "PDF दस्तावेज़ों को एडिट करने योग्य Word फाइल में बदलें।",
-      "Word to PDF": "Word से PDF",
-      "Convert supported Word documents into PDF format.": "Word दस्तावेज़ों को PDF में बदलें।",
-      "PDF Merge & Split": "PDF जोड़ें और अलग करें",
-      "Combine PDF documents or split them into separate pages.": "PDF दस्तावेज़ जोड़ें या अलग-अलग पेज में बांटें।",
-      "Image to Word - OCR": "इमेज से Word - OCR",
-      "Extract text from supported images and scanned documents.": "इमेज और स्कैन किए गए दस्तावेज़ों से टेक्स्ट निकालें।",
-      "BMI Calculator": "BMI कैलकुलेटर",
-      "Calculate body mass index using height and weight.": "लंबाई और वजन से बॉडी मास इंडेक्स निकालें।",
-      "Age Calculator": "उम्र कैलकुलेटर",
-      "Calculate age in years, months and days from date of birth.": "जन्मतिथि से साल, महीने और दिन में उम्र निकालें।",
-      "Loan EMI Calculator": "लोन EMI कैलकुलेटर",
-      "Estimate monthly loan payments, interest and total repayment.": "मासिक लोन किस्त, ब्याज और कुल भुगतान का अनुमान लगाएं।",
-      "Percentage Calculator": "प्रतिशत कैलकुलेटर",
-      "Calculate percentages, percentage changes and values.": "प्रतिशत, प्रतिशत बदलाव और मान निकालें।",
-      "Discount Calculator": "डिस्काउंट कैलकुलेटर",
-      "Calculate discounted prices and total savings.": "छूट के बाद कीमत और कुल बचत निकालें।",
-      "Date Difference Calculator": "तारीख अंतर कैलकुलेटर",
-      "Find the number of days between two selected dates.": "दो तारीखों के बीच दिनों की संख्या निकालें।",
-      "Word Counter": "शब्द गिनें",
-      "Count words, characters, sentences and text length.": "शब्द, अक्षर, वाक्य और टेक्स्ट की लंबाई गिनें।",
-      "Character Counter": "अक्षर गिनें",
-      "Count characters with and without spaces.": "स्पेस के साथ और बिना अक्षरों की गिनती करें।",
-      "AI Text Humanizer": "AI टेक्स्ट ह्यूमनाइज़र",
-      "Rewrite text to create a more natural writing style.": "टेक्स्ट को अधिक स्वाभाविक अंदाज में दोबारा लिखें।",
-      "Unit Converter": "यूनिट कन्वर्टर",
-      "Convert length, weight, temperature and other common units.": "लंबाई, वजन, तापमान और अन्य यूनिट बदलें।",
-      "Password Generator": "पासवर्ड जनरेटर",
-      "Generate random passwords with customizable options.": "अपनी पसंद के विकल्पों के साथ मजबूत पासवर्ड बनाएं।",
-      "Resume Builder": "रिज्यूमे बिल्डर",
-      "Create a professional resume and download your document.": "प्रोफेशनल रिज्यूमे बनाएं और डाउनलोड करें।",
-      "Contact:": "संपर्क:",
-      "A collection of free online tools for images, PDFs, videos, text and everyday tasks. Explore simple utilities designed to make common digital work easier.": "इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स का संग्रह। आम डिजिटल कामों को आसान बनाने वाली सुविधाएं देखें।",
-      "NEXORA brings together useful online tools for working with images, PDF documents, videos, text and everyday calculations. Whether you need to compress a photo, convert a document, extract text from an image, prepare a passport photo or calculate a value, you can explore the available tools in one place.": "NEXORA इमेज, PDF दस्तावेज़, वीडियो, टेक्स्ट और रोज़मर्रा की गणनाओं के लिए उपयोगी ऑनलाइन टूल्स एक जगह उपलब्ध कराता है। फोटो कंप्रेस करने, दस्तावेज़ बदलने, इमेज से टेक्स्ट निकालने या पासपोर्ट फोटो बनाने के लिए टूल्स देखें।",
-      "Each tool has its own features and supported formats. Processing methods, file limits and browser requirements may vary depending on the tool. Check the instructions on each tool page before using it.": "हर टूल की अपनी सुविधाएं और सपोर्टेड फॉर्मेट हैं। प्रोसेसिंग का तरीका, फाइल लिमिट और ब्राउज़र की जरूरत अलग हो सकती है। इस्तेमाल से पहले टूल पेज के निर्देश पढ़ें।",
-      "No Watermark": "वॉटरमार्क नहीं",
-      "Easy to Use": "इस्तेमाल में आसान",
-      "Text Extraction": "टेक्स्ट निकालना",
-      "Audio Support": "ऑडियो सपोर्ट",
-      "Multiple Languages": "कई भाषाएं",
-      "Thumbnails": "थंबनेल",
-      "HD Options": "HD विकल्प",
-      "Photo Sizes": "फोटो साइज",
-      "Custom Options": "कस्टम विकल्प",
-      "Background Editing": "बैकग्राउंड एडिटिंग",
-      "Image Tool": "इमेज टूल",
-      "Target KB": "लक्षित KB",
-      "Image Compression": "इमेज कंप्रेशन",
-      "Multiple Images": "कई इमेज",
-      "PDF Export": "PDF एक्सपोर्ट",
-      "PDF Conversion": "PDF कन्वर्जन",
-      "Image Export": "इमेज एक्सपोर्ट",
-      "QR Generator": "QR जनरेटर",
-      "Download": "डाउनलोड",
-      "DOCX": "DOCX",
-      "Merge PDF": "PDF जोड़ें",
-      "Split PDF": "PDF अलग करें",
-      "Word Export": "Word एक्सपोर्ट",
-      "Health": "स्वास्थ्य",
-      "Calculator": "कैलकुलेटर",
-      "DOB": "जन्मतिथि",
-      "Finance": "वित्त",
-      "EMI": "EMI",
-      "Percentage": "प्रतिशत",
-      "Discount": "छूट",
-      "Savings": "बचत",
-      "Dates": "तारीखें",
-      "Duration": "अवधि",
-      "Word Count": "शब्द गिनती",
-      "Instant": "तुरंत",
-      "Character Count": "अक्षर गिनती",
-      "Text": "टेक्स्ट",
-      "AI Writing": "AI लेखन",
-      "Security": "सुरक्षा",
-      "Generator": "जनरेटर",
-      "PDF Download": "PDF डाउनलोड",
-      "RESUME": "रिज्यूमे",
-      "NEW": "नया",
-      "PRO": "प्रो",
-      "VIDEO": "वीडियो",
-      "40+ LANGUAGES": "40+ भाषाएं",
-      "HD": "HD",
-      "FUN": "मनोरंजन",
-      "PHOTO": "फोटो",
-      "AI": "AI",
-      "POPULAR": "लोकप्रिय",
-      "MEDIA": "मीडिया",
-      "QR": "QR",
-      "DOCUMENT": "दस्तावेज़",
-      "OCR": "OCR",
-      "INSTANT": "तुरंत",
-      "TEXT": "टेक्स्ट"
+      "Image Compression Guides": "इमेज कंप्रेशन गाइड",
+      "WORLDWIDE NO.1 • FREE DPI TOOL": "दुनिया का नंबर 1 • फ्री DPI टूल",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly": "इमेज DPI चेंजर - 72 से 300 DPI तुरंत बदलें",
+      "Change your JPG, PNG or HEIC image DPI to 72, 150, 300, 600 or custom value. Best for printing, Amazon, passport & worldwide docs. 100% Private - No Watermark.": "अपनी JPG, PNG या HEIC इमेज का DPI बदलें। प्रिंटिंग के लिए बेस्ट, 100% प्राइवेट।",
+      "Upload Your Image": "अपनी इमेज अपलोड करें",
+      "Select DPI": "DPI चुनें", "Or enter custom DPI (1–1200)": "या कस्टम DPI डालें (1-1200)",
+      "Download Image - 300 DPI →": "इमेज डाउनलोड करें - 300 DPI →"
+    },
+    bn: {
+      "Home": "হোম", "All Tools": "সব টুলস", "About": "আমাদের সম্পর্কে", "Contact": "যোগাযোগ", "Privacy": "গোপনীয়তা",
+      "FREE ONLINE TOOLS FOR EVERYDAY TASKS": "দৈনন্দিন কাজের জন্য বিনামূল্যে অনলাইন টুলস",
+      "Get More Done with": "আপনার কাজ সহজে করুন", "Search tools... e.g. image compressor, PDF to Word": "টুল খুঁজুন...",
+      "All Tools": "সব টুলস", "Image": "ছবি", "PDF": "PDF", "Calculators": "ক্যালকুলেটর", "Open Tool →": "টুল খুলুন →",
+      "Image DPI Changer - 72 to 300 DPI": "ইমেজ DPI পরিবর্তনকারী - 72 থেকে 300 DPI",
+      "Image Compression Guides": "ইমেজ কম্প্রেশন গাইড",
+      "WORLDWIDE NO.1 • FREE DPI TOOL": "বিশ্বব্যাপী নং 1 • বিনামূল্যে DPI টুল",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly": "ইমেজ DPI পরিবর্তনকারী - 72 থেকে 300 DPI তে পরিবর্তন করুন",
+      "Change your JPG, PNG or HEIC image DPI to 72, 150, 300, 600 or custom value. Best for printing, Amazon, passport & worldwide docs. 100% Private - No Watermark.": "আপনার JPG, PNG ছবির DPI পরিবর্তন করুন। প্রিন্টিং এর জন্য সেরা, 100% প্রাইভেট।",
+      "Upload Your Image": "আপনার ছবি আপলোড করুন",
+      "Select DPI": "DPI নির্বাচন করুন", "Or enter custom DPI (1–1200)": "অথবা কাস্টম DPI লিখুন (1-1200)",
+      "Download Image - 300 DPI →": "ছবি ডাউনলোড করুন - 300 DPI →"
+    },
+    pt: {
+      "Home": "Início", "All Tools": "Todas Ferramentas", "About": "Sobre", "Contact": "Contato", "Privacy": "Privacidade",
+      "FREE ONLINE TOOLS FOR EVERYDAY TASKS": "FERRAMENTAS ONLINE GRÁTIS PARA TAREFAS DIÁRIAS",
+      "Get More Done with": "Faça mais com", "Search tools... e.g. image compressor, PDF to Word": "Buscar ferramentas...",
+      "All Tools": "Todas Ferramentas", "Image": "Imagem", "PDF": "PDF", "Calculators": "Calculadoras", "Open Tool →": "Abrir →",
+      "Image DPI Changer - 72 to 300 DPI": "Alterador de DPI - 72 a 300 DPI",
+      "WORLDWIDE NO.1 • FREE DPI TOOL": "Nº 1 MUNDIAL • FERRAMENTA DPI GRÁTIS",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly": "Alterador de DPI de Imagem - Mude 72 para 300 DPI Instantaneamente",
+      "Upload Your Image": "Carregue sua imagem",
+      "Select DPI": "Selecione DPI", "Or enter custom DPI (1–1200)": "Ou digite DPI personalizado",
+      "Download Image - 300 DPI →": "Baixar Imagem - 300 DPI →"
+    },
+    es: {
+      "Home": "Inicio", "All Tools": "Todas Herramientas", "WORLDWIDE NO.1 • FREE DPI TOOL": "Nº1 MUNDIAL • HERRAMIENTA DPI GRATIS",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly": "Cambiador de DPI - Cambia 72 a 300 DPI al instante",
+      "Upload Your Image": "Sube tu imagen", "Select DPI": "Seleccionar DPI",
+      "Download Image - 300 DPI →": "Descargar Imagen - 300 DPI →"
+    },
+    id: {
+      "Home": "Beranda", "All Tools": "Semua Alat", "WORLDWIDE NO.1 • FREE DPI TOOL": "NO.1 DUNIA • ALAT DPI GRATIS",
+      "Image DPI Changer - Change 72 to 300 DPI Instantly": "Pengubah DPI Gambar - Ubah 72 ke 300 DPI Instan",
+      "Upload Your Image": "Unggah Gambar Anda", "Select DPI": "Pilih DPI",
+      "Download Image - 300 DPI →": "Unduh Gambar - 300 DPI →"
     }
   };
 
-  // Keep the original text so language switching is reversible.
   const originalTexts = new WeakMap();
-  const originalPlaceholders = new WeakMap();
-  const originalTitles = new WeakMap();
-  const originalAriaLabels = new WeakMap();
-
   let activeLanguage = "en";
   let resultCountObserver = null;
 
   function detectLanguage() {
-    const preferences = navigator.languages || [
-      navigator.language || "en"
-    ];
-
-    for (const preference of preferences) {
-      const code = preference.toLowerCase();
-
-      if (code.startsWith("zh-tw") || code.startsWith("zh-hk")) {
-        return "zh-TW";
-      }
-
-      if (code.startsWith("zh")) {
-        return "zh-CN";
-      }
-
-      const exact = supported.find(
-        item => item.toLowerCase() === code
-      );
-
+    const prefs = navigator.languages || [navigator.language || "en"];
+    for (const pref of prefs) {
+      const code = pref.toLowerCase();
+      if (code.startsWith("zh-tw") || code.startsWith("zh-hk")) return "zh-TW";
+      if (code.startsWith("zh")) return "zh-CN";
+      const exact = supported.find(item => item.toLowerCase() === code);
       if (exact) return exact;
-
       const base = code.split("-")[0];
-
-      if (supported.includes(base)) {
-        return base;
-      }
+      if (supported.includes(base)) return base;
     }
-
     return "en";
   }
 
   function safeGetLanguage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-
-      return saved && saved !== "auto" && LANGUAGES[saved]
-        ? saved
-        : detectLanguage();
-    } catch (error) {
-      return detectLanguage();
-    }
+      return saved && saved !== "auto" && LANGUAGES[saved] ? saved : detectLanguage();
+    } catch (e) { return detectLanguage(); }
   }
 
   function getOriginalText(node) {
-    if (!originalTexts.has(node)) {
-      originalTexts.set(node, node.nodeValue);
-    }
-
+    if (!originalTexts.has(node)) originalTexts.set(node, node.nodeValue);
     return originalTexts.get(node);
   }
 
   function translateTextNodes(language, dictionary) {
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          const parent = node.parentElement;
-
-          if (!parent) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          if (
-            parent.closest(
-              "script, style, noscript, textarea, #resultCount, #nexora-language-selector"
-            )
-          ) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          return NodeFilter.FILTER_ACCEPT;
-        }
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest("script, style, noscript, textarea, #resultCount, #nexora-language-selector")) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
       }
-    );
-
+    });
     let node;
-
     while ((node = walker.nextNode())) {
       const original = getOriginalText(node);
       const key = original.trim();
-
       if (!key) continue;
-
-      if (language === "en") {
-        node.nodeValue = original;
-        continue;
-      }
-
+      if (language === "en") { node.nodeValue = original; continue; }
       let translated = dictionary[key];
-
-      // Handle text such as "Explore Tools →".
       if (!translated && key.endsWith(" →")) {
         const baseKey = key.slice(0, -2).trim();
-
-        if (dictionary[baseKey]) {
-          translated = dictionary[baseKey] + " →";
-        }
+        if (dictionary[baseKey]) translated = dictionary[baseKey] + " →";
       }
-
       if (translated) {
         const leading = original.match(/^\s*/)?.[0] || "";
         const trailing = original.match(/\s*$/)?.[0] || "";
-
         node.nodeValue = leading + translated + trailing;
-      } else {
-        node.nodeValue = original;
-      }
+      } else { node.nodeValue = original; }
     }
-  }
-
-  function translateAttributes(language, dictionary) {
-    // Placeholders
-    document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
-      if (!originalPlaceholders.has(element)) {
-        originalPlaceholders.set(
-          element,
-          element.getAttribute("placeholder") || ""
-        );
-      }
-
-      const original = originalPlaceholders.get(element);
-      const key = element.getAttribute("data-i18n-placeholder");
-
-      element.setAttribute(
-        "placeholder",
-        language === "en"
-          ? original
-          : (dictionary[key] || original)
-      );
-    });
-
-    // Title attributes
-    document.querySelectorAll("[data-i18n-title]").forEach(element => {
-      if (!originalTitles.has(element)) {
-        originalTitles.set(
-          element,
-          element.getAttribute("title") || ""
-        );
-      }
-
-      const original = originalTitles.get(element);
-      const key = element.getAttribute("data-i18n-title");
-
-      element.setAttribute(
-        "title",
-        language === "en"
-          ? original
-          : (dictionary[key] || original)
-      );
-    });
-
-    // Accessibility labels
-    const ariaTranslations = {
-      "Search online tools": "ऑनलाइन टूल खोजें",
-      "Clear search": "खोज साफ़ करें",
-      "Filter tools by category": "कैटेगरी के अनुसार टूल छांटें",
-      "Choose website language": "वेबसाइट की भाषा चुनें"
-    };
-
-    document.querySelectorAll("[aria-label]").forEach(element => {
-      if (!originalAriaLabels.has(element)) {
-        originalAriaLabels.set(
-          element,
-          element.getAttribute("aria-label") || ""
-        );
-      }
-
-      const original = originalAriaLabels.get(element);
-
-      element.setAttribute(
-        "aria-label",
-        language === "en"
-          ? original
-          : (ariaTranslations[original] || original)
-      );
-    });
-  }
-
-  // Dynamic search result count.
-  function updateResultCount(language) {
-    const resultCount = document.getElementById("resultCount");
-
-    if (!resultCount) return;
-
-    const currentText = resultCount.textContent.trim();
-
-    let countMatch = currentText.match(
-      /^Showing\s+(\d+)\s+tools?$/i
-    );
-
-    if (!countMatch) {
-      countMatch = currentText.match(
-        /^(\d+)\s+टूल(?:\s+दिखाए जा रहे हैं|\s+दिखाया जा रहा है)?$/
-      );
-    }
-
-    if (!countMatch) return;
-
-    const count = Number(countMatch[1]);
-    let newText;
-
-    if (language === "hi") {
-      newText = count === 1
-        ? "1 टूल दिखाया जा रहा है"
-        : count + " टूल दिखाए जा रहे हैं";
-    } else {
-      newText = "Showing " + count +
-        (count === 1 ? " tool" : " tools");
-    }
-
-    if (resultCount.textContent.trim() !== newText) {
-      resultCount.textContent = newText;
-    }
-  }
-
-  function watchResultCount() {
-    const resultCount = document.getElementById("resultCount");
-
-    if (!resultCount || resultCountObserver) return;
-
-    resultCountObserver = new MutationObserver(() => {
-      updateResultCount(activeLanguage);
-    });
-
-    resultCountObserver.observe(resultCount, {
-      childList: true,
-      characterData: true,
-      subtree: true
-    });
   }
 
   function translatePage(language) {
-    if (!LANGUAGES[language]) {
-      language = "en";
-    }
-
+    if (!LANGUAGES[language]) language = "en";
     activeLanguage = language;
-
     const dictionary = TRANSLATIONS[language] || {};
-
     document.documentElement.lang = language;
-
-    document.documentElement.dir =
-      ["ar", "ur", "fa"].includes(language)
-        ? "rtl"
-        : "ltr";
-
+    document.documentElement.dir = ["ar","ur","fa"].includes(language) ? "rtl" : "ltr";
     translateTextNodes(language, dictionary);
-    translateAttributes(language, dictionary);
-    updateResultCount(language);
   }
 
   function createLanguageSelector() {
-    if (document.getElementById("nexora-language-selector")) {
-      return;
-    }
-
+    if (document.getElementById("nexora-language-selector")) return;
     const style = document.createElement("style");
-
-    style.textContent = `
-      #nexora-language-selector {
-        position: fixed;
-        right: 14px;
-        bottom: 16px;
-        z-index: 99999;
-        padding: 10px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 12px;
-        background: #fff;
-        color: #111827;
-        font-size: 14px;
-        max-width: 190px;
-        box-shadow: 0 4px 18px rgba(0,0,0,.13);
-        cursor: pointer;
-      }
-
-      #nexora-language-selector:focus {
-        outline: 2px solid #6366f1;
-      }
-
-      html[dir="rtl"] #nexora-language-selector {
-        right: auto;
-        left: 14px;
-      }
-    `;
-
+    style.textContent = `#nexora-language-selector{position:fixed;right:14px;bottom:16px;z-index:99999;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#111827;font-size:14px;max-width:190px;box-shadow:0 4px 18px rgba(0,0,0,.13);cursor:pointer} html[dir="rtl"] #nexora-language-selector{right:auto;left:14px}`;
     document.head.appendChild(style);
-
     const select = document.createElement("select");
-
     select.id = "nexora-language-selector";
-    select.setAttribute("aria-label", "Choose website language");
-
     const autoOption = document.createElement("option");
-
-    autoOption.value = "auto";
-    autoOption.textContent = "🌐 Automatic";
-
+    autoOption.value = "auto"; autoOption.textContent = "🌐 Automatic";
     select.appendChild(autoOption);
-
     Object.entries(LANGUAGES).forEach(([code, name]) => {
       const option = document.createElement("option");
-
-      option.value = code;
-      option.textContent = name;
-
+      option.value = code; option.textContent = name;
       select.appendChild(option);
     });
-
     let saved = "auto";
-
-    try {
-      saved = localStorage.getItem(STORAGE_KEY) || "auto";
-    } catch (error) {}
-
-    select.value =
-      saved === "auto" || LANGUAGES[saved]
-        ? saved
-        : "auto";
-
+    try { saved = localStorage.getItem(STORAGE_KEY) || "auto"; } catch(e) {}
+    select.value = saved === "auto" || LANGUAGES[saved] ? saved : "auto";
     select.addEventListener("change", () => {
       const choice = select.value;
-
-      try {
-        localStorage.setItem(STORAGE_KEY, choice);
-      } catch (error) {}
-
-      const language =
-        choice === "auto"
-          ? detectLanguage()
-          : choice;
-
+      try { localStorage.setItem(STORAGE_KEY, choice); } catch(e) {}
+      const language = choice === "auto" ? detectLanguage() : choice;
       translatePage(language);
+      location.reload();
     });
-
     document.body.appendChild(select);
   }
 
   function start() {
     let saved = "auto";
-
-    try {
-      saved = localStorage.getItem(STORAGE_KEY) || "auto";
-    } catch (error) {}
-
-    const initialLanguage =
-      saved === "auto"
-        ? detectLanguage()
-        : safeGetLanguage();
-
+    try { saved = localStorage.getItem(STORAGE_KEY) || "auto"; } catch(e) {}
+    const initialLanguage = saved === "auto" ? detectLanguage() : safeGetLanguage();
     translatePage(initialLanguage);
     createLanguageSelector();
-    watchResultCount();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start);
-  } else {
-    start();
-  }
-
-  window.NEXORA_LANGUAGE = {
-    languages: LANGUAGES,
-    translations: TRANSLATIONS,
-    translate: translatePage,
-    detect: detectLanguage
-  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
 })();
