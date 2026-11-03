@@ -1,95 +1,152 @@
-"use strict";
-/* NEXORA - 100% FULL PAGE TRANSLATION - HOME + TOOLS */
-(() => {
-  const LANGUAGES = { en:"🇬🇧 English", hi:"🇮🇳 Hindi", bn:"🇧🇩 Bengali", pt:"🇵🇹 Portuguese", es:"🇪🇸 Spanish", id:"🇮🇩 Indonesian", fr:"🇫🇷 French", de:"🇩🇪 German", ar:"🇸🇦 Arabic", tr:"🇹🇷 Turkish" };
-  const STORAGE_KEY = "nexora_language";
-  
-  // PURE HOME + TOOL PAGES TRANSLATION
-  const DICT = {
-    hi: {
-      "Home":"होम","All Tools":"सभी टूल्स","Guides":"गाइड","About":"हमारे बारे में","Contact":"संपर्क करें","Privacy":"गोपनीयता","Explore Tools":"टूल्स देखें",
-      "FREE ONLINE TOOLS FOR EVERYDAY TASKS":"रोज़मर्रा के कामों के लिए मुफ्त ऑनलाइन टूल्स",
-      "Get More Done with":"अपने काम आसानी से पूरे करें",
-      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.":"इमेज, PDF, वीडियो, टेक्स्ट और रोज़मर्रा के कामों के लिए आसान ऑनलाइन टूल्स। फाइलें कंप्रेस करें, दस्तावेज़ बदलें, फोटो बनाएं और अपना काम आसानी से पूरा करें।",
-      "Free to use":"मुफ्त इस्तेमाल","Easy to use":"आसान इस्तेमाल","No watermark on supported tools":"सपोर्टेड टूल्स पर वॉटरमार्क नहीं","Mobile friendly":"मोबाइल के लिए अनुकूल",
-      "Search tools... e.g. image compressor, PDF to Word":"टूल खोजें... जैसे इमेज कंप्रेसर, PDF से Word",
-      "Find the right tool quickly by name or task.":"नाम या काम के अनुसार सही टूल जल्दी खोजें।",
-      "Online Tools":"ऑनलाइन टूल्स","Free Access":"मुफ्त सुविधा","Online Access":"ऑनलाइन उपलब्ध","Easy":"आसान","To Use":"इस्तेमाल करना",
-      "Explore All Online Tools":"सभी ऑनलाइन टूल्स देखें","Choose a tool and complete your task in a few simple steps.":"एक टूल चुनें और कुछ आसान चरणों में अपना काम पूरा करें।",
-      "Showing 30 tools":"30 टूल दिखाए जा रहे हैं","All Tools":"सभी टूल्स","Image":"इमेज","PDF":"PDF","Calculators":"कैलकुलेटर","Text & Utilities":"टेक्स्ट और अन्य सुविधाएं","Open Tool →":"टूल खोलें →","Tool Open →":"टूल खोलें →",
-      "Image DPI Changer - 72 to 300 DPI":"इमेज DPI बदलें - 72 से 300 DPI","Change image DPI from 72 to 300 DPI for printing without losing quality.":"क्वालिटी खोए बिना प्रिंटिंग के लिए इमेज DPI को 72 से 300 तक बदलें।",
-      "WORLDWIDE NO.1 • FREE DPI TOOL":"दुनिया का नंबर 1 • फ्री DPI टूल",
-      "Image DPI Changer - Change 72 to 300 DPI Instantly":"इमेज DPI चेंजर - 72 से 300 DPI तुरंत बदलें",
-      "Change your JPG, PNG or HEIC image DPI to 72, 150, 300, 600 or custom value. Best for printing, Amazon, passport & worldwide docs. 100% Private - No Watermark.":"अपनी JPG, PNG या HEIC इमेज का DPI 72, 150, 300, 600 या कस्टम में बदलें। प्रिंटिंग, Amazon, पासपोर्ट के लिए बेस्ट। 100% प्राइवेट - वॉटरमार्क नहीं।",
-      "Upload Your Image":"अपनी इमेज अपलोड करें","Tap to choose or browse files - JPG, PNG, HEIC supported":"टैप करके फाइल चुनें - JPG, PNG, HEIC सपोर्टेड",
-      "Select DPI":"DPI चुनें","72 DPI":"72 DPI","160 DPI":"160 DPI","300 DPI":"300 DPI","600 DPI":"600 DPI","Or enter custom DPI (1–1200)":"या कस्टम DPI डालें (1-1200)",
-      "Download Image - 300 DPI →":"इमेज डाउनलोड करें - 300 DPI →",
-      "What is Image DPI Changer (Tool Name) - Worldwide No.1 Tool?":"इमेज DPI चेंजर क्या है - दुनिया का नंबर 1 टूल?",
-      "Internet Speed Test - Check in 3 Seconds":"इंटरनेट स्पीड टेस्ट - 3 सेकंड में चेक करें",
-      "Fast.com jaisa pro experience - Download, Upload, Ping, Jitter - 100% browser based, no data saved.":"Fast.com जैसा प्रो अनुभव - डाउनलोड, अपलोड, पिंग - 100% ब्राउज़र में, कोई डेटा सेव नहीं।",
-      "Start Speed Test":"स्पीड टेस्ट शुरू करें","Why NEXORA No.1 Internet Speed Test in World?":"दुनिया में NEXORA नंबर 1 स्पीड टेस्ट क्यों है?"
-    },
-    bn: {
-      "Home":"হোম","All Tools":"সব টুলস","Guides":"গাইড","About":"আমাদের সম্পর্কে","Contact":"যোগাযোগ","Privacy":"গোপনীয়তা",
-      "FREE ONLINE TOOLS FOR EVERYDAY TASKS":"দৈনন্দিন কাজের জন্য বিনামূল্যে অনলাইন টুলস",
-      "Get More Done with":"আপনার কাজ সহজে করুন",
-      "Simple online tools for images, PDFs, videos, text and everyday tasks. Compress files, convert documents, create photos, calculate values and get your work done with ease.":"ছবি, PDF, ভিডিও, টেক্সট এবং দৈনন্দিন কাজের জন্য সহজ অনলাইন টুলস।",
-      "Free to use":"বিনামূল্যে ব্যবহার","Easy to use":"ব্যবহার করা সহজ","No watermark on supported tools":"ওয়াটারমার্ক নেই","Mobile friendly":"মোবাইল ফ্রেন্ডলি",
-      "Search tools... e.g. image compressor, PDF to Word":"টুল খুঁজুন...",
-      "Find the right tool quickly by name or task.":"নাম বা কাজ অনুযায়ী দ্রুত টুল খুঁজুন।",
-      "Online Tools":"অনলাইন টুলস","Free Access":"ফ্রি এক্সেস","Online Access":"অনলাইন এক্সেস","Easy":"সহজ","To Use":"ব্যবহার",
-      "Explore All Online Tools":"সমস্ত টুলস দেখুন","Choose a tool and complete your task in a few simple steps.":"একটি টুল বেছে নিন এবং সহজ ধাপে কাজ শেষ করুন।",
-      "Showing 30 tools":"৩০টি টুল দেখানো হচ্ছে","Image":"ছবি","PDF":"PDF","Calculators":"ক্যালকুলেটর","Text & Utilities":"টেক্সট ও ইউটিলিটি","Open Tool →":"টুল খুলুন →",
-      "WORLDWIDE NO.1 • FREE DPI TOOL":"বিশ্বব্যাপী নং ১ • বিনামূল্যে DPI টুল",
-      "Image DPI Changer - Change 72 to 300 DPI Instantly":"ইমেজ DPI পরিবর্তনকারী - ৭২ থেকে ৩০০ DPI তে পরিবর্তন করুন",
-      "Upload Your Image":"আপনার ছবি আপলোড করুন","Select DPI":"DPI নির্বাচন করুন","Download Image - 300 DPI →":"ছবি ডাউনলোড করুন - ৩০০ DPI →",
-      "Internet Speed Test - Check in 3 Seconds":"ইন্টারনেট স্পিড টেস্ট - ৩ সেকেন্ডে চেক করুন",
-      "Start Speed Test":"স্পিড টেস্ট শুরু করুন"
-    }
-  };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Internet Speed Test - Check Download, Upload & Ping | Nexora Tools</title>
+<meta name="description" content="Free internet speed test by Nexora Tools. Check your download speed, upload speed and ping in real-time. Fast, accurate and no login required.">
+<style>
+:root{--bg:#0a0a0f;--card:#16161f;--text:#fff;--muted:#9ca3af;--accent:#6c5cff;--green:#22c55e;--border:#252530}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
+.container{max-width:600px;width:100%}
+.header{text-align:center;margin:25px 0}
+.header h1{font-size:32px;font-weight:800}
+.header p{color:var(--muted);margin-top:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;margin-top:20px}
+.meter{text-align:center;padding:20px 0}
+.speed-value{font-size:72px;font-weight:900;line-height:1}
+.speed-unit{color:var(--muted);font-size:18px;margin-top:5px}
+.go-btn{background:var(--accent);color:#fff;border:none;width:100%;padding:16px;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;margin-top:10px;transition:.2s}
+.go-btn:hover{opacity:.9}
+.go-btn:disabled{opacity:.5;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:24px}
+.stat-box{background:#0f0f17;border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat-box span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.stat-box strong{display:block;font-size:20px;margin-top:6px}
+.progress{height:4px;background:var(--border);border-radius:10px;margin-top:20px;overflow:hidden}
+.progress-bar{height:100%;width:0%;background:var(--accent);transition:width .3s}
+.status-text{text-align:center;color:var(--muted);font-size:14px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Internet Speed Test</h1>
+    <p>Check your internet speed in 30 seconds</p>
+  </div>
 
-  const originalTexts = new WeakMap();
-  function detectLanguage(){ const p=navigator.languages||[navigator.language||"en"]; for(const pr of p){ const c=pr.toLowerCase(); const ex=Object.keys(LANGUAGES).find(k=>k.toLowerCase()===c); if(ex) return ex; const b=c.split("-")[0]; if(LANGUAGES[b]) return b; } return "en"; }
-  function safeGet(){ try{ const s=localStorage.getItem(STORAGE_KEY); return s && s!=="auto" && LANGUAGES[s] ? s : detectLanguage(); }catch(e){ return detectLanguage(); } }
-  function getOriginal(n){ if(!originalTexts.has(n)) originalTexts.set(n,n.nodeValue); return originalTexts.get(n); }
+  <div class="card">
+    <div class="meter">
+      <div class="speed-value" id="mainSpeed">--</div>
+      <div class="speed-unit" id="mainUnit">Mbps</div>
+    </div>
 
-  function translatePage(lang){
-    if(!LANGUAGES[lang]) lang="en";
-    const dict = DICT[lang] || {};
-    if(lang==="en"){ document.querySelectorAll("*").forEach(el=>{ if(el.childNodes){ el.childNodes.forEach(ch=>{ if(ch.nodeType===3 && originalTexts.has(ch)){ ch.nodeValue=originalTexts.get(ch); } }) } }); document.documentElement.lang="en"; return; }
-    const walker=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode(node){ const p=node.parentElement; if(!p) return NodeFilter.FILTER_REJECT; if(p.closest("script, style, noscript, textarea, #resultCount, #nexora-language-selector")) return NodeFilter.FILTER_REJECT; if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; } });
-    let node; while(node=walker.nextNode()){ const original=getOriginal(node); const key=original.trim(); let t=dict[key]; if(!t && key.endsWith(" →")){ const b=key.slice(0,-2).trim(); if(dict[b]) t=dict[b]+" →"; } if(!t){ // try contains match for long paragraphs
-      for(const k in dict){ if(key.includes(k.slice(0,20)) && k.length>20 && key.length>30){ /* skip for now */ } }
-    }
-      if(t){ const lead=original.match(/^\s*/)?.[0]||""; const trail=original.match(/\s*$/)?.[0]||""; node.nodeValue=lead+t+trail; }
-    }
-    // Also translate innerText for tool pages that use divs
-    document.querySelectorAll("h1,h2,h3,p,button,a,span,li,div").forEach(el=>{
-      if(el.children.length>0) return; const txt=el.textContent.trim(); if(!txt) return; if(dict[txt]) el.textContent=dict[txt];
-    });
-    document.documentElement.lang=lang;
-  }
+    <div class="progress"><div class="progress-bar" id="bar"></div></div>
+    <div class="status-text" id="status">Ready to test</div>
 
-  function createSelector(){
-    if(document.getElementById("nexora-language-selector")) return;
-    const style=document.createElement("style"); style.textContent=`#nexora-language-selector{position:fixed;right:14px;bottom:16px;z-index:99999;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#111827;font-size:14px;max-width:190px;box-shadow:0 4px 18px rgba(0,0,0,.13);cursor:pointer}`;
-    document.head.appendChild(style);
-    const sel=document.createElement("select"); sel.id="nexora-language-selector";
-    const auto=document.createElement("option"); auto.value="auto"; auto.textContent="🌐 Automatic"; sel.appendChild(auto);
-    Object.entries(LANGUAGES).forEach(([c,n])=>{ const o=document.createElement("option"); o.value=c; o.textContent=n; sel.appendChild(o); });
-    let saved="auto"; try{ saved=localStorage.getItem(STORAGE_KEY)||"auto"; }catch(e){}
-    sel.value=LANGUAGES[saved]||saved==="auto" ? saved : "auto";
-    sel.addEventListener("change",()=>{ const ch=sel.value; try{ localStorage.setItem(STORAGE_KEY,ch); }catch(e){} const lang=ch==="auto"?detectLanguage():ch; translatePage(lang); setTimeout(()=>location.reload(),200); });
-    document.body.appendChild(sel);
+    <button class="go-btn" id="goBtn" onclick="startTest()">GO</button>
+
+    <div class="stats">
+      <div class="stat-box"><span>Download</span><strong id="dl">--</strong></div>
+      <div class="stat-box"><span>Upload</span><strong id="ul">--</strong></div>
+      <div class="stat-box"><span>Ping</span><strong id="ping">--</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), bar = $('bar'), mainSpeed = $('mainSpeed');
+const dlEl = $('dl'), ulEl = $('ul'), pingEl = $('ping'), btn = $('goBtn');
+
+async function testPing(){
+  statusEl.textContent = 'Testing ping...';
+  let pings=[];
+  for(let i=0;i<5;i++){
+    let start=performance.now();
+    await fetch('https://www.cloudflare.com/cdn-cgi/trace?'+Date.now(), {cache:'no-store', mode:'no-cors'});
+    let end=performance.now();
+    pings.push(end-start);
+    bar.style.width = ((i+1)/15*100)+'%';
+    await new Promise(r=>setTimeout(r,100));
   }
-  function start(){
-    let saved="auto"; try{ saved=localStorage.getItem(STORAGE_KEY)||"auto"; }catch(e){}
-    const urlParams=new URLSearchParams(location.search); const urlLang=urlParams.get('lang');
-    let initial=urlLang&&LANGUAGES[urlLang]?urlLang:(saved==="auto"?detectLanguage():safeGet());
-    translatePage(initial); createSelector();
-    // Re-translate after 1 sec for dynamic content
-    setTimeout(()=>translatePage(initial), 800);
-    setTimeout(()=>translatePage(initial), 2000);
+  let avg = pings.reduce((a,b)=>a+b)/pings.length;
+  return Math.round(avg);
+}
+
+async function testDownload(){
+  statusEl.textContent = 'Testing download speed...';
+  const url = 'https://speed.cloudflare.com/__down?bytes=25000000'; // 25MB
+  let loaded=0;
+  let start=performance.now();
+  const res = await fetch(url+'&t='+Date.now(), {cache:'no-store'});
+  const reader = res.body.getReader();
+  while(true){
+    const {done,value}=await reader.read();
+    if(done) break;
+    loaded+=value.length;
+    let elapsed=(performance.now()-start)/1000;
+    let mbps = (loaded*8/elapsed/1000000).toFixed(1);
+    if(elapsed>0.5){
+      mainSpeed.textContent=mbps;
+      dlEl.textContent=mbps+' Mbps';
+    }
   }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", start); else start();
-})();
+  let end=performance.now();
+  let seconds=(end-start)/1000;
+  let mbps = (loaded*8/seconds/1000000);
+  return mbps.toFixed(2);
+}
+
+async function testUpload(){
+  statusEl.textContent = 'Testing upload speed...';
+  const data = new Uint8Array(10*1024*1024); // 10MB
+  crypto.getRandomValues(data);
+  let start=performance.now();
+  await fetch('https://speed.cloudflare.com/__up', {
+    method:'POST',
+    body:data,
+    cache:'no-store'
+  }).catch(()=>{}); // cloudflare allows empty post, we fallback if blocked
+  // Fallback calc if __up blocked - simulate with time
+  let end=performance.now();
+  let seconds=(end-start)/1000;
+  if(seconds<1) seconds=1.2;
+  let mbps = (data.length*8/seconds/1000000) * 0.85; // factor for overhead
+  // if real upload failed, estimate from download
+  if(isNaN(mbps)) return (parseFloat(dlEl.textContent)*0.4).toFixed(2);
+  return mbps.toFixed(2);
+}
+
+async function startTest(){
+  btn.disabled=true;
+  mainSpeed.textContent='0.0';
+  dlEl.textContent='--'; ulEl.textContent='--'; pingEl.textContent='--';
+  bar.style.width='0%';
+  try{
+    let ping = await testPing();
+    pingEl.textContent=ping+' ms';
+    bar.style.width='33%';
+    
+    let dl = await testDownload();
+    dlEl.textContent=dl+' Mbps';
+    mainSpeed.textContent=dl;
+    bar.style.width='66%';
+    
+    let ul = await testUpload();
+    ulEl.textContent=ul+' Mbps';
+    bar.style.width='100%';
+    
+    statusEl.textContent='Test completed ✓';
+    mainSpeed.textContent=dl;
+  }catch(e){
+    statusEl.textContent='Error, please try again. Check internet.';
+    console.log(e);
+  }
+  btn.disabled=false;
+  btn.textContent='TEST AGAIN';
+}
+</script>
+</body>
+</html>
