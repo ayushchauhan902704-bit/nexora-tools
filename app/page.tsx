@@ -14,7 +14,7 @@ const TOOLS = [
   { t:"Compress Image to Any KB", d:"JPG/PNG/WEBP to 20KB, 50KB, 100KB, 200KB - Exact Size", h:"/compress-image", c:"IMAGE", icon:"🗜️", tags:["Exact KB","Private"] },
   { t:"JPG to PDF - Best", d:"50 Images to Single PDF - No Watermark HD", h:"/jpg-to-pdf", c:"PDF", icon:"📷", tags:["50 Photos","HD"] },
   { t:"PDF to JPG - HD", d:"Convert PDF Pages to HD JPG Images - No Watermark", h:"/pdf-to-jpg", c:"PDF", icon:"🖼️", tags:["HD","Private"] },
-  { t:"Instagram Reels Downloader", d:"Download Reels in HD - No Watermark, Fast", h:"/instagram-reels-downloader", c:"IMAGE", icon:"🎬", tags:["HD","No Watermark"] },
+  { t:"Instagram Reels Downloader", d:"Download Reels in HD - No Watermark, Fast", h:"/instagram-reel-downloader", c:"IMAGE", icon:"🎬", tags:["HD","No Watermark"] },
   { t:"QR Code Generator - No.1", d:"Create QR for Link, Text, WiFi - Instant HD Download", h:"/qr-code-generator", c:"IMAGE", icon:"🔳", tags:["Instant","HD"] },
   { t:"PDF to Word - HD", d:"Convert PDF to Editable Word DOC - Keep Formatting", h:"/pdf-to-word", c:"PDF", icon:"📄", tags:["Editable","HD"] },
   { t:"Word to PDF - HD", d:"DOCX, DOC to PDF - A4, HD, No Watermark", h:"/word-to-pdf", c:"PDF", icon:"📄", tags:["A4 HD","HD"] },
