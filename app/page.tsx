@@ -9,7 +9,7 @@ const TOOLS = [
   { t:"Text to Speech - 40+ Languages", d:"Convert Text to Real Human Voice - 40+ Languages", h:"/text-to-speech", c:"TEXT", icon:"🌍", tags:["40+ Lang","Real Voice"] },
   { t:"YT Thumbnail Downloader - HD", d:"Download YouTube Thumbnail in HD 1280x720", h:"/yt-thumbnail-downloader", c:"IMAGE", icon:"🖼️", tags:["HD","No Watermark"] },
   { t:"Love Calculator - By Name", d:"Check Love Compatibility % By Names - Fun Test", h:"/love-calculator", c:"CALCULATOR", icon:"❤️", tags:["Viral","Fun"] },
-  { t:"Passport Photo Maker", d:"10 Sizes - 20KB, 50KB, Visa, Stamp, 35x45mm", h:"/passport-size-photo", c:"IMAGE", icon:"📸", tags:["10 Sizes","Exact KB"] },
+  { t:"Passport Photo Maker", d:"10 Sizes - 20KB, 50KB, Visa, Stamp, 35x45mm", h:"/passport-size-photo-maker", c:"IMAGE", icon:"📸", tags:["10 Sizes","Exact KB"] },
   { t:"Background Remover", d:"Remove BG in 1 Click - HD, Transparent, White, Blue", h:"/background-remover", c:"IMAGE", icon:"🖼️", tags:["AI","HD"] },
   { t:"Compress Image to Any KB", d:"JPG/PNG/WEBP to 20KB, 50KB, 100KB, 200KB - Exact Size", h:"/compress-image", c:"IMAGE", icon:"🗜️", tags:["Exact KB","Private"] },
   { t:"JPG to PDF - Best", d:"50 Images to Single PDF - No Watermark HD", h:"/jpg-to-pdf", c:"PDF", icon:"📷", tags:["50 Photos","HD"] },
@@ -108,7 +108,7 @@ export default function Home(){
       <footer className="footer">
         <div className="footerMain">
           <div className="footerBrand"><a href="/" className="brand"><span className="brandMark">N</span>NEXORA<span className="brandDot">.</span></a><p style={{marginTop:12}}>30 free tools trusted worldwide. Fast, Private Browser-Based, No Watermark HD.</p><a className="emailLink" href="mailto:ayushchauhan902704@gmail.com">ayushchauhan902704@gmail.com</a></div>
-          <div><h4>Popular Tools</h4><a href="/image-to-text">Image to Text OCR</a><a href="/video-compressor">Video Compressor</a><a href="/text-to-speech">Text to Speech</a><a href="/passport-size-photo">Passport Photo</a><a href="/image-dpi-changer">Image DPI Changer</a></div>
+          <div><h4>Popular Tools</h4><a href="/image-to-text">Image to Text OCR</a><a href="/video-compressor">Video Compressor</a><a href="/text-to-speech">Text to Speech</a><a href="/passport-size-photo-maker">Passport Photo</a><a href="/image-dpi-changer">Image DPI Changer</a></div>
           <div><h4>PDF Tools HD</h4><a href="/pdf-to-word">PDF to Word</a><a href="/word-to-pdf">Word to PDF</a><a href="/pdf-merge-split">Merge & Split PDF</a><a href="/jpg-to-pdf">JPG to PDF</a></div>
           <div><h4>Legal</h4><a href="/about">About Us</a><a href="/contact">Contact</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a></div>
         </div>
