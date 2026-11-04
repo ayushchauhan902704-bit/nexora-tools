@@ -3,6 +3,7 @@ import { useState } from "react";
 
 const TOOLS = [
   { t:"Internet Speed Test - Pro", d:"Check Download, Upload, Ping in 3 Sec - Private & Accurate", h:"/internet-speed-test", c:"TEXT", icon:"⚡", tags:["PRO Meter","Private"] },
+  { t:"Image DPI Changer - 72 to 300 DPI", d:"Change JPG, PNG, HEIC DPI to 72, 150, 300, 600 - For Printing, Passport", h:"/image-dpi-changer", c:"IMAGE", icon:"📏", tags:["300 DPI","No Watermark"] },
   { t:"Image to Text - OCR Free", d:"Extract Text From JPG, PNG in 3 Sec - Fast & Private", h:"/image-to-text", c:"IMAGE", icon:"🔤", tags:["OCR","Private"] },
   { t:"Video Compressor to Any MB", d:"Compress Video to Exact 5MB, 10MB, 20MB, 100MB - HD", h:"/video-compressor", c:"VIDEO", icon:"🎬", tags:["Exact Size","HD"] },
   { t:"Text to Speech - 40+ Languages", d:"Convert Text to Real Human Voice - 40+ Languages", h:"/text-to-speech", c:"TEXT", icon:"🌍", tags:["40+ Lang","Real Voice"] },
@@ -53,7 +54,7 @@ export default function Home(){
       </header>
 
       <section className="hero">
-        <span className="heroEyebrow"><span className="liveDot"></span> 29 FREE TOOLS • NO WATERMARK • 100% PRIVATE</span>
+        <span className="heroEyebrow"><span className="liveDot"></span> 30 FREE TOOLS • NO WATERMARK • 100% PRIVATE</span>
         <h1>Every Tool You Need.<br/><span className="gradientText">In One Place.</span></h1>
         <p className="heroCopy">Compress Image to Any KB • Video Compressor to Exact MB • Image to Text OCR • Text to Speech 40+ Languages • PDF Tools HD — No Watermark, Trusted Worldwide</p>
         <div className="heroActions"><a href="#tools" className="primaryButton">Explore All Tools →</a><a href="/compress-image" className="secondaryButton">Compress Image to 20KB</a></div>
@@ -68,18 +69,18 @@ export default function Home(){
               <div className="floatTile tileC"><span>🔤</span><b>Image to Text OCR</b><small>3 Sec • Private</small></div>
             </div>
           </div>
-          <div className="visualBottom"><span>29 TOOLS</span><span>96K+ USERS</span><span>100% FREE</span></div>
+          <div className="visualBottom"><span>30 TOOLS</span><span>96K+ USERS</span><span>100% FREE</span></div>
         </div>
-        <div className="heroMetrics"><div><strong>29+</strong><span>Free Tools</span></div><div><strong>96K+</strong><span>Happy Users</span></div><div><strong>100%</strong><span>Private</span></div><div><strong>0</strong><span>Watermark</span></div></div>
+        <div className="heroMetrics"><div><strong>30+</strong><span>Free Tools</span></div><div><strong>96K+</strong><span>Happy Users</span></div><div><strong>100%</strong><span>Private</span></div><div><strong>0</strong><span>Watermark</span></div></div>
       </section>
 
       <section className="toolsSection" id="tools">
-        <div className="sectionHeading"><div><span className="sectionKicker">● ALL TOOLS</span><h2>Find Your Tool<br/><span className="mutedHeading">In Seconds.</span></h2></div><p>Search from 29 powerful tools. Everything runs in your browser - fast, private & free forever.</p></div>
+        <div className="sectionHeading"><div><span className="sectionKicker">● ALL TOOLS</span><h2>Find Your Tool<br/><span className="mutedHeading">In Seconds.</span></h2></div><p>Search from 30 powerful tools. Everything runs in your browser - fast, private & free forever.</p></div>
         <div className="toolControls">
-          <div className="searchBox"><span>⌕</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search 29 tools... e.g. compress image to 50kb, jpg to pdf..." /><button onClick={()=>setQ("")}>×</button></div>
+          <div className="searchBox"><span>⌕</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search 30 tools... e.g. dpi changer, compress image to 50kb, jpg to pdf..." /><button onClick={()=>setQ("")}>×</button></div>
           <div className="categoryList">{CATS.map(c=><button key={c} onClick={()=>setCat(c)} className={`categoryPill ${cat===c?'selected':''}`}>{c}</button>)}</div>
         </div>
-        <div className="resultsLine"><span>{filtered.length} TOOLS FOUND</span><span>Showing <b>{filtered.length} / 29</b></span></div>
+        <div className="resultsLine"><span>{filtered.length} TOOLS FOUND</span><span>Showing <b>{filtered.length} / 30</b></span></div>
         <div className="toolGrid">
           {filtered.map((t,i)=>(
             <a key={t.t} href={t.h} className="toolCard" style={{'--card-index':i} as any}>
@@ -106,12 +107,12 @@ export default function Home(){
 
       <footer className="footer">
         <div className="footerMain">
-          <div className="footerBrand"><a href="/" className="brand"><span className="brandMark">N</span>NEXORA<span className="brandDot">.</span></a><p style={{marginTop:12}}>29 free tools trusted worldwide. Fast, Private Browser-Based, No Watermark HD.</p><a className="emailLink" href="mailto:ayushchauhan902704@gmail.com">ayushchauhan902704@gmail.com</a></div>
-          <div><h4>Popular Tools</h4><a href="/image-to-text">Image to Text OCR</a><a href="/video-compressor">Video Compressor</a><a href="/text-to-speech">Text to Speech</a><a href="/passport-size-photo">Passport Photo</a></div>
+          <div className="footerBrand"><a href="/" className="brand"><span className="brandMark">N</span>NEXORA<span className="brandDot">.</span></a><p style={{marginTop:12}}>30 free tools trusted worldwide. Fast, Private Browser-Based, No Watermark HD.</p><a className="emailLink" href="mailto:ayushchauhan902704@gmail.com">ayushchauhan902704@gmail.com</a></div>
+          <div><h4>Popular Tools</h4><a href="/image-to-text">Image to Text OCR</a><a href="/video-compressor">Video Compressor</a><a href="/text-to-speech">Text to Speech</a><a href="/passport-size-photo">Passport Photo</a><a href="/image-dpi-changer">Image DPI Changer</a></div>
           <div><h4>PDF Tools HD</h4><a href="/pdf-to-word">PDF to Word</a><a href="/word-to-pdf">Word to PDF</a><a href="/pdf-merge-split">Merge & Split PDF</a><a href="/jpg-to-pdf">JPG to PDF</a></div>
           <div><h4>Legal</h4><a href="/about">About Us</a><a href="/contact">Contact</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms</a></div>
         </div>
-        <div className="footerBottom"><span>© 2026 NEXORA Tools • 29 Tools Free Forever</span><span>No Watermark HD • Private & Secure</span></div>
+        <div className="footerBottom"><span>© 2026 NEXORA Tools • 30 Tools Free Forever</span><span>No Watermark HD • Private & Secure</span></div>
       </footer>
     </div>
   );
