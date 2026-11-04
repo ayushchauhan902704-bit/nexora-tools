@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 export default function VideoCompressorClient() {
   const [file, setFile] = useState<File | null>(null);
@@ -60,22 +60,46 @@ export default function VideoCompressorClient() {
       const ratio = Math.min(1, maxH / videoHeight);
       let width = Math.floor((videoWidth * ratio) / 2) * 2;
       let height = Math.floor((videoHeight * ratio) / 2) * 2;
+      
       const canvas = document.createElement("canvas");
       canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext("2d", { alpha: false })!;
-      const stream = canvas.captureStream(Number(fps));
-      const mime = format === "mp4" ? "video/mp4" : format === "webm" ? "video/webm;codecs=vp8,opus" : "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported(mime) ? mime : "video/webm" });
+      const canvasStream = canvas.captureStream(Number(fps));
+      
+      // FIX 1: AUDIO LOGIC ADDED - Client-side audio capture
+      let finalStream = new MediaStream();
+      canvasStream.getVideoTracks().forEach(t=>finalStream.addTrack(t));
+      
+      if(keepAudio){
+        try{
+          // @ts-ignore
+          const audioStream = (v as any).captureStream ? (v as any).captureStream() : (v as any).mozCaptureStream?.();
+          if(audioStream && audioStream.getAudioTracks().length > 0){
+            finalStream.addTrack(audioStream.getAudioTracks()[0]);
+          }
+        }catch{}
+      }
+
+      let mime = "video/webm;codecs=vp8,opus";
+      if(format === "mp4"){
+        const mp4 = "video/mp4;codecs=avc1.42E01E,mp4a.40.2";
+        if(MediaRecorder.isTypeSupported(mp4)) mime = mp4;
+      } else if(format === "webm"){
+        mime = "video/webm;codecs=vp8,opus";
+      }
+      
+      const recorder = new MediaRecorder(finalStream, { mimeType: MediaRecorder.isTypeSupported(mime) ? mime : "video/webm" });
       const chunks: Blob[] = [];
       recorder.ondataavailable = e => e.data.size > 0 && chunks.push(e.data);
       const done = new Promise<void>(res => recorder.onstop = () => res());
       recorder.start(200);
       v.currentTime = 0; await v.play();
+      
       const draw = () => {
-        if (v.ended) { recorder.stop(); return; }
+        if (v.ended || v.paused) { if(recorder.state !== "inactive") recorder.stop(); return; }
         ctx.drawImage(v, 0, 0, width, height);
         setProgress(Math.min(94, (v.currentTime / duration) * 94));
-        setProgressLabel(`Compressing video... ${Math.floor(v.currentTime)}s / ${Math.ceil(duration)}s`);
+        setProgressLabel(`Compressing video... ${Math.floor(v.currentTime)}s / ${Math.ceil(duration)}s - Worldwide No.1 - Progress 0-100%`);
         requestAnimationFrame(draw);
       };
       requestAnimationFrame(draw);
@@ -85,8 +109,8 @@ export default function VideoCompressorClient() {
       setOutputUrl(url); setOutputExt(blob.type.includes("mp4") ? "mp4" : "webm");
       setOrigSize(formatBytes(file.size)); setCompSize(formatBytes(blob.size));
       setSaved(file.size > blob.size ? (((file.size - blob.size) / file.size) * 100).toFixed(1) + "% saved" : "Larger");
-      setResultNote(`Output: ${blob.type.includes("mp4") ? "MP4" : "WebM"} | Target ${targetMB}MB | ${blob.size < targetBytes ? "Within target - No Watermark HD - 100% Private Client-side" : "Above target - Try lower quality"} | ${keepAudio ? "Audio included - Video compressor with audio" : ""} | Worldwide No.1 - File server pe nahi jati`);
-      setShowResult(true); setProgress(100); setProgressLabel("Done!"); setStatus("Your compressed video is ready - Before/After - HD Quality - Download now - Worldwide No.1");
+      setResultNote(`Output: ${blob.type.includes("mp4") ? "MP4" : "WebM"} | Target ${targetMB}MB | ${blob.size < targetBytes ? "Within target - No Watermark HD - 100% Private Client-side - File server pe nahi jati" : "Above target - Try lower quality"} | ${keepAudio ? "Audio included - Video compressor with audio - Worldwide" : ""} | Worldwide No.1 - Before/After - Client-side`);
+      setShowResult(true); setProgress(100); setProgressLabel("Done! - HD Quality - No Watermark"); setStatus("Your compressed video is ready - Before/After - HD Quality - Download now - Worldwide No.1 - 100% Private");
       if (outputRef.current) { outputRef.current.src = url; outputRef.current.style.display = "block"; }
     } catch (e: any) { setError(e.message); setShowProgress(false); } finally { setIsCompressing(false); }
   };
@@ -138,8 +162,19 @@ export default function VideoCompressorClient() {
                   <option value="original">Original resolution</option><option value="1080">1080p (Full HD)</option><option value="720">720p (HD)</option><option value="480">480p</option><option value="360">360p</option>
                 </select>
               </div>
+              {/* FIX 2: FORMAT + FPS UI ADDED */}
+              <div><label style={{display:"block",fontSize:"13px",fontWeight:700,marginBottom:"9px"}}>Output format - Worldwide</label>
+                <select value={format} onChange={e=>setFormat(e.target.value)} style={{width:"100%",background:"#0d1528",color:"white",border:"1px solid rgba(255,255,255,.10)",borderRadius:"10px",padding:"13px"}}>
+                  <option value="auto">Best supported format</option><option value="mp4">MP4 (if supported)</option><option value="webm">WebM (if supported)</option>
+                </select>
+              </div>
+              <div><label style={{display:"block",fontSize:"13px",fontWeight:700,marginBottom:"9px"}}>Frame rate - Global</label>
+                <select value={fps} onChange={e=>setFps(e.target.value)} style={{width:"100%",background:"#0d1528",color:"white",border:"1px solid rgba(255,255,255,.10)",borderRadius:"10px",padding:"13px"}}>
+                  <option value="24">24 FPS</option><option value="30">30 FPS - Best Worldwide</option>
+                </select>
+              </div>
             </div>
-            <div style={{marginTop:"20px"}}><div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",marginBottom:"10px"}}><label>Compression quality</label><strong>{quality}%</strong></div><input type="range" min={25} max={95} value={quality} onChange={e=>setQuality(Number(e.target.value))} style={{width:"100%"}} /><div style={{color:"#9eabc4",fontSize:"12px",marginTop:"8px"}}>Higher quality = larger file. Lower quality reduces size further - Worldwide optimization.</div></div>
+            <div style={{marginTop:"20px"}}><div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",marginBottom:"10px"}}><label>Compression quality</label><strong>{quality}%</strong></div><input type="range" min={25} max={95} value={quality} onChange={e=>setQuality(Number(e.target.value))} style={{width:"100%"}} /></div>
             <label style={{display:"flex",gap:"10px",marginTop:"19px",fontSize:"13px"}}><input type="checkbox" checked={keepAudio} onChange={e=>setKeepAudio(e.target.checked)} /><span>Preserve original audio. This video compressor with audio keeps sound when supported - Worldwide No.1 feature.</span></label>
             <div style={{marginTop:"22px",display:"flex",gap:"12px",flexWrap:"wrap"}}><button className="btn" onClick={compressNow} disabled={!file||isCompressing} style={{flex:1,minWidth:"170px",opacity:!file||isCompressing?0.45:1}}>{isCompressing?"Compressing...":"Compress Video - Worldwide No.1"}</button><button className="btn" style={{background:"#27334e"}} onClick={()=>{setFile(null); setShowResult(false); setShowProgress(false); setError("")}}>Reset</button></div>
             {error && <div style={{marginTop:"16px",padding:"13px",borderRadius:"10px",color:"#ffc2c7",background:"rgba(255,80,100,.10)",border:"1px solid rgba(255,80,100,.25)",fontSize:"13px"}}>{error}</div>}
@@ -153,32 +188,14 @@ export default function VideoCompressorClient() {
               <div className="feature"><div style={{fontSize:"23px"}}>🎯</div><h3 style={{fontSize:"14px",margin:"10px 0 7px"}}>Compress video to 5MB, 10MB, 20MB - Worldwide</h3><p style={{fontSize:"12px",color:"#9eabc4"}}>Online video size reducer - Choose target 5MB to 100MB worldwide - Before/After - Client-side.</p></div>
               <div className="feature"><div style={{fontSize:"23px"}}>💬</div><h3 style={{fontSize:"14px",margin:"10px 0 7px"}}>WhatsApp & Discord compressor - 16MB 8MB</h3><p style={{fontSize:"12px",color:"#9eabc4"}}>WhatsApp video compressor 16MB limit, Discord video compressor 8MB limit - Worldwide sharing fix.</p></div>
               <div className="feature"><div style={{fontSize:"23px"}}>🔒</div><h3 style={{fontSize:"14px",margin:"10px 0 7px"}}>No watermark, with audio - HD Quality</h3><p style={{fontSize:"12px",color:"#9eabc4"}}>Video compressor without watermark, with audio support, MP4 video compressor - 100% Private.</p></div>
-              <div className="feature"><div style={{fontSize:"23px"}}>📱</div><h3 style={{fontSize:"14px",margin:"10px 0 7px"}}>Compress video on iPhone - Mobile Friendly</h3><p style={{fontSize:"12px",color:"#9eabc4"}}>Works on iPhone Safari worldwide - No app needed, browser-based, File server pe nahi jati.</p></div>
-              <div className="feature"><div style={{fontSize:"23px"}}>🤖</div><h3 style={{fontSize:"14px",margin:"10px 0 7px"}}>Video compressor for Android - Universal</h3><p style={{fontSize:"12px",color:"#9eabc4"}}>Video compressor for Android Chrome worldwide - Universal browser support, International standards.</p></div>
-              <div className="feature"><div style={{fontSize:"23px"}}>⚡</div><h3 style={{fontSize:"14px",margin:"10px 0 7px"}}>MP4 video compressor - No.1 Worldwide</h3><p style={{fontSize:"12px",color:"#9eabc4"}}>MP4 video compressor + MOV support worldwide - Best free video compressor online - E-E-A-T trusted.</p></div>
             </div>
           </div>
-
+          
           <div className="card" style={{color:"#9eabc4",fontSize:"14px",lineHeight:1.8}}>
-            <h2 style={{fontSize:"21px",margin:"0 0 12px",color:"white"}}>Free Video Compressor Online - Reduce Video File Size Worldwide No.1</h2>
-            <p>NEXORA is free video compressor online worldwide that helps reduce video file size in browser - Client-side processing, File server pe nahi jati, 100% Private. This online video size reducer lets you compress video to 5MB, 10MB, 20MB or custom size worldwide. As MP4 video compressor, supports common formats and preserves audio when browser allows. Before/After size dikhega, Progress 0-100%, Error handling, Live preview No reload, Sab kuch 1 page me, No forced login, Unlimited, Global download support, Universal browser support, International standards, Searchable tool pages, Global keywords, Made in India.</p>
-            <h3 style={{fontSize:"16px",margin:"22px 0 8px",color:"white"}}>Testimonials - What Worldwide Users Say</h3>
-            <p>⭐⭐⭐⭐⭐ "Compressed 100MB video to 9MB for WhatsApp, no watermark, HD quality!" - Ankit, India<br/>⭐⭐⭐⭐⭐ "Best video compressor with audio, file never left my phone!" - Priya, USA - Worldwide No.1</p>
-            <h3 style={{fontSize:"16px",margin:"22px 0 8px",color:"white"}}>Comparison - NEXORA vs Others - Why No.1 Worldwide</h3>
-            <p>✅ NEXORA: Unlimited, 100% Private Client-side, No Watermark HD, Progress Bar, Before/After, Free Forever, iPhone + Android Worldwide Support<br/>❌ Others: Limit 2, Upload to server, Watermark, No progress, Slow, Paid</p>
-          </div>
-
-          <div className="card" style={{color:"#9eabc4",fontSize:"14px",lineHeight:1.8}}>
-            <h2 style={{fontSize:"21px",margin:"0 0 12px",color:"white"}}>FAQ - Video Compressor Worldwide</h2>
-            <p><b>1. Free video compressor online worldwide?</b> Yes free worldwide, browser-based, no watermark HD, no upload, file server pe nahi jati, client-side, 100% private.<br/><br/><b>2. Compress to 5MB 10MB 20MB exactly?</b> Targets not exact guarantee, tries to approach target - Before/After, Progress 0-100% - Worldwide logic.<br/><br/><b>3. Video compressor without watermark HD?</b> Yes no watermark HD quality, clean output worldwide.<br/><br/><b>4. Video compressor with audio worldwide?</b> Yes tries to preserve audio - Keep Preserve Audio checked - Browser support worldwide.<br/><br/><b>5. WhatsApp 16MB Discord 8MB compressor?</b> Yes use 16MB for WhatsApp video compressor and 8MB for Discord video compressor worldwide.<br/><br/><b>6. Compress video on iPhone Android worldwide?</b> Yes iPhone Safari + Android Chrome worldwide - Mobile friendly - Universal support.<br/><br/><b>7. MP4 video compressor worldwide?</b> Yes MP4 + MOV support worldwide - Output MP4 or WebM based on browser.<br/><br/><b>8. How to reduce video file size worldwide?</b> Upload, choose target 5MB 10MB 20MB, select 720p 70% quality, download no watermark HD worldwide.</p>
-            <p style={{marginTop:"14px"}}>📧 Email: <a href="mailto:ayushchauhan902704@gmail.com" style={{color:"#b8adff",fontWeight:700}}>ayushchauhan902704@gmail.com</a> | 📱 Phone: <a href="tel:+919389641559" style={{color:"#b8adff",fontWeight:700}}>+91 9389641559</a> | 📍 Dehradun, India | 🔗 <a href="https://www.linkedin.com/in/ayush-chauhan-0b0960444" style={{color:"#b8adff",fontWeight:700}}>LinkedIn</a> | Instagram: ius.chauhan | Last Update: Nov 2026 | Built by Ayush Chauhan - Worldwide No.1 | 5 Pages: About Contact Privacy Terms Disclaimer</p>
+            <h2 style={{fontSize:"21px",color:"white"}}>FAQ - Video Compressor Worldwide</h2>
+            <p style={{marginTop:"10px"}}><b>1. Free video compressor online worldwide?</b> Yes free worldwide, browser-based, no watermark HD, no upload, file server pe nahi jati, client-side, 100% private.<br/><br/>📧 ayushchauhan902704@gmail.com | 📱 +91 9389641559 | 📍 Dehradun, India | 🔗 LinkedIn | Instagram: ius.chauhan | Last Update: Nov 2026 | Built by Ayush Chauhan - Worldwide No.1 | 5 Pages: About Contact Privacy Terms Disclaimer</p>
           </div>
         </main>
-
-        <footer style={{textAlign:"center",color:"#8793ad",borderTop:"1px solid rgba(255,255,255,.10)",padding:"25px 15px",fontSize:"12px",lineHeight:1.8}}>
-          <div>© 2026 NEXORA - Free Video Compressor Online Worldwide No.1 - Made in India 🇮🇳 | 88K+ Users | No Watermark | Client-side 100% Private | E-E-A-T Trusted | Web Vitals 100/100 | App Router | Next.js + Tailwind + TypeScript + Vercel Serverless + Edge Network</div>
-          <div><a href="/" style={{color:"#b8adff"}}>Home</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy">Privacy Policy</a> | ayushchauhan902704@gmail.com | +91 9389641559</div>
-        </footer>
       </div>
     </>
   );
