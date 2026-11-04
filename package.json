@@ -2,6 +2,11 @@
   "name": "nexora-tools",
   "private": true,
   "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
-  "dependencies": { "next": "14.2.5", "react": "18.3.1", "react-dom": "18.3.1" },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@imgly/background-removal": "^1.4.5"
+  },
   "devDependencies": { "typescript": "^5", "@types/react": "^18", "@types/node": "^20" }
 }
