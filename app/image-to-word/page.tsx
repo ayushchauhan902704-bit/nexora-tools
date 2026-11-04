@@ -8,6 +8,24 @@ export default function Page() {
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const loadTesseract = () => {
+    return new Promise<any>((resolve, reject) => {
+      if ((window as any).Tesseract) return resolve((window as any).Tesseract);
+      const old = document.querySelector('script[data-tesseract="true"]');
+      if (old) {
+        old.addEventListener("load", () => resolve((window as any).Tesseract), { once: true });
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js";
+      s.async = true;
+      s.dataset.tesseract = "true";
+      s.onload = () => resolve((window as any).Tesseract);
+      s.onerror = () => reject(new Error("load fail"));
+      document.head.appendChild(s);
+    });
+  };
+
   const onFile = async (f: File | undefined) => {
     if (!f) return;
     setFileName(f.name);
@@ -18,8 +36,7 @@ export default function Page() {
       return;
     }
     try {
-      const Tesseract = (window as any).Tesseract;
-      if (!Tesseract) { setStatus("OCR library loading... 2 sec baad dobara try karo"); return; }
+      const Tesseract = await loadTesseract();
       const worker: any = await Tesseract.createWorker({
         logger: (m: any) => {
           if (m.status === "recognizing text") {
