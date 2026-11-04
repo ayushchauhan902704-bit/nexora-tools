@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import VideoCompressorClient from "./VideoCompressorClient";
+import dynamic from "next/dynamic";
+
+const VideoCompressorClient = dynamic(() => import("./VideoCompressorClient"), { ssr: false });
 
 export const metadata: Metadata = {
   title: "Free Video Compressor Online to 5MB, 10MB, 20MB Worldwide No.1 | NEXORA",
