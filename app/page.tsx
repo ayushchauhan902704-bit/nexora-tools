@@ -24,7 +24,7 @@ const TOOLS = [
   { t:"Loan EMI Calculator", d:"EMI, Interest, Total Payment - Home, Car, Personal", h:"/loan-emi-calculator", c:"CALCULATOR", icon:"🏦", tags:["EMI","Finance"] },
   { t:"Percentage Calculator", d:"Find X% of Y - Quick Percent Instant As You Type", h:"/percentage-calculator", c:"CALCULATOR", icon:"%", tags:["Instant","Fast"] },
   { t:"Discount Calculator", d:"Original Price, Discount %, Final Price + Savings", h:"/discount-calculator", c:"CALCULATOR", icon:"🏷️", tags:["Savings"] },
-  { t:"Date Difference / Days Calc", d:"Days Between Two Dates - Age, Duration", h:"/date-difference", c:"CALCULATOR", icon:"⏱️", tags:["Duration"] },
+  { t:"Date Difference / Days Calc", d:"Days Between Two Dates - Age, Duration", h:"/date-difference-calculator", c:"CALCULATOR", icon:"⏱️", tags:["Duration"] },
   { t:"Word Counter - Private", d:"Count Words, Characters, Sentences Instant - Private", h:"/word-counter", c:"TEXT", icon:"🔤", tags:["Instant","Private"] },
   { t:"Character Counter", d:"Char Count With & Without Spaces - For Social", h:"/character-counter", c:"TEXT", icon:"🔡", tags:["Social"] },
   { t:"AI Text Humanizer", d:"Make AI Text Sound Human - Bypass Detectors", h:"/ai-text-humanizer", c:"TEXT", icon:"🤖", tags:["AI","Humanize"] },
