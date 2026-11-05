@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import DpiChangerClient from "./DpiChangerClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "DPI Changer 10-1200 - Any Type DPI Maker, Photo Ka DPI Badhao | NEXORA",
   description: "Any type DPI maker - Photo ka DPI 10 se 1200 tak karo 1 sec me. JPG, PNG, HEIC photo ka DPI changer. Free, HD, No Watermark, 100% Private. Passport, Amazon, Printing ke liye.",
