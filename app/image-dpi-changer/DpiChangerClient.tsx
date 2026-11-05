@@ -56,7 +56,7 @@ function updateJpeg(buffer: ArrayBuffer, dpi: number) {
 }
 function updatePng(buffer: ArrayBuffer, dpi: number) {
   const src = new Uint8Array(buffer);
-  const sig = [137,80,78,71,13,10,26,10];
+  const sig = [STRIPPED binary array with 8 items];
   if (src.length<33 || !sig.every((v,i)=>src[i]===v)) throw new Error("Invalid PNG.");
   const parts: Uint8Array[] = [src.subarray(0,8)];
   let pos=8, inserted=false, foundH=false, foundE=false;
@@ -144,7 +144,7 @@ export default function DpiChangerClient() {
 
   const download = async () => {
     if(!ready||!blob) { setStatus("Pehle photo upload karo."); setIsSuccess(false); return; }
-    if(!Number.isInteger(dpi)||dpi<1||dpi>1200){ setStatus("1 se 1200 ke beech pura number likho."); setIsSuccess(false); return; }
+    if(!Number.isInteger(dpi)||dpi<10||dpi>1200){ setStatus("10 se 1200 ke beech pura number likho."); setIsSuccess(false); return; }
     setStatus("");
     try {
       const buf = await blob.arrayBuffer();
@@ -174,16 +174,14 @@ export default function DpiChangerClient() {
       </header>
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
-        {/* HEADING - HINGLISH + PRO */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "7px 12px", borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: "0.3px", whiteSpace: "nowrap" }}>✦ FREE • HD • NO WATERMARK • 100% PRIVATE</span>
           </div>
-          <h1 style={{ fontSize: 38, margin: "14px 0 8px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, fontFamily: "'Inter', system-ui, sans-serif", background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>DPI Changer</h1>
-          <p style={{ color: "#64748b", fontSize: 16, margin: 0, lineHeight: 1.6 }}>Photo ka DPI 72 se 300 karo 1 sec me.<br/>Passport, Amazon, Printing ke liye.</p>
+          <h1 style={{ fontSize: 38, margin: "14px 0 8px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, fontFamily: "'Inter', system-ui, sans-serif", background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>DPI Changer<br/>10 - 1200</h1>
+          <p style={{ color: "#64748b", fontSize: 16, margin: 0, lineHeight: 1.6 }}>Photo ka DPI 10 se 1200 tak karo 1 sec me.<br/>Any Type DPI Maker - Passport, Amazon, Printing ke liye.</p>
         </div>
 
-        {/* TOOL BOX */}
         <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 18, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
           <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 10px", textAlign: "center" }}>Apni Photo Yaha Upload Karo</p>
           <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif" onChange={(e)=>onFile(e.target.files?.[0])} hidden />
@@ -193,25 +191,24 @@ export default function DpiChangerClient() {
 
           {file && <p style={{ fontSize: 13, color: "#64748b", textAlign: "center", margin: "10px 0 0" }}>{meta} • {file.name}</p>}
 
-          {/* DPI BOX - HINGLISH, KHAALI */}
           <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 12, padding: "10px 12px", marginTop: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input
-                type="number" min={1} max={1200} value={customDpi}
-                onChange={(e) => { setCustomDpi(e.target.value); const v = parseInt(e.target.value); if (!isNaN(v)) setDpi(Math.min(1200, Math.max(1, v))); }}
-                placeholder="Kitna DPI chahiye? Type karo"
+                type="number" min={10} max={1200} value={customDpi}
+                onChange={(e) => { setCustomDpi(e.target.value); const v = parseInt(e.target.value); if (!isNaN(v)) setDpi(Math.min(1200, Math.max(10, v))); }}
+                placeholder="Kitna DPI chahiye? 10-1200 Type karo"
                 style={{ flex: 1, padding: "11px 12px", borderRadius: 10, border: "1.5px solid #2563eb", fontSize: 14, fontWeight: 600, outline: "none", background: "#fff", color: "#0f172a" }}
               />
               <span style={{ fontWeight: 800, fontSize: 14, flexShrink: 0 }}>DPI</span>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2, whiteSpace: "nowrap", scrollbarWidth: "none" }}>
-              {[72, 150, 200, 300, 350, 400, 600, 1200].map(s => (
+              {[10, 72, 150, 200, 300, 350, 600, 1200].map(s => (
                 <button key={s} onClick={() => { setDpi(s); setCustomDpi(String(s)); }} style={{ padding: "6px 10px", borderRadius: 999, border: dpi === s ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: dpi === s ? "#fff7ed" : "#fff", color: dpi === s ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 12, flexShrink: 0 }}>{s} DPI</button>
               ))}
             </div>
           </div>
 
-          <div style={{ marginTop: 12, padding: "10px 12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, fontSize: 12, color: "#57534e" }}><b style={{ color: "#d97706" }}>Note:</b> DPI badhane se photo kharab nahi hoti. Sirf print achha hota hai. Pixels same rehte hai.</div>
+          <div style={{ marginTop: 12, padding: "10px 12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, fontSize: 12, color: "#57534e" }}><b style={{ color: "#d97706" }}>Note:</b> Any type DPI bana sakte ho - 10 se 1200 tak. DPI badhane se photo kharab nahi hoti. Sirf print achha hota hai. Pixels same rehte hai.</div>
 
           {status && <p style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "10px 12px", borderRadius: 10, fontSize: 14, margin: "14px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
 
@@ -226,31 +223,32 @@ export default function DpiChangerClient() {
 
         <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
           <b>💡 Earning Tip - Is Tool Se Paisa Kamao!</b>
-          <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.7 }}>Printing shop, studio wale 300 DPI ke liye 30-50 Rs lete hai. Tu WhatsApp pe ₹20 me kisi ki bhi photo ka DPI 300 kar de. Roz 20 photo = ₹400. Koi paisa nahi lagna, sirf ye free tool.</p>
+          <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.7 }}>Printing shop, studio wale DPI badalne ke liye 30-50 Rs lete hai. Tu WhatsApp pe ₹20 me kisi ki bhi photo ka DPI 10 se 1200 tak kar de. Roz 20 photo = ₹400. Koi paisa nahi lagna, sirf ye free tool.</p>
         </div>
 
         <div style={{ height: 30 }}></div>
 
         <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
           <h2 style={{ fontSize: 21 }}>DPI Kya Hota Hai? Note Wala Samajh</h2>
-          <p style={{ color: "#475569", lineHeight: 1.8 }}>DPI ka matlab hai <b>Dots Per Inch</b>. Matlab 1 inch me kitne dot print honge. Jitna zyada DPI, utni saaf printing.<br/><br/><b>72 DPI</b> = Sirf mobile / screen ke liye, print me phat jayega.<br/><b>150 DPI</b> = Normal print ke liye thik hai.<br/><b>300 DPI</b> = Passport, Visa, Sarkari Form, Amazon ke liye best. Sabse zyada manga jata hai.<br/><b>600 DPI</b> = Bade poster / banner ke liye.</p>
-          <p style={{ color: "#475569", lineHeight: 1.8 }}>Is tool se <b>photo ka DPI kaise badhaye</b> - Bas photo upload karo, 300 likho, Download dabao. Photo ke pixels same rahenge, quality kharab nahi hogi, sirf DPI badlega.</p>
+          <p style={{ color: "#475569", lineHeight: 1.8 }}>DPI ka matlab hai <b>Dots Per Inch</b>. Matlab 1 inch me kitne dot print honge. Jitna zyada DPI, utni saaf printing.<br/><br/><b>10 DPI</b> = Sabse kam, sirf chhota preview ke liye.<br/><b>72 DPI</b> = Sirf mobile / screen ke liye, print me phat jayega.<br/><b>150 DPI</b> = Normal print ke liye thik hai.<br/><b>300 DPI</b> = Passport, Visa, Sarkari Form, Amazon ke liye best. Sabse zyada manga jata hai.<br/><b>600 - 1200 DPI</b> = Bade poster / banner / high quality print ke liye.</p>
+          <p style={{ color: "#475569", lineHeight: 1.8 }}>Is tool se <b>photo ka DPI kaise badhaye</b> - Bas photo upload karo, 10 se 1200 ke beech koi bhi DPI likho, Download dabao. Ye <b>any type DPI maker</b> hai - 10, 72, 150, 300, 600, 1200 ya beech ka koi bhi DPI bana sakte ho.</p>
 
           <h2 style={{ fontSize: 21, marginTop: 26 }}>Kaise Use Kare? 3 Step Me</h2>
-          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Step 1:</b> Photo upload karo - JPG, PNG ya HEIC.<br/><b>Step 2:</b> Kitna DPI chahiye type karo - Jaise 300.<br/><b>Step 3:</b> Download dabao - Nayi DPI wali photo mil jayegi.</p>
+          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Step 1:</b> Photo upload karo - JPG, PNG ya HEIC.<br/><b>Step 2:</b> Kitna DPI chahiye type karo - 10 se 1200 tak, jaise 300.<br/><b>Step 3:</b> Download dabao - Nayi DPI wali photo mil jayegi.</p>
 
           <h2 style={{ fontSize: 21, marginTop: 26 }}>NEXORA vs Dusre Tools</h2>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 10 }}><tbody>
             <tr><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc", textAlign: "left" }}>Feature</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>NEXORA ✅</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>Dusre ❌</th></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Range</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>10 - 1200 ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Sirf 72 / 300</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Quality</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Same Rahegi ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Compress Kar Dete Hai</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Watermark</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Nahi ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Lagta Hai</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Privacy</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>100% Private ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Server Pe Jati Hai</td></tr>
-            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>HEIC</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Chalega ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Nahi Chalta</td></tr>
           </tbody></table>
 
           <h2 style={{ fontSize: 21, marginTop: 26 }}>Aksar Puche Jane Wale Sawal</h2>
-          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Photo ka DPI kaise badhaye?</summary><p style={{ color: "#475569" }}>Photo upload karo, 300 type karo, Download dabao. 1 sec me ho jayega.</p></details>
-          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>72 se 300 DPI kaise kare?</summary><p style={{ color: "#475569" }}>Isi tool me 300 select karo. Pixels same rahenge, quality kharab nahi hogi.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Photo ka DPI kaise badhaye?</summary><p style={{ color: "#475569" }}>Photo upload karo, 10 se 1200 tak koi bhi DPI type karo, Download dabao. 1 sec me ho jayega.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>10 se 1200 DPI kaise kare?</summary><p style={{ color: "#475569" }}>Isi tool me 10 se 1200 tak kuch bhi likh sakte ho. Pixels same rahenge.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Any type DPI maker kya hai?</summary><p style={{ color: "#475569" }}>Matlab koi bhi DPI bana sakte ho - 10, 72, 150, 300, 600, 1200 ya beech ka koi bhi.</p></details>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>DPI badhane se photo kharab to nahi hogi?</summary><p style={{ color: "#475569" }}>Nahi, DPI sirf print density badalta hai. Photo same rehti hai.</p></details>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Passport ke liye kitna DPI chahiye?</summary><p style={{ color: "#475569" }}>Passport, Visa aur sarkari form ke liye 300 DPI sabse best hai.</p></details>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Kya meri photo safe hai?</summary><p style={{ color: "#475569" }}>Haan, photo browser me hi badalti hai, server pe nahi jati.</p></details>
@@ -266,7 +264,7 @@ export default function DpiChangerClient() {
 
       <div style={{ background: "#f8fafc", borderTop: "1px solid #eef2f7", padding: "16px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
         <div style={{ display: "inline-block", animation: "nexoraLoop 18s linear infinite", fontSize: 14, fontWeight: 700, color: "#2563eb" }}>
-          <span style={{ padding: "0 18px" }}>✦ DPI Changer 300 DPI</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ DPI Changer 300 DPI</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span>
+          <span style={{ padding: "0 18px" }}>✦ DPI Changer 10-1200</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ DPI Changer 10-1200</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span>
         </div>
         <style>{`@keyframes nexoraLoop { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
       </div>
