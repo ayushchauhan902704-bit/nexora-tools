@@ -6,15 +6,31 @@ export const dynamic = "force-dynamic";
 type Doc = { label: string; sub: string; w: number; h: number; kb: number };
 
 const DOCS: Doc[] = [
-  { label: "Passport", sub: "3.5x4.5cm • 413x531", w: 413, h: 531, kb: 0 },
+  { label: "Passport India", sub: "413x531 • 3.5x4.5cm", w: 413, h: 531, kb: 0 },
+  { label: "Passport USA", sub: "600x600 • 2x2 inch", w: 600, h: 600, kb: 0 },
+  { label: "Visa USA 2x2", sub: "600x600 • 2x2 inch", w: 600, h: 600, kb: 0 },
+  { label: "Visa UK", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Schengen", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Canada", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Australia", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa China", sub: "390x567 • 33x48mm", w: 390, h: 567, kb: 0 },
+  { label: "Visa Japan", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Korea", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Dubai", sub: "413x531 • 35x45mm", w: 413, h: 531, kb: 0 },
   { label: "SSC • 20KB", sub: "200x230 • 20KB", w: 200, h: 230, kb: 20 },
   { label: "UPSC • 50KB", sub: "300x350 • 50KB", w: 300, h: 350, kb: 50 },
-  { label: "Visa 2x2", sub: "US Visa • 600x600", w: 600, h: 600, kb: 0 },
-  { label: "PAN Card", sub: "3.5x2.5cm • 400x300", w: 400, h: 300, kb: 0 },
-  { label: "Aadhar", sub: "300x400 • HD", w: 300, h: 400, kb: 0 },
+  { label: "IBPS • 20KB", sub: "200x230 • 20KB", w: 200, h: 230, kb: 20 },
+  { label: "Railway • 20KB", sub: "200x230 • 20KB", w: 200, h: 230, kb: 20 },
+  { label: "Bank Form", sub: "300x350 • 50KB", w: 300, h: 350, kb: 50 },
+  { label: "PAN Card", sub: "400x300 • 3.5x2.5cm", w: 400, h: 300, kb: 0 },
+  { label: "Aadhar Card", sub: "300x400 • HD", w: 300, h: 400, kb: 0 },
   { label: "Driving License", sub: "300x350 • HD", w: 300, h: 350, kb: 0 },
-  { label: "Stamp Size", sub: "2.5x3.5cm • 300x400", w: 300, h: 400, kb: 0 },
+  { label: "Voter ID", sub: "300x400 • HD", w: 300, h: 400, kb: 0 },
+  { label: "OCI Card", sub: "600x600 • 2x2 inch", w: 600, h: 600, kb: 0 },
+  { label: "Stamp Size", sub: "300x400 • 2.5x3.5cm", w: 300, h: 400, kb: 0 },
   { label: "1x1 Inch", sub: "400x400 • HD", w: 400, h: 400, kb: 0 },
+  { label: "College ID", sub: "300x400 • HD", w: 300, h: 400, kb: 0 },
+  { label: "Job Resume", sub: "400x500 • HD", w: 400, h: 500, kb: 0 },
 ];
 
 export default function PassportClient() {
@@ -28,6 +44,11 @@ export default function PassportClient() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [origW, setOrigW] = useState(0);
+  const [origH, setOrigH] = useState(0);
+  const [origKB, setOrigKB] = useState(0);
+  const [newKB, setNewKB] = useState(0);
+  const [paused, setPaused] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const getCurrent = (): Doc => {
@@ -51,6 +72,7 @@ export default function PassportClient() {
     ctx.drawImage(image, sx, sy, sW, sH, 0, 0, c.width, c.height);
     setCanvas(c);
     setPreview(c.toDataURL("image/jpeg", 0.9));
+    c.toBlob((b) => { if (b) setNewKB(Math.round(b.size / 1024)); }, "image/jpeg", 0.9);
   };
 
   const handleFile = (file: File | undefined) => {
@@ -59,7 +81,12 @@ export default function PassportClient() {
     const reader = new FileReader();
     reader.onload = () => {
       const image = new Image();
-      image.onload = () => { setImg(image); processImage(image, getCurrent()); setStatus("Ho gaya! Ab neeche se Document ya Size badal sakte ho."); setIsSuccess(true); setProcessing(false); };
+      image.onload = () => {
+        setImg(image);
+        setOrigW(image.naturalWidth); setOrigH(image.naturalHeight); setOrigKB(Math.round(file.size / 1024));
+        processImage(image, getCurrent());
+        setStatus("Ho gaya! Document chuno ya neeche size likho."); setIsSuccess(true); setProcessing(false);
+      };
       image.onerror = () => { setStatus("Ye photo nahi khuli. Dusri photo try karo."); setIsSuccess(false); setProcessing(false); };
       image.src = reader.result as string;
     };
@@ -105,6 +132,7 @@ export default function PassportClient() {
       blob = await toBlob(finalCanvas, 0.9);
     }
     if (!blob) return;
+    setNewKB(Math.round(blob.size / 1024));
     const url = URL.createObjectURL(blob);
     const fileName = `NEXORA-${s.label.replace(/[^a-zA-Z0-9]+/g, "-")}-${s.w}x${s.h}${s.kb ? "-" + s.kb + "KB" : "-HD"}.jpg`;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -137,63 +165,73 @@ export default function PassportClient() {
       </header>
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "7px 12px", borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: "0.3px", whiteSpace: "nowrap" }}>✦ FREE • HD • NO WATERMARK • 100% PRIVATE</span>
           </div>
-          <h1 style={{ fontSize: 38, margin: "14px 0 8px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>Passport Photo<br />Maker</h1>
-          <p style={{ color: "#64748b", fontSize: 16, margin: 0, lineHeight: 1.6 }}>Document chuno, Size likho, KB likho - Photo ready!<br />20KB, 50KB, Passport, Visa, PAN, Aadhar - Sab 1 jagah.</p>
+          <h1 style={{ fontSize: 36, margin: "12px 0 6px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>Passport Photo<br />Maker</h1>
+          <p style={{ color: "#64748b", fontSize: 14, margin: 0, lineHeight: 1.5 }}>Document chuno, Size likho, KB likho - Photo ready!</p>
         </div>
 
-        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 18, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
-          <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 10px", textAlign: "center" }}>Apni Photo Yaha Upload Karo</p>
+        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 8px", textAlign: "center" }}>Apni Photo Yaha Upload Karo</p>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
-          <div onClick={() => fileRef.current?.click()} style={{ border: "1.5px dashed #cbd5e1", borderRadius: 14, padding: preview ? 10 : 18, textAlign: "center", cursor: "pointer", background: "#fff" }}>
-            {preview ? <img src={preview} alt="Preview" style={{ maxWidth: "100%", maxHeight: 180, borderRadius: 10, objectFit: "contain" }} /> : <><div style={{ fontSize: 28 }}>📸</div><p style={{ fontWeight: 700, margin: "6px 0 2px", fontSize: 15 }}>Tap Karke Photo Upload Karo</p><p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>JPG, PNG • White Background Auto • 100% Private</p></>}
+          <div onClick={() => fileRef.current?.click()} style={{ border: "1.5px dashed #cbd5e1", borderRadius: 12, padding: preview ? 8 : 14, textAlign: "center", cursor: "pointer", background: "#fff" }}>
+            {preview ? <img src={preview} alt="Preview" style={{ maxWidth: "100%", maxHeight: 140, borderRadius: 8, objectFit: "contain" }} /> : <><div style={{ fontSize: 24 }}>📸</div><p style={{ fontWeight: 700, margin: "4px 0 2px", fontSize: 14 }}>Tap Karke Photo Upload Karo</p><p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>JPG, PNG • White Background Auto • 100% Private</p></>}
           </div>
 
-          {preview && <p style={{ fontSize: 13, color: "#64748b", textAlign: "center", margin: "10px 0 0", fontWeight: 700 }}>{cur.w}x{cur.h}px • {cur.kb > 0 ? cur.kb + "KB Target" : "HD Quality"} • White BG • {cur.label}</p>}
-
-          <p style={{ fontWeight: 800, fontSize: 13, margin: "18px 0 8px" }}>1️⃣ Kis Document Ke Liye Chahiye? Chuno 👇</p>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {DOCS.map((s, i) => (
-              <button key={i} onClick={() => selectDoc(i)} style={{ padding: "8px 10px", borderRadius: 10, border: sel === i && !customW && !customH && !customKB ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: sel === i && !customW && !customH && !customKB ? "#fff7ed" : "#fff", color: sel === i && !customW && !customH && !customKB ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 12, lineHeight: 1.3, textAlign: "left" }}>{s.label}<br /><span style={{ fontSize: 10, fontWeight: 600, color: "#64748b" }}>{s.sub}</span></button>
-            ))}
-          </div>
-
-          <p style={{ fontWeight: 800, fontSize: 13, margin: "18px 0 8px" }}>2️⃣ Apna Size Aur KB Likho (Chaaho To) 👇</p>
-          <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 12, padding: "12px" }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>Width (px)</label>
-                <input type="number" value={customW} onChange={(e) => setCustomW(e.target.value)} placeholder={String(DOCS[sel].w)} style={{ width: "100%", boxSizing: "border-box", padding: "11px 10px", borderRadius: 10, border: "1.5px solid #2563eb", fontSize: 14, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", marginTop: 4 }} />
-              </div>
-              <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 10, fontWeight: 800, color: "#94a3b8" }}>×</div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>Height (px)</label>
-                <input type="number" value={customH} onChange={(e) => setCustomH(e.target.value)} placeholder={String(DOCS[sel].h)} style={{ width: "100%", boxSizing: "border-box", padding: "11px 10px", borderRadius: 10, border: "1.5px solid #2563eb", fontSize: 14, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", marginTop: 4 }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>Kitna KB?</label>
-                <input type="number" value={customKB} onChange={(e) => setCustomKB(e.target.value)} placeholder={DOCS[sel].kb ? String(DOCS[sel].kb) : "HD"} style={{ width: "100%", boxSizing: "border-box", padding: "11px 10px", borderRadius: 10, border: "1.5px solid #f97316", fontSize: 14, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", marginTop: 4 }} />
-              </div>
+          {preview && origW > 0 && (
+            <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "9px 10px", textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#475569" }}>Pehle <b style={{ color: "#0f172a" }}>{origW} × {origH} • {origKB} KB</b></div>
+              <div style={{ fontSize: 16, color: "#16a34a", lineHeight: 1 }}>↓</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#15803d" }}>Ab {cur.w} × {cur.h} • {cur.kb ? cur.kb + "KB Target" : newKB + " KB"} • {cur.label}</div>
             </div>
-            <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>Example: Width 400, Height 400, KB 20 likhoge to 400x400 - 20KB photo ban jayegi. Khali chhodoge to Document wala size chalega.</p>
-            {img && <button onClick={applyCustom} style={{ width: "100%", padding: 11, marginTop: 10, background: "#0f172a", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, cursor: "pointer", fontSize: 13 }}>Size Lagao → Preview Dekho</button>}
+          )}
+
+          <p style={{ fontWeight: 800, fontSize: 12, margin: "14px 0 6px" }}>Kis Document Ke Liye Chahiye? 👇</p>
+          <div
+            onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+            onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)}
+            style={{ overflow: "hidden", whiteSpace: "nowrap", paddingBottom: 2 }}
+          >
+            <div style={{ display: "inline-flex", gap: 6, animation: paused ? "none" : "scrollDocs 30s linear infinite" }}>
+              {[...DOCS, ...DOCS].map((s, i) => (
+                <button key={i} onClick={() => selectDoc(i % DOCS.length)} style={{ padding: "7px 9px", borderRadius: 9, border: (sel === i % DOCS.length && !customW && !customH && !customKB) ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: (sel === i % DOCS.length && !customW && !customH && !customKB) ? "#fff7ed" : "#fff", color: (sel === i % DOCS.length && !customW && !customH && !customKB) ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 11, lineHeight: 1.3, textAlign: "left", whiteSpace: "nowrap", flexShrink: 0 }}>{s.label}<br /><span style={{ fontSize: 9, fontWeight: 600, color: "#64748b" }}>{s.sub}</span></button>
+              ))}
+            </div>
+            <style>{`@keyframes scrollDocs { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+          </div>
+          <p style={{ fontSize: 10, color: "#94a3b8", margin: "4px 0 0", textAlign: "center" }}>👈 Khud chalte hai • Rokne ke liye touch karo / haath rakho • Dabao to select ho jayega</p>
+
+          <p style={{ fontWeight: 800, fontSize: 12, margin: "14px 0 6px" }}>Apna Size / KB Likho (Chaaho To)</p>
+          <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 10, padding: "9px" }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" value={customW} onChange={(e) => setCustomW(e.target.value)} placeholder={`W - ${DOCS[sel].w}`} style={{ flex: 1, padding: "9px 8px", borderRadius: 8, border: "1.5px solid #2563eb", fontSize: 13, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", minWidth: 0 }} />
+              <div style={{ display: "flex", alignItems: "center", fontWeight: 800, color: "#94a3b8", fontSize: 13 }}>×</div>
+              <input type="number" value={customH} onChange={(e) => setCustomH(e.target.value)} placeholder={`H - ${DOCS[sel].h}`} style={{ flex: 1, padding: "9px 8px", borderRadius: 8, border: "1.5px solid #2563eb", fontSize: 13, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", minWidth: 0 }} />
+              <input type="number" value={customKB} onChange={(e) => setCustomKB(e.target.value)} placeholder={DOCS[sel].kb ? `${DOCS[sel].kb} KB` : "KB?"} style={{ flex: 1, padding: "9px 8px", borderRadius: 8, border: "1.5px solid #f97316", fontSize: 13, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", minWidth: 0 }} />
+            </div>
+            {img && <button onClick={applyCustom} style={{ width: "100%", padding: 9, marginTop: 8, background: "#0f172a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 800, cursor: "pointer", fontSize: 12 }}>Size Lagao →</button>}
           </div>
 
-          <div style={{ marginTop: 12, padding: "10px 12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, fontSize: 12, color: "#57534e" }}><b style={{ color: "#d97706" }}>Note:</b> Document chunte hi size-KB apne aap set ho jata hai. Agar form me alag size manga hai to upar apna size-KB likh do. Photo kharab nahi hogi, White Background apne aap lag jayega.</div>
+          {status && <p style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "9px 10px", borderRadius: 9, fontSize: 13, margin: "12px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
 
-          {status && <p style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "10px 12px", borderRadius: 10, fontSize: 14, margin: "14px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
-
-          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-            <button onClick={download} disabled={!preview || processing} style={{ flex: 1, padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: (!preview || processing) ? "not-allowed" : "pointer", opacity: (!preview || processing) ? 0.5 : 1 }}>{processing ? "Bana Raha Hu..." : `Download Karo - ${cur.label} →`}</button>
-            <button onClick={() => { setImg(null); setPreview(""); setStatus(""); setCustomW(""); setCustomH(""); setCustomKB(""); setSel(0); setCanvas(null); }} style={{ padding: "15px 20px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, cursor: "pointer", fontWeight: 700 }}>Clear</button>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <button onClick={download} disabled={!preview || processing} style={{ flex: 1, padding: 13, background: "#f97316", color: "#fff", border: "none", borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: (!preview || processing) ? "not-allowed" : "pointer", opacity: (!preview || processing) ? 0.5 : 1 }}>{processing ? "Bana Raha Hu..." : `Download Karo - ${cur.label} →`}</button>
+            <button onClick={() => { setImg(null); setPreview(""); setStatus(""); setCustomW(""); setCustomH(""); setCustomKB(""); setSel(0); setCanvas(null); setOrigW(0); }} style={{ padding: "13px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 11, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Clear</button>
           </div>
-          <p style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", margin: "10px 0 0", fontWeight: 700 }}>🔒 100% Private - Photo browser me hi banti hai, kabhi upload nahi hoti</p>
+          <p style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", margin: "8px 0 0", fontWeight: 700 }}>🔒 100% Private - Photo browser me hi banti hai</p>
         </div>
 
-        <div style={{ height: 70 }}></div>
+        <div style={{ height: 50 }}></div>
+
+        <div style={{ background: "#ecfdf5", border: "1.5px solid #86efac", borderRadius: 14, padding: 16 }}>
+          <b style={{ color: "#15803d" }}>✅ Photo Ban Gayi? Ab DPI Bhi Check Kar Lo!</b>
+          <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.7, color: "#166534" }}>Agar form me <b>300 DPI</b> manga hai, ya photo print me phat rahi hai, to DPI badhani padegi. Size sahi hai, par DPI alag cheez hai.</p>
+          <a href="/image-dpi-changer" style={{ display: "block", marginTop: 12, textAlign: "center", padding: 13, background: "#16a34a", color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 800, fontSize: 14 }}>📏 Photo Ki DPI Badhani / Ghatani Hai? Yaha Tap Karo → DPI Changer 10-1200</a>
+        </div>
+
+        <div style={{ height: 30 }}></div>
 
         <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
           <b>💡 Earning Tip - Is Tool Se Paisa Kamao!</b>
@@ -204,7 +242,7 @@ export default function PassportClient() {
 
         <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
           <h2 style={{ fontSize: 21 }}>Kaun Se Document Me Kaun Sa Size Chahiye?</h2>
-          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Passport / Visa:</b> Passport 3.5x4.5cm, Visa 2x2 inch (600x600).<br /><b>SSC / Railway:</b> 20KB photo - 200x230.<br /><b>UPSC / Govt:</b> 50KB photo - 300x350.<br /><b>PAN Card:</b> 400x300.<br /><b>Aadhar / License:</b> 300x400 / 300x350.<br />Form me jo size manga hai wo upar likh do, photo wahi ban jayegi.</p>
+          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Passport / Visa:</b> India 413x531, USA / Visa 600x600.<br /><b>SSC / Railway / IBPS:</b> 20KB photo - 200x230.<br /><b>UPSC / Bank:</b> 50KB photo - 300x350.<br /><b>PAN:</b> 400x300 • <b>Aadhar / Voter:</b> 300x400 • <b>License:</b> 300x350.<br />Form me jo size manga hai wo upar likh do, photo wahi ban jayegi.</p>
 
           <h2 style={{ fontSize: 21, marginTop: 26 }}>Kaise Use Kare? 3 Step Me</h2>
           <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Step 1:</b> Photo upload karo.<br /><b>Step 2:</b> Document chuno - Passport, SSC 20KB, UPSC 50KB, Visa - ya apna Width / Height / KB likho.<br /><b>Step 3:</b> Download dabao - HD photo ready.</p>
@@ -212,7 +250,7 @@ export default function PassportClient() {
           <h2 style={{ fontSize: 21, marginTop: 26 }}>NEXORA vs Dusre Tools</h2>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 10 }}><tbody>
             <tr><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc", textAlign: "left" }}>Feature</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>NEXORA ✅</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>Dusre ❌</th></tr>
-            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Document</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>9 Document ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>2-3 hi</td></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Document</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>25 Document ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>2-3 hi</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Custom Size</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Likh Sakte Ho ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Nahi</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Exact KB</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>20KB 50KB Exact ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Random</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Watermark</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Nahi ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Lagta Hai</td></tr>
