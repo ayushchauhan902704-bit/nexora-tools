@@ -28,6 +28,20 @@ export default function CompressImageClient() {
     return v;
   };
 
+  // EXACT COMPRESS - Size + Quality dono kam karega
+  const makeBlob = (img: HTMLImageElement, scale: number, quality: number): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      let w = Math.max(80, Math.round(img.width * scale));
+      let h = Math.max(80, Math.round(img.height * scale));
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((b) => resolve(b), "image/jpeg", quality);
+    });
+  };
+
   const compress = async () => {
     if (!file) { setError("Please upload a photo first."); return; }
     const finalKB = getTargetKB();
@@ -36,24 +50,38 @@ export default function CompressImageClient() {
     try {
       const img = new Image();
       img.src = preview;
-      await new Promise((res) => (img.onload = res));
-      const canvas = document.createElement("canvas");
-      let w = img.width, h = img.height;
-      const maxDim = 1600;
-      if (w > maxDim || h > maxDim) { const r = Math.min(maxDim / w, maxDim / h); w = Math.round(w * r); h = Math.round(h * r); }
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, w, h);
-      let quality = 0.92;
-      let blob: Blob | null = null;
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+
       const targetBytes = finalKB * 1024;
-      for (let i = 0; i < 10; i++) {
-        blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", quality));
-        if (!blob) break;
-        if (blob.size <= targetBytes || quality <= 0.08) break;
-        quality -= 0.1;
+      let bestBlob: Blob | null = null;
+      let bestDiff = Infinity;
+
+      // Pehle normal size pe try karo, phir chhota karte jao jab tak exact na aaye
+      const scales = [1, 0.85, 0.7, 0.55, 0.4, 0.28, 0.18, 0.12];
+      const qualities = [0.92, 0.8, 0.65, 0.5, 0.35, 0.2, 0.12];
+
+      outer: for (const scale of scales) {
+        for (const q of qualities) {
+          const blob = await makeBlob(img, scale, q);
+          if (!blob) continue;
+          const diff = Math.abs(blob.size - targetBytes);
+          // Jo sabse close hai usko yaad rakho
+          if (diff < bestDiff) { bestDiff = diff; bestBlob = blob; }
+          // Agar target se thoda neeche aa gaya aur 90% se upar hai to wahi best hai - EXACT
+          if (blob.size <= targetBytes && blob.size >= targetBytes * 0.85) {
+            bestBlob = blob; break outer;
+          }
+          // Agar is scale pe bhi bahut bada hai to quality aur kam karne ka fayda nahi, scale chhota karo
+          if (blob.size > targetBytes && q === 0.12) break;
+          if (blob.size < targetBytes * 0.6) break; // Bahut chhota ho gaya, agla scale try mat karo
+        }
+        if (bestBlob && bestBlob.size <= targetBytes && bestBlob.size >= targetBytes * 0.85) break;
       }
-      if (blob) { setCompressedUrl(URL.createObjectURL(blob)); setNewSize(blob.size); }
+
+      if (bestBlob) {
+        setCompressedUrl(URL.createObjectURL(bestBlob));
+        setNewSize(bestBlob.size);
+      }
     } catch { setError("Something went wrong. Please try another photo."); }
     setLoading(false);
   };
@@ -66,6 +94,7 @@ export default function CompressImageClient() {
 
   const formatSize = (b: number) => b >= 1024 * 1024 ? (b / (1024 * 1024)).toFixed(2) + " MB" : (b / 1024).toFixed(1) + " KB";
   const savedPercent = origSize && newSize ? Math.round((1 - newSize / origSize) * 100) : 0;
+  const isExact = newSize > 0 && newSize <= target * 1024;
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", background: "#ffffff", color: "#0f172a", minHeight: "100vh", colorScheme: "light" }}>
@@ -80,14 +109,12 @@ export default function CompressImageClient() {
       </header>
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
-        {/* HEADING - STYLISH BADI SITE JAISE */}
         <div style={{ textAlign: "center", marginBottom: 30 }}>
           <span style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: "0.5px" }}>✦ FREE • NO WATERMARK • 100% PRIVATE</span>
           <h1 style={{ fontSize: 44, margin: "16px 0 8px", lineHeight: 1.1, letterSpacing: "-1px", fontWeight: 900, background: "linear-gradient(90deg, #2563eb, #7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Image Compressor</h1>
           <p style={{ color: "#64748b", fontSize: 17, margin: 0, lineHeight: 1.6 }}>Reduce image to any size you want.<br/>For UPSC, Passport, SSC, College Form.</p>
         </div>
 
-        {/* TOOL BOX - CHHOTA + CLEAN */}
         <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 18, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
           <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 10px", textAlign: "center" }}>Upload Your Photo Here</p>
           <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
@@ -97,7 +124,6 @@ export default function CompressImageClient() {
 
           {file && <p style={{ fontSize: 13, color: "#64748b", textAlign: "center", margin: "10px 0 0" }}>Original: <b style={{ color: "#0f172a" }}>{formatSize(origSize)}</b> • {file.name}</p>}
 
-          {/* KB BOX - KHAALI, LEFT TO RIGHT CHHOTA */}
           <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 12, padding: "10px 12px", marginTop: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input
@@ -118,17 +144,16 @@ export default function CompressImageClient() {
           {error && <p style={{ background: "#fef2f2", color: "#dc2626", padding: "10px 12px", borderRadius: 10, fontSize: 14, margin: "14px 0 0", textAlign: "center" }}>{error}</p>}
 
           <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-            <button onClick={compress} disabled={loading} style={{ flex: 1, padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{loading ? "Compressing..." : "Compress Image →"}</button>
+            <button onClick={compress} disabled={loading} style={{ flex: 1, padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{loading ? "Compressing... Exact Size Bana Raha Hu" : "Compress Image →"}</button>
             <button onClick={() => { setFile(null); setPreview(""); setCompressedUrl(""); setError(""); setCustomKB(""); setTarget(20); }} style={{ padding: "15px 20px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, cursor: "pointer", fontWeight: 700 }}>Clear</button>
           </div>
         </div>
 
-        {/* RESULT - PHOTO + KITNE SE KITNA */}
         {compressedUrl && (
           <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 18, marginTop: 20, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
             <p style={{ textAlign: "center", fontWeight: 800, fontSize: 16, margin: "0 0 4px" }}>✅ Ho Gaya!</p>
-            <p style={{ textAlign: "center", fontSize: 18, fontWeight: 900, margin: "0 0 6px", color: "#2563eb" }}>{formatSize(origSize)} → {formatSize(newSize)}</p>
-            <p style={{ textAlign: "center", fontSize: 13, color: "#16a34a", margin: "0 0 14px", fontWeight: 700 }}>{savedPercent}% Size Kam Hua • Ab Form Me Upload Ho Jayega</p>
+            <p style={{ textAlign: "center", fontSize: 18, fontWeight: 900, margin: "0 0 6px", color: isExact ? "#2563eb" : "#dc2626" }}>{formatSize(origSize)} → {formatSize(newSize)}</p>
+            <p style={{ textAlign: "center", fontSize: 13, color: isExact ? "#16a34a" : "#dc2626", margin: "0 0 14px", fontWeight: 700 }}>{isExact ? `Perfect! ${target}KB ke andar aa gaya • ${savedPercent}% Size Kam Hua` : `Target ${target}KB tha, ${formatSize(newSize)} hua`}</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div style={{ background: "#f8fafc", borderRadius: 12, padding: 10, textAlign: "center" }}>
                 <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", margin: "0 0 8px" }}>BEFORE • {formatSize(origSize)}</p>
@@ -140,11 +165,9 @@ export default function CompressImageClient() {
               </div>
             </div>
             <button onClick={download} style={{ width: "100%", padding: 15, background: "#0f172a", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 14 }}>Download {target}KB Photo ↓</button>
-            <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", margin: "10px 0 0" }}>Agar size thoda upar-niche hai to dobara Compress dabao, exact ho jayega.</p>
           </div>
         )}
 
-        {/* TOOL KE NICHE KHALI JAGAH */}
         <div style={{ height: 70 }}></div>
 
         <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
