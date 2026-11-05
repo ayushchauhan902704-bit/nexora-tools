@@ -57,14 +57,7 @@ export default function PassportClient() {
     const w = customW ? parseInt(customW) : d.w;
     const h = customH ? parseInt(customH) : d.h;
     const kb = customKB ? parseInt(customKB) : d.kb;
-    const isCustom = hasCustom;
-    return {
-      label: isCustom ? "Custom Size" : d.label,
-      sub: d.sub,
-      w: isNaN(w) ? d.w : w,
-      h: isNaN(h) ? d.h : h,
-      kb: isNaN(kb) ? d.kb : kb,
-    };
+    return { label: hasCustom ? "Custom Size" : d.label, sub: d.sub, w: isNaN(w) ? d.w : w, h: isNaN(h) ? d.h : h, kb: isNaN(kb) ? d.kb : kb };
   };
 
   const processImage = (image: HTMLImageElement, doc: Doc) => {
@@ -102,8 +95,7 @@ export default function PassportClient() {
   };
 
   const selectDoc = (idx: number) => {
-    setSel(idx);
-    setCustomW(""); setCustomH(""); setCustomKB("");
+    setSel(idx); setCustomW(""); setCustomH(""); setCustomKB("");
     if (img) processImage(img, DOCS[idx]);
   };
 
@@ -136,9 +128,7 @@ export default function PassportClient() {
         finalCanvas = smaller;
         blob = await toBlob(finalCanvas, 0.7);
       }
-    } else {
-      blob = await toBlob(finalCanvas, 0.9);
-    }
+    } else { blob = await toBlob(finalCanvas, 0.9); }
     if (!blob) return;
     setNewKB(Math.round(blob.size / 1024));
     const url = URL.createObjectURL(blob);
@@ -185,17 +175,11 @@ export default function PassportClient() {
         <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
           <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 8px", textAlign: "center" }}>Apni Photo Yaha Upload Karo</p>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
-          <div onClick={() => fileRef.current?.click()} style={{ border: "1.5px dashed #cbd5e1", borderRadius: 12, padding: preview ? 8 : 14, textAlign: "center", cursor: "pointer", background: "#fff" }}>
-            {preview ? <img src={preview} alt="Preview" style={{ maxWidth: "100%", maxHeight: 140, borderRadius: 8, objectFit: "contain" }} /> : <><div style={{ fontSize: 24 }}>📸</div><p style={{ fontWeight: 700, margin: "4px 0 2px", fontSize: 14 }}>Tap Karke Photo Upload Karo</p><p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>JPG, PNG • White Background Auto • 100% Private</p></>}
+          <div onClick={() => fileRef.current?.click()} style={{ border: "1.5px dashed #cbd5e1", borderRadius: 12, padding: 14, textAlign: "center", cursor: "pointer", background: "#fff" }}>
+            <div style={{ fontSize: 24 }}>📸</div>
+            <p style={{ fontWeight: 700, margin: "4px 0 2px", fontSize: 14 }}>{preview ? "Photo Badalni Hai? Dobara Tap Karo" : "Tap Karke Photo Upload Karo"}</p>
+            <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>JPG, PNG • White Background Auto • 100% Private</p>
           </div>
-
-          {preview && origW > 0 && (
-            <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "9px 10px", textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "#475569" }}>Pehle <b style={{ color: "#0f172a" }}>{origW} × {origH} • {origKB} KB</b></div>
-              <div style={{ fontSize: 16, color: "#16a34a", lineHeight: 1 }}>↓</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#15803d" }}>Ab {cur.w} × {cur.h} • {cur.kb ? cur.kb + "KB Target" : newKB + " KB"} • {cur.label}</div>
-            </div>
-          )}
 
           <p style={{ fontWeight: 800, fontSize: 12, margin: "14px 0 6px" }}>Kis Document Ke Liye Chahiye? 👇 Ungli se scroll karo</p>
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
@@ -218,10 +202,24 @@ export default function PassportClient() {
             {img && <button onClick={applyCustom} style={{ width: "100%", padding: 9, marginTop: 8, background: "#0f172a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 800, cursor: "pointer", fontSize: 12 }}>Size Lagao →</button>}
           </div>
 
+          {preview && (
+            <div style={{ marginTop: 16, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 12, textAlign: "center" }}>
+              <p style={{ fontWeight: 800, fontSize: 13, margin: "0 0 8px" }}>👇 Teri Photo Ka Preview</p>
+              <img src={preview} alt="Preview" style={{ width: "100%", maxWidth: 280, maxHeight: 320, borderRadius: 10, objectFit: "contain", background: "#fff", border: "1px solid #e2e8f0" }} />
+              {origW > 0 && (
+                <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px", textAlign: "center" }}>
+                  <div style={{ fontSize: 12, color: "#475569" }}>Pehle <b style={{ color: "#0f172a" }}>{origW} × {origH} • {origKB} KB</b></div>
+                  <div style={{ fontSize: 18, color: "#16a34a", lineHeight: 1.2 }}>↓</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#15803d" }}>Ab {cur.w} × {cur.h} • {cur.kb ? cur.kb + "KB Target" : newKB + " KB"} • {cur.label}</div>
+                </div>
+              )}
+            </div>
+          )}
+
           {status && <p style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "9px 10px", borderRadius: 9, fontSize: 13, margin: "12px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
 
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <button onClick={download} disabled={!preview || processing} style={{ flex: 1, padding: 13, background: "#f97316", color: "#fff", border: "none", borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: (!preview || processing) ? "not-allowed" : "pointer", opacity: (!preview || processing) ? 0.5 : 1 }}>{processing ? "Bana Raha Hu..." : `Download Karo - ${cur.label} →`}</button>
+            <button onClick={download} disabled={!preview || processing} style={{ flex: 1, padding: 14, background: "#f97316", color: "#fff", border: "none", borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: (!preview || processing) ? "not-allowed" : "pointer", opacity: (!preview || processing) ? 0.5 : 1 }}>{processing ? "Bana Raha Hu..." : `Download Karo - ${cur.label} →`}</button>
             <button onClick={() => { setImg(null); setPreview(""); setStatus(""); setCustomW(""); setCustomH(""); setCustomKB(""); setSel(0); setCanvas(null); setOrigW(0); }} style={{ padding: "13px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 11, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Clear</button>
           </div>
           <p style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", margin: "8px 0 0", fontWeight: 700 }}>🔒 100% Private - Photo browser me hi banti hai</p>
@@ -243,10 +241,8 @@ export default function PassportClient() {
         <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
           <h2 style={{ fontSize: 21 }}>Kaun Se Document Me Kaun Sa Size Chahiye?</h2>
           <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Passport / Visa:</b> India 413x531, USA / Visa 600x600.<br /><b>SSC / Railway / IBPS:</b> 20KB photo - 200x230.<br /><b>UPSC / Bank:</b> 50KB photo - 300x350.<br /><b>PAN:</b> 400x300 • <b>Aadhar / Voter:</b> 300x400 • <b>License:</b> 300x350.<br />Form me jo size manga hai wo upar likh do, photo wahi ban jayegi.</p>
-
           <h2 style={{ fontSize: 21, marginTop: 26 }}>Kaise Use Kare? 3 Step Me</h2>
           <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Step 1:</b> Photo upload karo.<br /><b>Step 2:</b> Document chuno - Passport, SSC 20KB, UPSC 50KB, Visa - ya apna Width / Height / KB likho.<br /><b>Step 3:</b> Download dabao - HD photo ready.</p>
-
           <h2 style={{ fontSize: 21, marginTop: 26 }}>NEXORA vs Dusre Tools</h2>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 10 }}><tbody>
             <tr><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc", textAlign: "left" }}>Feature</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>NEXORA ✅</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>Dusre ❌</th></tr>
@@ -255,28 +251,23 @@ export default function PassportClient() {
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Exact KB</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>20KB 50KB Exact ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Random</td></tr>
             <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Watermark</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Nahi ✅</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Lagta Hai</td></tr>
           </tbody></table>
-
           <h2 style={{ fontSize: 21, marginTop: 26 }}>Aksar Puche Jane Wale Sawal</h2>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>20KB photo kaise banaye?</summary><p style={{ color: "#475569" }}>SSC 20KB dabao ya KB wale box me 20 likho, photo apne aap 20KB ki ban jayegi.</p></details>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>50KB photo kaise banaye?</summary><p style={{ color: "#475569" }}>UPSC 50KB dabao ya KB wale box me 50 likho.</p></details>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Apna size kaise likhe?</summary><p style={{ color: "#475569" }}>Width aur Height wale box me apna size likh do, jaise 400x400.</p></details>
           <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Kya meri photo safe hai?</summary><p style={{ color: "#475569" }}>Haan, photo browser me hi banti hai, server pe nahi jati.</p></details>
-
           <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
             <a href="/image-dpi-changer" style={{ flex: 1, textAlign: "center", padding: 14, background: "#0f172a", color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 700 }}>Agla Tool Dekho → DPI Changer 10-1200</a>
           </div>
         </div>
-
         <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", margin: "30px 0 10px", lineHeight: 1.6 }}>By <b style={{ color: "#0f172a" }}>Ayush Chauhan</b> • Tool: Nexora<br />Last Updated: 5 Nov 2026 • 100% Free & Private</p>
       </main>
-
       <div style={{ background: "#f8fafc", borderTop: "1px solid #eef2f7", padding: "16px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
         <div style={{ display: "inline-block", animation: "nexoraLoop 18s linear infinite", fontSize: 14, fontWeight: 700, color: "#2563eb" }}>
           <span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ DPI Changer 10-1200</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ DPI Changer 10-1200</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span>
         </div>
         <style>{`@keyframes nexoraLoop { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
       </div>
-
       <footer style={{ background: "#0f172a", color: "#cbd5e1", padding: "20px 16px", textAlign: "center", fontSize: 13 }}>
         <b style={{ color: "#fff", fontSize: 16 }}>NEXORA</b>
         <p style={{ margin: "6px 0 0" }}>Free Tools. Simple Solutions. • <a href="/about" style={{ color: "#cbd5e1" }}>About</a> • <a href="/privacy-policy" style={{ color: "#cbd5e1" }}>Privacy</a> • <a href="/contact" style={{ color: "#cbd5e1" }}>Contact</a></p>
