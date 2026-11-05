@@ -14,6 +14,7 @@ export default function BackgroundRemoverClient() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const blobRef = useRef<Blob | null>(null);
+  const progressRef = useRef(0);
 
   useEffect(() => {
     const s = document.createElement("script");
@@ -57,20 +58,29 @@ export default function BackgroundRemoverClient() {
     }
     setUploadText("⏳ Loading AI...");
     setShowPreview(false);
-    setStatus("⏳ Downloading AI model...");
-    setProgress(10);
+    setStatus("⏳ AI Loading...");
+    progressRef.current = 0;
+    setProgress(0);
     setIsProcessing(true);
     try {
       const removeBg = (window as any).__nexoraRemoveBg;
       const blob = await removeBg(file, {
         progress: (_key: string, current: number, total: number) => {
+          if (!total) return;
           const pct = Math.round((current / total) * 100);
-          setProgress(pct);
-          setStatus(`🤖 Processing - ${pct}%`);
+          // FIX: Sirf aage badhega, 100 se 0 kabhi nahi hoga
+          if (pct > progressRef.current) {
+            progressRef.current = pct;
+            setProgress(pct);
+            if (pct < 30) setStatus(`⏳ AI Loading... ${pct}%`);
+            else if (pct < 90) setStatus(`🤖 Background Hata Raha Hu... ${pct}%`);
+            else setStatus(`✨ Almost Done... ${pct}%`);
+          }
         },
       });
-      blobRef.current = blob;
+      progressRef.current = 100;
       setProgress(100);
+      blobRef.current = blob;
       const url = URL.createObjectURL(blob);
       const img = new Image();
       img.onload = () => {
@@ -81,6 +91,7 @@ export default function BackgroundRemoverClient() {
         setStatus("✅ Done! Choose background color");
         setInfo(`${img.naturalWidth}x${img.naturalHeight} • HD PNG`);
         setIsProcessing(false);
+        setProgress(100);
       };
       img.src = url;
     } catch (err: any) {
@@ -122,11 +133,15 @@ export default function BackgroundRemoverClient() {
       </header>
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
-        {/* HEADING - STYLISH BADI SITE JAISE */}
-        <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <span style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: "0.5px" }}>✦ FREE • HD • NO WATERMARK • 100% PRIVATE {libReady ? "• AI READY ✅" : "• AI LOADING..."}</span>
-          <h1 style={{ fontSize: 44, margin: "16px 0 8px", lineHeight: 1.1, letterSpacing: "-1px", fontWeight: 900, background: "linear-gradient(90deg, #2563eb, #7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Background Remover</h1>
-          <p style={{ color: "#64748b", fontSize: 17, margin: 0, lineHeight: 1.6 }}>Remove background in 1 second.<br/>Transparent, White, Blue, Red - HD PNG.</p>
+        {/* HEADING - PRO FIXED */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "7px 12px", borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: "0.3px", whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>
+              ✦ FREE • HD • NO WATERMARK • {libReady ? "AI READY ✅" : "AI LOADING..."}
+            </span>
+          </div>
+          <h1 style={{ fontSize: 38, margin: "14px 0 8px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, fontFamily: "'Inter', system-ui, sans-serif", background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>Background<br/>Remover</h1>
+          <p style={{ color: "#64748b", fontSize: 16, margin: 0, lineHeight: 1.6 }}>Remove background in 1 second.<br/>Transparent, White, Blue, Red - HD PNG.</p>
         </div>
 
         {/* TOOL BOX - CHHOTA + CLEAN */}
@@ -139,8 +154,18 @@ export default function BackgroundRemoverClient() {
             <input type="file" ref={fileRef} accept="image/*" hidden onChange={(e) => handleFile(e.target.files?.[0])} />
           </div>
 
-          {isProcessing && <div style={{ width: "100%", height: 6, background: "#e5e7eb", borderRadius: 10, marginTop: 12, overflow: "hidden" }}><div style={{ height: "100%", width: `${progress}%`, background: "#f97316", transition: "0.3s" }} /></div>}
-          <p style={{ fontSize: 13, fontWeight: 700, textAlign: "center", marginTop: 10, color: "#2563eb" }}>{status}</p>
+          {isProcessing && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+                <span style={{ color: "#2563eb" }}>{status}</span>
+                <span style={{ color: "#2563eb" }}>{progress}%</span>
+              </div>
+              <div style={{ width: "100%", height: 8, background: "#eef2f7", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #2563eb, #7c3aed)", transition: "width 0.3s ease", borderRadius: 999 }} />
+              </div>
+            </div>
+          )}
+          {!isProcessing && <p style={{ fontSize: 13, fontWeight: 700, textAlign: "center", margin: "12px 0 0", color: "#2563eb" }}>{status}</p>}
 
           <p style={{ fontWeight: 700, fontSize: 14, margin: "16px 0 10px", textAlign: "center" }}>Choose Background</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
@@ -156,13 +181,11 @@ export default function BackgroundRemoverClient() {
               <button onClick={download} style={{ width: "100%", padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 8 }}>Download HD PNG ↓</button>
             </div>
           )}
-          {!showPreview && <button onClick={() => fileRef.current?.click()} style={{ width: "100%", padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 16 }}>Remove Background →</button>}
+          {!showPreview && !isProcessing && <button onClick={() => fileRef.current?.click()} style={{ width: "100%", padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 16 }}>Remove Background →</button>}
         </div>
 
-        {/* TOOL KE NICHE KHALI JAGAH */}
         <div style={{ height: 70 }}></div>
 
-        {/* EARNING BOX */}
         <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
           <b>💡 Earning Tip - Earn Money With This Tool!</b>
           <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.7 }}>Passport photo ke liye White background chahiye hota hai. Studio 50 Rs leta hai. Tu WhatsApp pe ₹30 me photo ka background White karke de. Roz 20 photo = ₹600. Yehi tool use kar, 1 sec me ho jayega.</p>
@@ -170,7 +193,6 @@ export default function BackgroundRemoverClient() {
 
         <div style={{ height: 30 }}></div>
 
-        {/* CONTENT + COMPARISON + FAQ */}
         <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
           <h2 style={{ fontSize: 21 }}>Why NEXORA No.1 Background Remover?</h2>
           <p style={{ color: "#475569", lineHeight: 1.8 }}>Unlike remove.bg with limits, watermark and paid plans, NEXORA is <b>100% free forever, no watermark, HD PNG, 100% private</b> - your photo never leaves your phone. AI runs in browser. Choose <b>Transparent for products, White for passport, Blue for visa, Red for documents.</b></p>
