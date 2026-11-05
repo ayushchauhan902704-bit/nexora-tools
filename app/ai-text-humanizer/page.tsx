@@ -1,70 +1,56 @@
-"use client";
-import { useState } from "react";
+import type { Metadata } from "next";
+import HumanizerTool from "./HumanizerTool";
 
-const SYNONYMS: Record<string, string> = {
-  utilize: "use", however: "but", moreover: "also", therefore: "so",
-  additionally: "also", consequently: "so", furthermore: "also",
-  nevertheless: "but", nonetheless: "but", subsequently: "then",
-  approximately: "about", sufficient: "enough", demonstrate: "show",
-  illustrate: "show", commence: "start", terminate: "end",
-  facilitate: "help", implement: "do", acquire: "get",
-  require: "need", assist: "help", obtain: "get",
+export const metadata: Metadata = {
+  title: "AI Text Humanizer Online Free - No Watermark | Nexora",
+  description: "Humanize AI text in 2 seconds. Free AI to human text converter. Make AI text natural, bypass AI detection. No login, 100% private.",
+  keywords: ["AI text humanizer", "humanize AI text", "AI to human text converter", "free AI humanizer", "humanize text online", "bypass AI detection", "make AI text natural", "rewrite AI content", "undetectable AI text"],
+  alternates: { canonical: "https://nexora-tools.com/ai-text-humanizer" },
+  openGraph: {
+    title: "AI Text Humanizer Online Free - No Watermark | Nexora",
+    description: "Paste AI text, get natural human-like text. Free, No Login, 100% Private.",
+    url: "https://nexora-tools.com/ai-text-humanizer",
+    type: "website",
+  },
+  robots: { index: true, follow: true },
 };
 
-function humanize(text: string) {
-  let out = text;
-  for (const k in SYNONYMS) {
-    const re = new RegExp(`\\b${k}\\b`, "gi");
-    out = out.replace(re, SYNONYMS[k]);
-  }
-  return out
-    .replace(/\bIn conclusion\b/gi, "In the end")
-    .replace(/\bIt is important to note that\b/gi, "Note that")
-    .replace(/delve/gi, "explore")
-    .replace(/tapestry/gi, "mix");
-}
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "Is this AI text humanizer free?", acceptedAnswer: { "@type": "Answer", text: "Yes, it is 100% free. No login, no watermark, no limit." } },
+    { "@type": "Question", name: "Does it bypass AI detection?", acceptedAnswer: { "@type": "Answer", text: "It rewrites robotic words into natural human words, which helps make text sound more natural." } },
+    { "@type": "Question", name: "Is my data safe?", acceptedAnswer: { "@type": "Answer", text: "Yes. Your text is processed in your browser only. We never save or upload your text to any server." } },
+    { "@type": "Question", name: "Can I use it for assignments and blogs?", acceptedAnswer: { "@type": "Answer", text: "Yes, you can use it for blogs, assignments, emails and social media posts to make them sound natural." } },
+    { "@type": "Question", name: "Is there any watermark?", acceptedAnswer: { "@type": "Answer", text: "No. Output is 100% clean with no watermark." } },
+  ],
+};
+
+const howToSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "How to Humanize AI Text",
+  step: [
+    { "@type": "HowToStep", text: "Paste your AI text in the box." },
+    { "@type": "HowToStep", text: "Click Humanize Text button." },
+    { "@type": "HowToStep", text: "Copy the natural human-like output." },
+  ],
+};
 
 export default function Page() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  const doHumanize = () => {
-    if (!input.trim()) return;
-    setOutput(humanize(input));
-    setCopied(false);
-  };
-
-  const copy = async () => {
-    if (!output) return;
-    await navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 20, fontFamily: "system-ui" }}>
-      <a href="/" style={{ color: "#2563eb", textDecoration: "none", fontWeight: 700 }}>← NEXORA</a>
-      <h1 style={{ fontSize: 32, margin: "16px 0 8px" }}>AI Text Humanizer - Free</h1>
-      <p style={{ color: "#475569" }}>Paste AI text, get natural human-like text. 100% Free, Private - No Login.</p>
-
-      <textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder="Paste your AI text here..." style={{ width: "100%", height: 160, padding: 14, borderRadius: 12, border: "1px solid #cbd5e1", fontSize: 16, boxSizing: "border-box" }} />
-      <div style={{ display: "flex", gap: 10, margin: "12px 0" }}>
-        <button onClick={doHumanize} style={{ flex: 1, padding: 14, background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>Humanize Text →</button>
-        <button onClick={() => { setInput(""); setOutput(""); }} style={{ padding: 14, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 10, cursor: "pointer" }}>Clear</button>
-      </div>
-
-      {output && (
-        <div style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 12, padding: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b>Humanized Output</b>
-            <button onClick={copy} style={{ padding: "8px 14px", background: copied ? "#16a34a" : "#0f172a", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>{copied ? "Copied ✓" : "Copy"}</button>
-          </div>
-          <p style={{ whiteSpace: "pre-wrap", marginTop: 12, lineHeight: 1.7 }}>{output}</p>
-        </div>
-      )}
-
-      <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, marginTop: 30 }}>NEXORA - Free Tools. Simple Solutions. • <a href="/">All Tools</a></p>
-    </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org", "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://nexora-tools.com/" },
+          { "@type": "ListItem", position: 2, name: "AI Text Humanizer", item: "https://nexora-tools.com/ai-text-humanizer" }
+        ]
+      }) }} />
+      <HumanizerTool />
+    </>
   );
 }
