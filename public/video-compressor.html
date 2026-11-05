@@ -20,107 +20,100 @@
 body{margin:0;background:#f8faff;color:#17203a;font-family:'Inter',Arial,sans-serif}
 a{color:inherit;text-decoration:none}
 button,input{font:inherit}
-.navbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 6%;background:#fff;border-bottom:1px solid #e9edf7;position:sticky;top:0;z-index:10}
-.logo{font-family:'Poppins',sans-serif;font-size:24px;font-weight:800;color:#1e5bff;letter-spacing:.5px}
+.navbar{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 6%;background:#fff;border-bottom:1px solid #e9edf7;position:sticky;top:0;z-index:10}
+.logo{font-family:'Poppins',sans-serif;font-size:23px;font-weight:800;color:#1e5bff}
 .nav-link{font-size:13px;font-weight:700;color:#5b657f}
-.hero{max-width:820px;margin:26px auto 14px;padding:0 16px;text-align:center}
-.badge{display:inline-block;padding:7px 14px;border-radius:30px;background:#e8efff;color:#1e5bff;font-size:12px;font-weight:800}
-h1{font-family:'Poppins',sans-serif;font-size:clamp(28px,5.2vw,42px);line-height:1.15;margin:14px 0 8px;color:#1e5bff}
+.hero{max-width:820px;margin:22px auto 12px;padding:0 16px;text-align:center}
+.badge{display:inline-block;padding:6px 13px;border-radius:30px;background:#e8efff;color:#1e5bff;font-size:12px;font-weight:800}
+h1{font-family:'Poppins',sans-serif;font-size:clamp(27px,5.2vw,40px);line-height:1.15;margin:12px 0 8px;color:#1e5bff}
 .hero p{color:#5b657f;line-height:1.7;font-size:14px;max-width:680px;margin:auto}
-.main{width:min(820px,calc(100% - 28px));margin:18px auto 40px}
-.card{background:#fff;border:1px solid #e9edf7;border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(30,91,255,.07);margin-bottom:18px}
-/* CHOTA UPLOAD BOX - LEFT TO RIGHT */
-.upload-box{border:2px dashed #b9c7ff;border-radius:14px;background:#f0f4ff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:68px;cursor:pointer}
+.main{width:min(820px,calc(100% - 28px));margin:16px auto 40px}
+.card{background:#fff;border:1px solid #e9edf7;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(30,91,255,.07);margin-bottom:16px}
+/* TOOL BOX - AUR CHOTA */
+.upload-box{border:2px dashed #b9c7ff;border-radius:12px;background:#f0f4ff;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:52px;cursor:pointer}
 .upload-box.drag{border-color:#ff7a00;background:#fff4e6}
-.upload-left{display:flex;align-items:center;gap:10px;text-align:left}
-.upload-left .ic{font-size:28px}
-.upload-left h2{font-family:'Poppins',sans-serif;font-size:16px;margin:0 0 2px}
-.upload-left p{font-size:12px;color:#6b7690;margin:0;line-height:1.4}
-.btn{border:0;border-radius:10px;padding:12px 20px;background:#ff7a00;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}
+.upload-left{display:flex;align-items:center;gap:8px;text-align:left;min-width:0}
+.upload-left .ic{font-size:22px;flex-shrink:0}
+.upload-left h2{font-family:'Poppins',sans-serif;font-size:14px;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upload-left p{font-size:11px;color:#6b7690;margin:1px 0 0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{border:0;border-radius:9px;padding:9px 14px;background:#ff7a00;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap;font-size:13px;flex-shrink:0}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.btn-big{width:100%;padding:15px;font-size:16px;margin-top:14px}
+.btn-big{width:100%;padding:13px;font-size:15px;margin-top:12px}
 .btn-secondary{background:#eef1f8;color:#17203a;border:1px solid #e5e8f5}
-/* NUMBER SCROLL - 500KB TO 100MB - LEFT TO RIGHT */
-.scroll-title{font-size:13px;font-weight:800;margin:16px 0 10px}
-.scroll-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;white-space:nowrap;-webkit-overflow-scrolling:touch}
-.scroll-row::-webkit-scrollbar{height:5px}
+/* NUMBER SCROLL */
+.scroll-title{font-size:13px;font-weight:800;margin:14px 0 8px}
+.scroll-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;white-space:nowrap;-webkit-overflow-scrolling:touch}
+.scroll-row::-webkit-scrollbar{height:4px}
 .scroll-row::-webkit-scrollbar-thumb{background:#c7d2ff;border-radius:10px}
-.chip{flex:0 0 auto;padding:9px 15px;border-radius:20px;border:1.5px solid #dde3f5;background:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.chip{flex:0 0 auto;padding:8px 13px;border-radius:20px;border:1.5px solid #dde3f5;background:#fff;font-size:12px;font-weight:700;cursor:pointer}
 .chip.active{background:#1e5bff;color:#fff;border-color:#1e5bff}
-/* LIKHNE WALA CHOTA BOX */
-.write-box{margin-top:14px}
-.write-box label{font-size:13px;font-weight:800;display:block;margin-bottom:8px}
-.write-row{display:flex;gap:8px}
-.write-row input{flex:1;border:2px solid #1e5bff;border-radius:11px;padding:13px;font-size:17px;font-weight:800;text-align:center;outline:none;color:#17203a}
+/* LIKHNE WALA BOX - FIXED MB BOX */
+.write-box{margin-top:12px}
+.write-box label{font-size:13px;font-weight:800;display:block;margin-bottom:7px}
+.write-row{display:flex;gap:6px;width:100%;align-items:stretch}
+.write-row input{flex:1;min-width:0;border:2px solid #1e5bff;border-radius:10px;padding:11px 10px;font-size:16px;font-weight:800;text-align:center;outline:none;color:#17203a;background:#fff}
 .write-row input:focus{border-color:#ff7a00}
-.unit-mini{display:flex;gap:8px}
-.unit-mini button{padding:0 16px;border-radius:11px;border:1.5px solid #dde3f5;background:#fff;font-weight:800;cursor:pointer}
+.unit-mini{display:flex;gap:6px;flex-shrink:0}
+.unit-mini button{width:48px;padding:0;border-radius:10px;border:1.5px solid #dde3f5;background:#fff;font-weight:800;cursor:pointer;font-size:12px;flex-shrink:0}
 .unit-mini button.active{background:#1e5bff;color:#fff;border-color:#1e5bff}
-.hint{font-size:12px;color:#6b7690;margin-top:8px;line-height:1.5}
-.file-info{display:none;margin-top:12px;padding:11px;border-radius:10px;background:#f6f8ff;font-size:13px;line-height:1.5}
-.progress{display:none;margin-top:14px}
-.progress-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;font-weight:700}
-.bar{height:10px;background:#eef1f8;border-radius:20px;overflow:hidden}
+.file-info{display:none;margin-top:10px;padding:10px;border-radius:10px;background:#f6f8ff;font-size:13px;line-height:1.5}
+.progress{display:none;margin-top:12px}
+.progress-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px;font-weight:700}
+.bar{height:9px;background:#eef1f8;border-radius:20px;overflow:hidden}
 .bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#1e5bff,#ff7a00);transition:width .2s}
-.error{display:none;margin-top:12px;padding:11px;border-radius:10px;background:#fff1f1;color:#c81e1e;font-size:13px;line-height:1.5}
-/* RESULT PREVIEW */
-.result{display:none;margin-top:16px;border:1.5px solid #b9eecb;border-radius:14px;padding:15px;background:#f0fff4}
-.result h3{margin:0 0 10px;color:#0a9e4a;font-family:'Poppins',sans-serif}
-.big-preview{font-size:17px;font-weight:800;text-align:center;background:#fff;border-radius:10px;padding:12px;margin:10px 0}
+.hint{font-size:12px;color:#6b7690;margin-top:7px;line-height:1.5}
+.error{display:none;margin-top:10px;padding:10px;border-radius:10px;background:#fff1f1;color:#c81e1e;font-size:13px}
+.result{display:none;margin-top:14px;border:1.5px solid #b9eecb;border-radius:13px;padding:13px;background:#f0fff4}
+.result h3{margin:0 0 8px;color:#0a9e4a;font-family:'Poppins',sans-serif;font-size:15px}
+.big-preview{font-size:16px;font-weight:800;text-align:center;background:#fff;border-radius:9px;padding:10px;margin:8px 0}
 .big-preview span{color:#1e5bff}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
-.stats div{background:#fff;border:1px solid #e5e8f5;border-radius:10px;padding:10px 6px}
-.stats strong{display:block;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;text-align:center}
+.stats div{background:#fff;border:1px solid #e5e8f5;border-radius:9px;padding:9px 5px}
+.stats strong{display:block;font-size:14px}
 .stats small{color:#6b7690;font-size:11px}
-.result-note{font-size:12px;color:#334155;line-height:1.6;margin-top:10px}
-.preview{width:100%;max-height:300px;background:#000;border-radius:12px;margin-top:12px;display:none}
-/* GREEN NOTE - PHOTO COMPRESSOR */
-.green-note{margin-top:28px;background:#e9fff1;border:1.5px solid #1ed06a;border-radius:14px;padding:16px;text-align:center;cursor:pointer}
-.green-note b{color:#0a9e4a;font-size:15px}
-.green-note p{margin:6px 0 0;color:#334155;font-size:13px;line-height:1.6}
-.green-note .go{display:inline-block;margin-top:10px;background:#0a9e4a;color:#fff;padding:10px 18px;border-radius:20px;font-weight:800;font-size:13px}
-/* EARNING LOOP */
-.loop{margin-top:16px;background:linear-gradient(90deg,#1e5bff,#7a3cff);color:#fff;border-radius:14px;padding:14px;text-align:center;overflow:hidden}
-.loop marquee{font-weight:800;font-size:13px}
-/* CONTENT - ACHE FONT ME POINTS */
+.result-note{font-size:12px;color:#334155;line-height:1.6;margin-top:8px}
+.preview{width:100%;max-height:280px;background:#000;border-radius:11px;margin-top:10px;display:none}
+/* GREEN NOTE - EK LINE ME, BILKUL CHOTA */
+.green-note{margin-top:14px;background:#e9fff1;border:1px solid #1ed06a;border-radius:9px;padding:8px 10px;text-align:center;font-size:12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.green-note a{color:#0a9e4a;font-weight:800;text-decoration:underline}
+.loop{margin-top:12px;background:linear-gradient(90deg,#1e5bff,#7a3cff);color:#fff;border-radius:12px;padding:11px;text-align:center;overflow:hidden}
+.loop marquee{font-weight:800;font-size:12px}
 .content h2{font-family:'Poppins',sans-serif;color:#1e5bff;font-size:20px;margin:0 0 10px}
 .content h3{font-size:15px;margin:18px 0 7px}
 .content p,.content li{color:#4b5568;font-size:14px;line-height:1.85}
 .content ul{padding-left:20px}
-.features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.feature{background:#f6f8ff;border:1px solid #e9edf7;border-radius:12px;padding:14px}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.feature{background:#f6f8ff;border:1px solid #e9edf7;border-radius:11px;padding:13px}
 .feature h3{margin:8px 0 6px;color:#1e5bff;font-size:14px}
 .feature p{font-size:12px;line-height:1.6;margin:0;color:#5b657f}
-.faq-item{border-bottom:1px solid #e9edf7;padding:12px 0}
+.faq-item{border-bottom:1px solid #e9edf7;padding:11px 0}
 .faq-item:last-child{border:0}
 .faq-item h3{margin:0 0 5px;font-size:14px}
 .faq-item p{margin:0;font-size:13px;line-height:1.6;color:#5b657f}
-footer{text-align:center;color:#8793ad;border-top:1px solid #e9edf7;padding:20px 14px;font-size:12px;background:#fff;line-height:1.8}
+footer{text-align:center;color:#8793ad;border-top:1px solid #e9edf7;padding:18px 14px;font-size:12px;background:#fff;line-height:1.8}
 footer a{color:#1e5bff}
-@media(max-width:650px){.upload-box{flex-direction:column;align-items:stretch;text-align:center}.upload-left{justify-content:center}.features{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.btn{width:100%}}
+@media(max-width:650px){.upload-box{flex-direction:row;min-height:52px}.upload-left p{display:none}.features{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.green-note{white-space:normal;font-size:12px}}
 </style>
 </head>
 <body>
 <header class="navbar"><a class="logo" href="index.html">NEXORA</a><a class="nav-link" href="index.html">← All Tools</a></header>
-
 <section class="hero">
 <span class="badge">⚡ 100x FAST • FREE • NO WATERMARK</span>
 <h1>Video Compressor to 500KB - 100MB</h1>
 <p><b>100x Fast Video Compressor Online Free.</b> Apni video ko 500KB, 1MB, 5MB, 10MB, 100MB tak compress karo. WhatsApp, Form, Email ke liye best. No signup, no watermark, with audio.</p>
 </section>
-
 <main class="main">
 <section class="card">
-<!-- 1. CHOTA BOX -->
+<!-- TOOL BOX - CHOTA -->
 <div class="upload-box" id="uploadArea">
-<div class="upload-left"><div class="ic">🎬</div><div><h2>Video Yaha Dalein</h2><p>Tap karo ya drag karo • Video phone me hi rehti hai</p></div></div>
+<div class="upload-left"><div class="ic">🎬</div><div><h2>Video Yaha Dalein</h2><p>Tap karo ya drag karo</p></div></div>
 <button class="btn" type="button" id="chooseBtn">Choose Video</button>
 <input type="file" id="videoInput" accept="video/*" hidden>
 </div>
 <div class="file-info" id="fileInfo"><b id="fileName"></b><div id="fileDetails"></div></div>
 <video id="sourceVideo" playsinline webkit-playsinline preload="auto" style="display:none"></video>
 
-<!-- 2. NUMBER SCROLL 500KB TO 100MB -->
+<!-- SCROLL -->
 <div class="scroll-title">👇 Size Chuno - Left to Right Scroll Karo</div>
 <div class="scroll-row" id="scrollRow">
 <button class="chip" data-val="500" data-unit="KB">500 KB</button>
@@ -137,23 +130,19 @@ footer a{color:#1e5bff}
 <button class="chip" data-val="100" data-unit="MB">100 MB</button>
 </div>
 
-<!-- 3. LIKHNE WALA CHOTA BOX -->
+<!-- LIKHNE WALA BOX - UPAR LINE, NICHE BOX -->
 <div class="write-box">
-<label>✍️ Yaha Likho Jitne KB / MB Ki Video Chahiye</label>
+<label>✍️ Yaha Likho Kitne KB / MB Ki Video Chahiye</label>
 <div class="write-row">
-<input type="number" id="targetValue" value="10" placeholder="Jaise 500 ya 10">
+<input type="number" id="targetValue" value="10" placeholder="10">
 <div class="unit-mini"><button type="button" id="kbBtn">KB</button><button type="button" id="mbBtn" class="active">MB</button></div>
 </div>
-<div class="hint">500KB se 100MB tak likh sakte ho. Example: 500KB likhoge to 500KB banegi. 10MB likhoge to 10MB → 9MB banane ki koshish karega.</div>
 </div>
 
 <button class="btn btn-big" id="compressBtn" disabled>⚡ GENERATE - Compress Video</button>
 <button class="btn btn-big btn-secondary" id="resetBtn" type="button" style="margin-top:8px">Reset</button>
-
 <div class="error" id="errorBox"></div>
 <div class="progress" id="progressWrap"><div class="progress-top"><span id="progressLabel">Preparing...</span><span id="progressPercent">0%</span></div><div class="bar"><i id="progressBar"></i></div><div class="hint" id="statusText"></div></div>
-
-<!-- 4. PREVIEW -->
 <div class="result" id="resultBox">
 <h3>✅ Ho Gaya! Preview Dekho</h3>
 <div class="big-preview" id="bigPreview">10 MB → 9.2 MB</div>
@@ -164,17 +153,12 @@ footer a{color:#1e5bff}
 </div>
 </section>
 
-<!-- 5. GREEN NOTE - PHOTO COMPRESSOR -->
-<div class="green-note" onclick="window.location.href='photo-compressor.html'">
-<b>🖼️ Photo Compressor Karna Hai To Yaha Jao</b>
-<p>Video ho gayi? Ab Photo ko 20KB, 50KB, 100KB me compress karo. Passport, Form, Visa ke liye best.</p>
-<span class="go">Photo Compressor → Kholo</span>
-</div>
+<!-- GREEN NOTE - EK LINE, CHOTA -->
+<div class="green-note">Photo Compressor Karna Hai To Yaha Kare - <a href="photo-compressor.html">Photo Compressor</a></div>
 
-<!-- 6. EARNING LOOP -->
+<!-- LOOP -->
 <div class="loop"><marquee>🔥 NEXORA - Free Tools • Video Compressor • Photo Compressor • PDF Compressor • 100% Free • No Watermark • Daily Use Karo • Apne Dosto Ko Bhejo 🔥</marquee></div>
 
-<!-- FEATURES -->
 <section class="card">
 <h2 style="font-family:'Poppins',sans-serif;color:#1e5bff;margin:0 0 14px">Kyu NEXORA No.1 Hai?</h2>
 <div class="features">
@@ -187,7 +171,6 @@ footer a{color:#1e5bff}
 </div>
 </section>
 
-<!-- CONTENT POINTS - GOOGLE KEYWORDS -->
 <section class="card content">
 <h2>Video Compressor Online Free - Video Ko 500KB Se 100MB Tak Chota Karo</h2>
 <p><b>NEXORA Video Compressor</b> duniya ka sabse fast <b>video compressor online free</b> hai. Agar aapko <b>compress video to 500KB, compress video to 1MB, compress video to 5MB, compress video to 10MB, compress video to 20MB, compress video to 100MB</b> karna hai, to ye tool aapke liye hai. Ye ek <b>MP4 video compressor, WhatsApp video compressor, video size reducer</b> hai jo bina watermark ke kaam karta hai.</p>
@@ -215,12 +198,12 @@ footer a{color:#1e5bff}
 <div class="faq-item"><h3>2. Kya ye free video compressor online hai?</h3><p>Haan, 100% free, no watermark, no signup.</p></div>
 <div class="faq-item"><h3>3. Kya audio rahega?</h3><p>Haan, awaz ke saath compress hota hai.</p></div>
 <div class="faq-item"><h3>4. WhatsApp ke liye kitna size rakhu?</h3><p>WhatsApp ke liye 10MB ya 16MB rakho.</p></div>
-<div class="faq-item"><h3>5. Photo compressor kaha hai?</h3><p>Upar green box pe click karo, Photo Compressor khul jayega.</p></div>
+<div class="faq-item"><h3>5. Photo compressor kaha hai?</h3><p>Upar green line me Photo Compressor pe click karo.</p></div>
 </section>
 </main>
 <footer><div>© <span id="year"></span> NEXORA. Free online tools for everyone.</div><div><a href="index.html">Home</a> · <a href="photo-compressor.html">Photo Compressor</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="privacy-policy.html">Privacy Policy</a></div></footer>
 <script>
-(()=>{"use strict";const $=id=>document.getElementById(id);const videoInput=$("videoInput"),uploadArea=$("uploadArea"),sourceVideo=$("sourceVideo"),compressBtn=$("compressBtn"),resetBtn=$("resetBtn");let selectedFile=null,sourceURL=null,outputURL=null,outputBlob=null,outputExtension="webm",isCompressing=false;let audioContext=null,audioSourceNode=null,audioDestination=null,recordingGain=null,silentMonitor=null;let currentUnit="MB";$("year").textContent=new Date().getFullYear();
+(()=>{"use strict";const $=id=>document.getElementById(id);const videoInput=$("videoInput"),uploadArea=$("uploadArea"),sourceVideo=$("sourceVideo"),compressBtn=$("compressBtn");let selectedFile=null,sourceURL=null,outputURL=null,outputBlob=null,outputExtension="webm",isCompressing=false;let audioContext=null,audioSourceNode=null,audioDestination=null,recordingGain=null,silentMonitor=null;let currentUnit="MB";$("year").textContent=new Date().getFullYear();
 function fmt(b){if(!b||b<=0)return"0 KB";if(b<1024*1024)return (b/1024).toFixed(0)+" KB";return (b/(1024*1024)).toFixed(2)+" MB";}
 function showError(m){$("errorBox").textContent=m;$("errorBox").style.display="block";}
 function clearError(){$("errorBox").style.display="none";}
@@ -228,7 +211,7 @@ function setProgress(p,l,s){$("progressWrap").style.display="block";$("progressB
 function setUnit(u){currentUnit=u;$("kbBtn").classList.toggle("active",u==="KB");$("mbBtn").classList.toggle("active",u==="MB");}
 $("kbBtn").addEventListener("click",()=>setUnit("KB"));$("mbBtn").addEventListener("click",()=>setUnit("MB"));
 document.querySelectorAll(".chip").forEach(c=>{c.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");setUnit(c.dataset.unit);$("targetValue").value=c.dataset.val;});});
-function getTargetBytes(){const v=Number($("targetValue").value);if(!Number.isFinite(v))throw new Error("Size likho - 500KB se 100MB tak.");if(currentUnit==="KB"){if(v<500||v>102400)throw new Error("KB me 500KB se 102400KB (100MB) tak likho.");return v*1024;}else{if(v<0.5||v>100)throw new Error("MB me 0.5MB se 100MB tak likho.");return v*1024*1024;}}
+function getTargetBytes(){const v=Number($("targetValue").value);if(!Number.isFinite(v))throw new Error("Size likho - 500KB se 100MB tak.");if(currentUnit==="KB"){if(v<500||v>102400)throw new Error("KB me 500KB se 102400KB tak likho.");return v*1024;}else{if(v<0.5||v>100)throw new Error("MB me 0.5MB se 100MB tak likho.");return v*1024*1024;}}
 function selectFile(f){clearError();$("resultBox").style.display="none";outputBlob=null;if(!f)return;if(!f.type.startsWith("video/")){showError("Video file chuno.");return;}selectedFile=f;if(sourceURL)URL.revokeObjectURL(sourceURL);sourceURL=URL.createObjectURL(f);sourceVideo.src=sourceURL;sourceVideo.load();$("fileInfo").style.display="block";$("fileName").textContent=f.name;$("fileDetails").textContent="Original: "+fmt(f.size)+" • "+(f.type||"Video");compressBtn.disabled=false;}
 $("chooseBtn").addEventListener("click",()=>videoInput.click());uploadArea.addEventListener("click",e=>{if(e.target.closest("button"))return;videoInput.click();});videoInput.addEventListener("change",e=>selectFile(e.target.files[0]));
 ["dragenter","dragover"].forEach(t=>uploadArea.addEventListener(t,e=>{e.preventDefault();uploadArea.classList.add("drag");}));["dragleave","drop"].forEach(t=>uploadArea.addEventListener(t,e=>{e.preventDefault();uploadArea.classList.remove("drag");}));uploadArea.addEventListener("drop",e=>selectFile(e.dataTransfer.files[0]));
@@ -237,37 +220,10 @@ function chooseMime(){if(!window.MediaRecorder)throw new Error("Browser support 
 async function prepareAudio(){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error("Audio not supported.");if(!audioContext)audioContext=new AC();if(audioContext.state==="suspended")await audioContext.resume();if(!audioSourceNode){audioSourceNode=audioContext.createMediaElementSource(sourceVideo);audioDestination=audioContext.createMediaStreamDestination();recordingGain=audioContext.createGain();recordingGain.gain.value=1;silentMonitor=audioContext.createGain();silentMonitor.gain.value=0;audioSourceNode.connect(recordingGain);recordingGain.connect(audioDestination);audioSourceNode.connect(silentMonitor);silentMonitor.connect(audioContext.destination);}const tr=audioDestination.stream.getAudioTracks();if(!tr.length)throw new Error("Audio track nahi mila.");return tr;}
 function waitMeta(){if(sourceVideo.readyState>=1)return Promise.resolve();return new Promise((res,rej)=>{const ti=setTimeout(()=>rej(new Error("Load timeout")),20000);sourceVideo.addEventListener("loadedmetadata",()=>{clearTimeout(ti);res();},{once:true});});}
 function waitSeek(){return new Promise((res,rej)=>{if(Math.abs(sourceVideo.currentTime)<0.05){res();return;}const ti=setTimeout(()=>rej(new Error("Rewind fail")),10000);sourceVideo.addEventListener("seeked",()=>{clearTimeout(ti);res();},{once:true});});}
-async function compress(){if(!selectedFile||isCompressing)return;clearError();$("resultBox").style.display="none";outputBlob=null;let targetBytes,mime;try{targetBytes=getTargetBytes();mime=chooseMime();}catch(e){showError(e.message);return;}isCompressing=true;compressBtn.disabled=true;let canvasStream=null,combined=null,recorder=null,raf=null,chunks=[],stopTO=null,audioTracks=[];try{setProgress(2,"Preparing...","Video load ho rahi hai.");await waitMeta();const dur=sourceVideo.duration;if(!dur||dur<=0)throw new Error("Duration nahi mili.");if(dur>600)throw new Error("10 minute se choti video use karo.");if(!sourceVideo.videoWidth)throw new Error("Video read nahi hui.");const{width,height}=getDims(sourceVideo.videoWidth,sourceVideo.videoHeight);
-// PURANA FORMULA - CLEAN WALA
-const totalBitsPerSecond=(targetBytes*8/dur)*0.88;
-const audioBitrate=128000;
-let videoBitrate=Math.floor(totalBitsPerSecond-audioBitrate);
-videoBitrate=Math.max(100000,videoBitrate);
-videoBitrate=Math.floor(videoBitrate*0.85);
-videoBitrate=Math.max(100000,videoBitrate);
-const frameRate=30;
-const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const ctx=canvas.getContext("2d",{alpha:false,desynchronized:true});
-canvasStream=canvas.captureStream(frameRate);
-try{audioTracks=await prepareAudio();}catch(e){audioTracks=[];}
-combined=new MediaStream();canvasStream.getVideoTracks().forEach(t=>combined.addTrack(t));audioTracks.forEach(t=>combined.addTrack(t));
-const opts={mimeType:mime,videoBitsPerSecond:videoBitrate};if(audioTracks.length)opts.audioBitsPerSecond=128000;
-recorder=new MediaRecorder(combined,opts);chunks=[];recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
-const done=new Promise((res,rej)=>{recorder.onerror=()=>rej(new Error("Recording fail"));recorder.onstop=res;});
-sourceVideo.muted=false;sourceVideo.volume=1;recorder.start(500);sourceVideo.pause();sourceVideo.currentTime=0;await waitSeek();
-await new Promise((resolve,reject)=>{let last=0,fin=false;function finish(){if(fin)return;fin=true;if(raf)cancelAnimationFrame(raf);try{ctx.drawImage(sourceVideo,0,0,width,height);}catch(_){}resolve();}function fail(er){if(fin)return;fin=true;if(raf)cancelAnimationFrame(raf);reject(er);}function draw(now){if(fin)return;if(sourceVideo.ended){finish();return;}if(now-last>=1000/frameRate){try{ctx.drawImage(sourceVideo,0,0,width,height);last=now;}catch(e){fail(e);return;}}const p=Math.min(94,(sourceVideo.currentTime/dur)*94);setProgress(p,"Compressing...","⚡ 100x Fast - "+Math.floor(sourceVideo.currentTime)+" / "+Math.ceil(dur)+" sec");raf=requestAnimationFrame(draw);}sourceVideo.onended=finish;sourceVideo.play().then(()=>{raf=requestAnimationFrame(draw);}).catch(()=>fail(new Error("Play nahi hui")));});
-sourceVideo.pause();setProgress(96,"Finishing...","Saving...");if(recorder.state!=="inactive")recorder.stop();stopTO=setTimeout(()=>{if(recorder&&recorder.state!=="inactive"){try{recorder.stop();}catch(_){}}},15000);await done;clearTimeout(stopTO);
-outputBlob=new Blob(chunks,{type:mime.split(";")[0]});if(!outputBlob.size)throw new Error("Empty file bana.");
-if(outputURL)URL.revokeObjectURL(outputURL);outputURL=URL.createObjectURL(outputBlob);outputExtension=outputBlob.type.includes("mp4")?"mp4":"webm";$("outputPreview").src=outputURL;$("outputPreview").style.display="block";
-const orig=selectedFile.size,nowB=outputBlob.size,diff=orig-nowB;
-$("originalSize").textContent=fmt(orig);$("compressedSize").textContent=fmt(nowB);$("savedSize").textContent=diff>0?((diff/orig)*100).toFixed(1)+"% kam":"-";
-$("bigPreview").innerHTML=fmt(orig)+" <span>→</span> "+fmt(nowB);
-let note="Target tha: "+fmt(targetBytes)+". ";if(nowB<=targetBytes){note+="Target ke andar hai. ";if(targetBytes>=9.5*1024*1024&&nowB>8*1024*1024)note+="10MB wali video ko "+fmt(nowB)+" bana diya, jaise 10MB → 9MB. ";}else{note+="Thoda bada hai, dobara 10MB likh ke try karo. ";}
-if(audioTracks.length)note+="Audio ke saath. Preview me check karo.";
-$("resultNote").textContent=note;$("resultBox").style.display="block";setProgress(100,"Done!","Ho gaya.");
-}catch(err){console.error(err);showError(err.message);$("progressWrap").style.display="none";}finally{if(stopTO)clearTimeout(stopTO);if(raf)cancelAnimationFrame(raf);try{sourceVideo.pause();sourceVideo.onended=null;}catch(_){}if(recorder&&recorder.state!=="inactive"){try{recorder.stop();}catch(_){}}if(canvasStream)canvasStream.getVideoTracks().forEach(t=>{try{t.stop();}catch(_){}});isCompressing=false;compressBtn.disabled=!selectedFile;}}
+async function compress(){if(!selectedFile||isCompressing)return;clearError();$("resultBox").style.display="none";outputBlob=null;let targetBytes,mime;try{targetBytes=getTargetBytes();mime=chooseMime();}catch(e){showError(e.message);return;}isCompressing=true;compressBtn.disabled=true;let canvasStream=null,combined=null,recorder=null,raf=null,chunks=[],stopTO=null,audioTracks=[];try{setProgress(2,"Preparing...","Video load ho rahi hai.");await waitMeta();const dur=sourceVideo.duration;if(!dur||dur<=0)throw new Error("Duration nahi mili.");if(dur>600)throw new Error("10 minute se choti video use karo.");if(!sourceVideo.videoWidth)throw new Error("Video read nahi hui.");const{width,height}=getDims(sourceVideo.videoWidth,sourceVideo.videoHeight);const totalBitsPerSecond=(targetBytes*8/dur)*0.88;const audioBitrate=128000;let videoBitrate=Math.floor(totalBitsPerSecond-audioBitrate);videoBitrate=Math.max(100000,videoBitrate);videoBitrate=Math.floor(videoBitrate*0.85);videoBitrate=Math.max(100000,videoBitrate);const frameRate=30;const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const ctx=canvas.getContext("2d",{alpha:false,desynchronized:true});canvasStream=canvas.captureStream(frameRate);try{audioTracks=await prepareAudio();}catch(e){audioTracks=[];}combined=new MediaStream();canvasStream.getVideoTracks().forEach(t=>combined.addTrack(t));audioTracks.forEach(t=>combined.addTrack(t));const opts={mimeType:mime,videoBitsPerSecond:videoBitrate};if(audioTracks.length)opts.audioBitsPerSecond=128000;recorder=new MediaRecorder(combined,opts);chunks=[];recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};const done=new Promise((res,rej)=>{recorder.onerror=()=>rej(new Error("Recording fail"));recorder.onstop=res;});sourceVideo.muted=false;sourceVideo.volume=1;recorder.start(500);sourceVideo.pause();sourceVideo.currentTime=0;await waitSeek();await new Promise((resolve,reject)=>{let last=0,fin=false;function finish(){if(fin)return;fin=true;if(raf)cancelAnimationFrame(raf);try{ctx.drawImage(sourceVideo,0,0,width,height);}catch(_){}resolve();}function fail(er){if(fin)return;fin=true;if(raf)cancelAnimationFrame(raf);reject(er);}function draw(now){if(fin)return;if(sourceVideo.ended){finish();return;}if(now-last>=1000/frameRate){try{ctx.drawImage(sourceVideo,0,0,width,height);last=now;}catch(e){fail(e);return;}}const p=Math.min(94,(sourceVideo.currentTime/dur)*94);setProgress(p,"Compressing...","⚡ 100x Fast - "+Math.floor(sourceVideo.currentTime)+" / "+Math.ceil(dur)+" sec");raf=requestAnimationFrame(draw);}sourceVideo.onended=finish;sourceVideo.play().then(()=>{raf=requestAnimationFrame(draw);}).catch(()=>fail(new Error("Play nahi hui")));});sourceVideo.pause();setProgress(96,"Finishing...","Saving...");if(recorder.state!=="inactive")recorder.stop();stopTO=setTimeout(()=>{if(recorder&&recorder.state!=="inactive"){try{recorder.stop();}catch(_){}}},15000);await done;clearTimeout(stopTO);outputBlob=new Blob(chunks,{type:mime.split(";")[0]});if(!outputBlob.size)throw new Error("Empty file bana.");if(outputURL)URL.revokeObjectURL(outputURL);outputURL=URL.createObjectURL(outputBlob);outputExtension=outputBlob.type.includes("mp4")?"mp4":"webm";$("outputPreview").src=outputURL;$("outputPreview").style.display="block";const orig=selectedFile.size,nowB=outputBlob.size,diff=orig-nowB;$("originalSize").textContent=fmt(orig);$("compressedSize").textContent=fmt(nowB);$("savedSize").textContent=diff>0?((diff/orig)*100).toFixed(1)+"% kam":"-";$("bigPreview").innerHTML=fmt(orig)+" <span>→</span> "+fmt(nowB);let note="Target tha: "+fmt(targetBytes)+". ";if(nowB<=targetBytes){note+="Target ke andar hai. ";if(targetBytes>=9.5*1024*1024&&nowB>8*1024*1024)note+="10MB wali video ko "+fmt(nowB)+" bana diya, jaise 10MB → 9MB. ";}else{note+="Thoda bada hai, dobara 10MB likh ke try karo. ";}if(audioTracks.length)note+="Audio ke saath. Preview me check karo.";$("resultNote").textContent=note;$("resultBox").style.display="block";setProgress(100,"Done!","Ho gaya.");}catch(err){console.error(err);showError(err.message);$("progressWrap").style.display="none";}finally{if(stopTO)clearTimeout(stopTO);if(raf)cancelAnimationFrame(raf);try{sourceVideo.pause();sourceVideo.onended=null;}catch(_){}if(recorder&&recorder.state!=="inactive"){try{recorder.stop();}catch(_){}}if(canvasStream)canvasStream.getVideoTracks().forEach(t=>{try{t.stop();}catch(_){}});isCompressing=false;compressBtn.disabled=!selectedFile;}}
 compressBtn.addEventListener("click",compress);
 $("downloadBtn").addEventListener("click",()=>{if(!outputBlob||!outputURL){showError("Pehle compress karo.");return;}const base=selectedFile.name.replace(/\.[^/.]+$/,"");const a=document.createElement("a");a.href=outputURL;a.download=base+"-compressed."+outputExtension;document.body.appendChild(a);a.click();a.remove();});
-resetBtn.addEventListener("click",()=>{if(isCompressing)return;selectedFile=null;outputBlob=null;if(sourceURL)URL.revokeObjectURL(sourceURL);if(outputURL)URL.revokeObjectURL(outputURL);sourceURL=null;outputURL=null;sourceVideo.pause();sourceVideo.removeAttribute("src");sourceVideo.load();$("outputPreview").pause();$("outputPreview").removeAttribute("src");$("outputPreview").style.display="none";$("fileInfo").style.display="none";$("resultBox").style.display="none";$("progressWrap").style.display="none";$("errorBox").style.display="none";videoInput.value="";compressBtn.disabled=true;setUnit("MB");$("targetValue").value=10;document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));});
+$("resetBtn").addEventListener("click",()=>{if(isCompressing)return;selectedFile=null;outputBlob=null;if(sourceURL)URL.revokeObjectURL(sourceURL);if(outputURL)URL.revokeObjectURL(outputURL);sourceURL=null;outputURL=null;sourceVideo.pause();sourceVideo.removeAttribute("src");sourceVideo.load();$("outputPreview").pause();$("outputPreview").removeAttribute("src");$("outputPreview").style.display="none";$("fileInfo").style.display="none";$("resultBox").style.display="none";$("progressWrap").style.display="none";$("errorBox").style.display="none";videoInput.value="";compressBtn.disabled=true;setUnit("MB");$("targetValue").value=10;document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));});
 })();
 </script>
 </body>
