@@ -6,7 +6,7 @@ export default function CompressImageClient() {
   const [preview, setPreview] = useState("");
   const [compressedUrl, setCompressedUrl] = useState("");
   const [target, setTarget] = useState(20);
-  const [customKB, setCustomKB] = useState("20");
+  const [customKB, setCustomKB] = useState("");
   const [origSize, setOrigSize] = useState(0);
   const [newSize, setNewSize] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -97,17 +97,20 @@ export default function CompressImageClient() {
 
           {file && <p style={{ fontSize: 13, color: "#64748b", textAlign: "center", margin: "10px 0 0" }}>Original: <b style={{ color: "#0f172a" }}>{formatSize(origSize)}</b> • {file.name}</p>}
 
-          {/* TYPING WALA - AAPKO KITNI KB CHAHIYE */}
-          <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 14, padding: 14, marginTop: 16 }}>
-            <p style={{ fontWeight: 800, fontSize: 14, margin: "0 0 10px", textAlign: "center" }}>Aapko Kitni KB Chahiye?</p>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center" }}>
-              <input type="number" min={10} max={1000} value={customKB} onChange={(e) => { setCustomKB(e.target.value); const v = parseInt(e.target.value); if (!isNaN(v)) setTarget(Math.min(1000, Math.max(10, v))); }} placeholder="20" style={{ width: 110, padding: "12px 14px", borderRadius: 10, border: "1.5px solid #2563eb", fontSize: 18, fontWeight: 800, textAlign: "center", outline: "none", background: "#fff", color: "#0f172a" }} />
-              <span style={{ fontWeight: 800, fontSize: 16 }}>KB</span>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>10KB - 1000KB</span>
+          {/* KB BOX - KHAALI, LEFT TO RIGHT CHHOTA */}
+          <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 12, padding: "10px 12px", marginTop: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="number" min={10} max={1000} value={customKB}
+                onChange={(e) => { setCustomKB(e.target.value); const v = parseInt(e.target.value); if (!isNaN(v)) setTarget(Math.min(1000, Math.max(10, v))); }}
+                placeholder="Kitne KB ka chahiye? Type kro"
+                style={{ flex: 1, padding: "11px 12px", borderRadius: 10, border: "1.5px solid #2563eb", fontSize: 14, fontWeight: 600, outline: "none", background: "#fff", color: "#0f172a" }}
+              />
+              <span style={{ fontWeight: 800, fontSize: 14, flexShrink: 0 }}>KB</span>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "center", marginTop: 12 }}>
-              {[10, 15, 20, 50, 100, 200, 500].map(s => (
-                <button key={s} onClick={() => { setTarget(s); setCustomKB(String(s)); }} style={{ padding: "7px 13px", borderRadius: 999, border: target === s ? "2px solid #f97316" : "1.5px solid #e2e8f0", background: target === s ? "#fff7ed" : "#fff", color: target === s ? "#ea580c" : "#0f172a", fontWeight: 800, cursor: "pointer", fontSize: 13 }}>{s}KB</button>
+            <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2, whiteSpace: "nowrap", scrollbarWidth: "none" }}>
+              {[10, 15, 20, 30, 40, 50, 80, 100, 200, 500].map(s => (
+                <button key={s} onClick={() => { setTarget(s); setCustomKB(String(s)); }} style={{ padding: "6px 10px", borderRadius: 999, border: target === s ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: target === s ? "#fff7ed" : "#fff", color: target === s ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 12, flexShrink: 0 }}>{s}KB</button>
               ))}
             </div>
           </div>
@@ -116,7 +119,7 @@ export default function CompressImageClient() {
 
           <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
             <button onClick={compress} disabled={loading} style={{ flex: 1, padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{loading ? "Compressing..." : "Compress Image →"}</button>
-            <button onClick={() => { setFile(null); setPreview(""); setCompressedUrl(""); setError(""); setCustomKB("20"); setTarget(20); }} style={{ padding: "15px 20px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, cursor: "pointer", fontWeight: 700 }}>Clear</button>
+            <button onClick={() => { setFile(null); setPreview(""); setCompressedUrl(""); setError(""); setCustomKB(""); setTarget(20); }} style={{ padding: "15px 20px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, cursor: "pointer", fontWeight: 700 }}>Clear</button>
           </div>
         </div>
 
@@ -141,7 +144,7 @@ export default function CompressImageClient() {
           </div>
         )}
 
-        {/* TOOL KE NICHE AUR KHALI JAGAH */}
+        {/* TOOL KE NICHE KHALI JAGAH */}
         <div style={{ height: 70 }}></div>
 
         <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
