@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef } from "react";
 
+export const dynamic = "force-dynamic";
+
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 const MAX_PIXELS = 40000000;
 
@@ -56,7 +58,7 @@ function updateJpeg(buffer: ArrayBuffer, dpi: number) {
 }
 function updatePng(buffer: ArrayBuffer, dpi: number) {
   const src = new Uint8Array(buffer);
-  const sig = [STRIPPED binary array with 8 items];
+  const sig = Array.from("\x89PNG\r\n\x1a\n", (c) => c.charCodeAt(0));
   if (src.length<33 || !sig.every((v,i)=>src[i]===v)) throw new Error("Invalid PNG.");
   const parts: Uint8Array[] = [src.subarray(0,8)];
   let pos=8, inserted=false, foundH=false, foundE=false;
