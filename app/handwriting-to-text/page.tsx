@@ -8,7 +8,6 @@ export default function Page() {
   const [status, setStatus] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Photo ko chota karna - jisse jaldi jaye, jaldi padhe
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -116,7 +115,7 @@ export default function Page() {
             {image && <img src={image} style={{ width: "100%", maxHeight: 340, objectFit: "contain", marginTop: 14, borderRadius: 12, background: "#fff", border: "1px solid #eee" }} alt="handwriting" />}
           </div>
 
-          {status && <div style={{ marginTop: 12, background: status.includes("❌") ? "#fee2e2" : "#fef3c7", color: status.includes("❌") ? "#991b1b" : "#92400e", borderRadius: 10, padding: "10px 12px", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>{status}</div>}
+          {status && <div style={{ marginTop: 12, background: status.includes("❌") || status.includes("ERROR") ? "#fee2e2" : "#fef3c7", color: status.includes("❌") || status.includes("ERROR") ? "#991b1b" : "#92400e", borderRadius: 10, padding: "10px 12px", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>{status}</div>}
 
           <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
             <button onClick={doAI} disabled={loading || !image} style={{ flex: 1, padding: 15, borderRadius: 12, border: "none", background: loading || !image ? "#94a3b8" : "#10b981", color: "#fff", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>
