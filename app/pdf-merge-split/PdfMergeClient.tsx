@@ -6,6 +6,7 @@ export default function PdfMergeClient() {
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
   const [finalUrl, setFinalUrl] = useState("");
   const [finalName, setFinalName] = useState("");
+  const [finalBlob, setFinalBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState("");
   const [activeTab, setActiveTab] = useState<"merge"|"split">("merge");
   const [splitInfo, setSplitInfo] = useState("");
@@ -21,7 +22,7 @@ export default function PdfMergeClient() {
     setStatus("⏳ Merging... 2 sec wait - 100% Private Client-side");
     // @ts-ignore
     const PDFLib = (window as any).PDFLib;
-    if (!PDFLib) { setStatus("Loading pdf-lib... try again"); return; }
+    if (!PDFLib) { setStatus("Loading pdf-lib... 2 sec ruk ke dobara dabao"); return; }
     const { PDFDocument } = PDFLib;
     try {
       const mergedPdf = await PDFDocument.create();
@@ -35,10 +36,30 @@ export default function PdfMergeClient() {
       const blob = new Blob([mergedBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const name = `NEXORA-Merged-${Date.now()}.pdf`;
+      setFinalBlob(blob);
       setFinalUrl(url); setFinalName(name);
       setStatus("✅ Merged! Niche GREEN button pe TAP karo - HD Quality No Watermark");
       setTimeout(()=>document.getElementById("downloadArea")?.scrollIntoView({behavior:"smooth"}),200);
     } catch(e:any){ setStatus("Error: "+e.message); }
+  };
+
+  // ASLI FIX - Merge Download - iPhone + Android dono ke liye
+  const downloadMerged = () => {
+    if (!finalBlob || !finalUrl) return;
+    const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isIPhone) {
+      window.open(finalUrl, "_blank");
+      setStatus("✅ Naya tab khul gaya! Ab Share → Save to Files dabao");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = finalUrl;
+    a.download = finalName || "NEXORA-Merged.pdf";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setStatus("✅ Download start ho gaya! Downloads me check kar");
   };
 
   const handleSplitFile = async (file: File) => {
@@ -54,6 +75,26 @@ export default function PdfMergeClient() {
       // @ts-ignore
       window._splitPdfDoc = pdf;
     } catch(err:any){ setSplitInfo("Error: "+err.message); }
+  };
+
+  const downloadSplitPage = async (i: number) => {
+    // @ts-ignore
+    const pdf = window._splitPdfDoc;
+    // @ts-ignore
+    const { PDFDocument } = window.PDFLib;
+    const newPdf = await PDFDocument.create();
+    const [copied] = await newPdf.copyPages(pdf,[i]);
+    newPdf.addPage(copied);
+    const out = await newPdf.save();
+    const blob = new Blob([out],{type:"application/pdf"});
+    const url = URL.createObjectURL(blob);
+    const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isIPhone) {
+      window.open(url, "_blank");
+      return;
+    }
+    const a=document.createElement("a"); a.href=url; a.download=`NEXORA-Page-${i+1}.pdf`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
   return (
@@ -83,7 +124,7 @@ export default function PdfMergeClient() {
 
         <main className="container">
           <div style={{textAlign:"center",padding:"20px 0 8px"}}>
-            <span className="badge">📄 MERGE + SPLIT • NO WATERMARK HD • 88K+ USERS • PRIVATE • CLIENT-SIDE • WORLDWIDE NO.1</span>
+            <span className="badge" style={{whiteSpace:"normal",lineHeight:1.5,textAlign:"center"}}>📄 MERGE + SPLIT • NO WATERMARK HD • 88K+ USERS • PRIVATE • CLIENT-SIDE • WORLDWIDE NO.1</span>
             <h1 style={{fontSize:"26px",fontWeight:900,letterSpacing:"-.5px",marginTop:"10px"}}>PDF Merge & Split - Worldwide No.1</h1>
             <p style={{fontSize:"13px",color:"#64748b",marginTop:"6px"}}>Combine Multiple PDFs to One + Split Pages — Free, Private, HD, No Watermark — 100% Browser-based — Last Update: Nov 2026 — Built by Ayush Chauhan</p>
           </div>
@@ -102,8 +143,9 @@ export default function PdfMergeClient() {
                 {finalUrl && (
                   <div id="downloadArea" style={{marginTop:"20px",border:"2px solid #10b981",padding:"18px",background:"#f0fdf4",borderRadius:"16px",textAlign:"center"}}>
                     <div style={{fontWeight:900,color:"#065f46"}}>✅ Merge Ho Gaya! - Before {mergeFiles.length} PDFs - After 1 PDF - HD Quality</div>
-                    <a href={finalUrl} download={finalName} target="_blank" style={{display:"block",marginTop:"12px",padding:"14px",background:"#10b981",color:"white",borderRadius:"12px",textDecoration:"none",fontWeight:900,fontSize:"15px"}}>⬇️ DOWNLOAD FINAL PDF - TAP HERE - No Watermark</a>
-                    <p style={{fontSize:"11px",marginTop:"8px",color:"#666"}}>iPhone: Tap karega toh new tab khulega → Share → Save to Files - Worldwide iPhone Fix</p>
+                    <button onClick={downloadMerged} style={{display:"block",width:"100%",marginTop:"12px",padding:"14px",background:"#10b981",color:"white",border:"none",borderRadius:"12px",fontWeight:900,fontSize:"15px",cursor:"pointer"}}>⬇️ DOWNLOAD FINAL PDF - TAP HERE - No Watermark</button>
+                    <button onClick={()=>window.open(finalUrl,"_blank")} style={{display:"block",width:"100%",marginTop:"8px",padding:"12px",background:"#fff",color:"#111827",border:"1.5px solid #10b981",borderRadius:"12px",fontWeight:800,fontSize:"13px",cursor:"pointer"}}>📱 iPhone pe na khule to yaha dabao - Open in New Tab</button>
+                    <p style={{fontSize:"11px",marginTop:"8px",color:"#666",lineHeight:1.5}}>iPhone: Naya tab khulega → Share → Save to Files<br/>Android: Seedha Downloads me jayega</p>
                   </div>
                 )}
               </div>
@@ -118,19 +160,7 @@ export default function PdfMergeClient() {
                   }} />
                 </div>
                 <div style={{textAlign:"center",marginTop:"12px",fontWeight:800,fontSize:"13px",color:"#6366f1"}}>{splitInfo}</div>
-                <div>{Array.from({length:splitPages}).map((_,i)=><button key={i} className="btn" style={{background:"white",color:"#111827",border:"1px solid #e5e7eb"}} onClick={async ()=>{
-                  // @ts-ignore
-                  const pdf = window._splitPdfDoc;
-                  // @ts-ignore
-                  const {PDFDocument} = window.PDFLib;
-                  const newPdf = await PDFDocument.create();
-                  const [copied] = await newPdf.copyPages(pdf,[i]);
-                  newPdf.addPage(copied);
-                  const out = await newPdf.save();
-                  const blob = new Blob([out],{type:"application/pdf"});
-                  const url = URL.createObjectURL(blob);
-                  const a=document.createElement("a"); a.href=url; a.download=`NEXORA-Page-${i+1}.pdf`; a.click();
-                }}>Download Page {i+1} - HD Quality - No Watermark</button>)}</div>
+                <div>{Array.from({length:splitPages}).map((_,i)=><button key={i} className="btn" style={{background:"white",color:"#111827",border:"1px solid #e5e7eb"}} onClick={()=>downloadSplitPage(i)}>Download Page {i+1} - HD Quality - No Watermark</button>)}</div>
               </div>
             )}
 
