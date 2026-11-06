@@ -1,17 +1,62 @@
 export default function handler(req, res) {
-  const baseUrl = 'https://nexora-tools-drab.vercel.app';
+  const baseUrl = 'https://nexora-tools.com';
   const today = new Date().toISOString().split('T')[0];
 
   const pages = [
     { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'daily' },
     { loc: `${baseUrl}/tools`, priority: '0.9', changefreq: 'daily' },
-    { loc: `${baseUrl}/video-compressor`, priority: '0.9', changefreq: 'weekly' },
-    { loc: `${baseUrl}/internet-speed-test`, priority: '0.9', changefreq: 'weekly' },
-    // ... tere baaki saare pages yaha same rahenge ...
-    // BAS DHYAN DE: .html kabhi mat lagana, aur last me / mat lagana
+    { loc: `${baseUrl}/about`, priority: '0.5', changefreq: 'monthly' },
+    { loc: `${baseUrl}/contact`, priority: '0.5', changefreq: 'monthly' },
+    { loc: `${baseUrl}/privacy`, priority: '0.5', changefreq: 'monthly' },
+    { loc: `${baseUrl}/terms`, priority: '0.5', changefreq: 'monthly' },
+    { loc: `${baseUrl}/disclaimer`, priority: '0.5', changefreq: 'monthly' },
+
+    { loc: `${baseUrl}/age-calculator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/ai-text-humanizer`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/background-remover`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/background-remover/english`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/background-remover/hindi`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/background-remover/spanish`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/bmi-calculator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/character-counter`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/compress-image`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/date-difference`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/date-difference-calculator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/discount-calculator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/handwriting-to-text`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/image-dpi-changer`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/image-to-text`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/image-to-word`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/instagram-reels-downloader`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/instagram-reel-downloader`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/internet-speed-test`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/jpg-to-pdf`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/loan-emi-calculator`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/love-calculator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/mirror`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/object-eraser`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/passport-size-photo`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/passport-size-photo-maker`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/password-generator`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/pdf-merge-split`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/pdf-to-jpg`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/pdf-to-word`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/percentage-calculator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/qr-code-generator`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/resume-builder`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/text-to-speech`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/unit-converter`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/video-compressor`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${baseUrl}/word-counter`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/word-to-pdf`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${baseUrl}/yt-thumbnail-downloader`, priority: '0.8', changefreq: 'weekly' },
+
+    { loc: `${baseUrl}/blog`, priority: '0.7', changefreq: 'weekly' },
+    { loc: `${baseUrl}/blog/best-free-video-compressor`, priority: '0.6', changefreq: 'monthly' },
+    { loc: `${baseUrl}/blog/compress-video-for-instagram`, priority: '0.6', changefreq: 'monthly' },
+    { loc: `${baseUrl}/blog/how-to-compress-image-to-20kb`, priority: '0.6', changefreq: 'monthly' },
+    { loc: `${baseUrl}/blog/how-to-compress-mp4-video`, priority: '0.6', changefreq: 'monthly' },
+    { loc: `${baseUrl}/blog/how-to-compress-photo-to-20kb`, priority: '0.6', changefreq: 'monthly' },
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -25,6 +70,6 @@ ${pages.map(p => `  <url>
 </urlset>`;
 
   res.setHeader('Content-Type', 'text/xml');
-  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate'); // Ye line roz update karayegi
+  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate');
   res.status(200).send(xml);
 }
