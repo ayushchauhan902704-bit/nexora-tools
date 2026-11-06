@@ -50,12 +50,13 @@ export default function Page() {
     reader.readAsDataURL(f);
   };
 
+  // FAST COMPRESS - 800px, 0.6 quality - 10MB -> 300KB
   const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
-        const max = 1000;
+        const max = 800;
         let w = img.naturalWidth, h = img.naturalHeight;
         if (Math.max(w, h) > max) {
           const s = max / Math.max(w, h);
@@ -67,7 +68,7 @@ export default function Page() {
         ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        c.toBlob((b) => resolve(b!), "image/jpeg", 0.65);
+        c.toBlob((b) => resolve(b || file), "image/jpeg", 0.6);
       };
       img.onerror = () => resolve(file);
       img.src = url;
@@ -84,49 +85,46 @@ export default function Page() {
     });
   };
 
-  // 4 HOST - Ek fail to dusra - iPhone pe bhi chalega
-  const uploadToHost = async (blob: Blob | File, name: string): Promise<string> => {
-    const hosts = [
-      async () => {
-        const f = new FormData();
-        f.append("file", blob, name);
-        const r = await fetch("https://tmpfiles.org/api/v1/upload", { method: "POST", body: f });
-        const j = await r.json();
-        const u = j?.data?.url?.replace("tmpfiles.org/", "tmpfiles.org/dl/");
-        if (u && u.startsWith("http")) return u;
-        throw new Error("tmp fail");
-      },
-      async () => {
-        const f = new FormData();
-        f.append("file", blob, name);
-        const r = await fetch("https://file.io/?expires=14d", { method: "POST", body: f });
-        const j = await r.json();
-        if (j?.link?.startsWith("http")) return j.link;
-        throw new Error("fileio fail");
-      },
-      async () => {
-        const f = new FormData();
-        f.append("file", blob, name);
-        const r = await fetch("https://0x0.st", { method: "POST", body: f });
-        const t = (await r.text()).trim();
-        if (t.startsWith("http")) return t;
-        throw new Error("0x0 fail");
-      },
-      async () => {
-        const f = new FormData();
-        f.append("reqtype", "fileupload");
-        f.append("fileToUpload", blob, name);
-        const r = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: f });
-        const t = (await r.text()).trim();
-        if (t.startsWith("http")) return t;
-        throw new Error("catbox fail");
-      },
-    ];
-    let lastErr: any = null;
-    for (const h of hosts) {
-      try { return await h(); } catch (e) { lastErr = e; }
-    }
-    throw lastErr;
+  // SPEED FIX - 4 host ek saath, jo pehle ho gaya wahi lega
+  const uploadFast = async (blob: Blob | File, name: string): Promise<string> => {
+    const withTimeout = (p: Promise<string>, ms: number) => {
+      return Promise.race([
+        p,
+        new Promise<string>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))
+      ]);
+    };
+    const tryTmp = async () => {
+      const f = new FormData(); f.append("file", blob, name);
+      const r = await fetch("https://tmpfiles.org/api/v1/upload", { method: "POST", body: f });
+      const j = await r.json();
+      const u = j?.data?.url?.replace("tmpfiles.org/", "tmpfiles.org/dl/");
+      if (u?.startsWith("http")) return u; throw new Error("tmp");
+    };
+    const try0x0 = async () => {
+      const f = new FormData(); f.append("file", blob, name);
+      const r = await fetch("https://0x0.st", { method: "POST", body: f });
+      const t = (await r.text()).trim();
+      if (t.startsWith("http")) return t; throw new Error("0x0");
+    };
+    const tryCatbox = async () => {
+      const f = new FormData(); f.append("reqtype", "fileupload"); f.append("fileToUpload", blob, name);
+      const r = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: f });
+      const t = (await r.text()).trim();
+      if (t.startsWith("http")) return t; throw new Error("catbox");
+    };
+    const tryFileIo = async () => {
+      const f = new FormData(); f.append("file", blob, name);
+      const r = await fetch("https://file.io/?expires=14d", { method: "POST", body: f });
+      const j = await r.json();
+      if (j?.link?.startsWith("http")) return j.link; throw new Error("fileio");
+    };
+    // Sab ek saath chalenge, jo pehle success wahi jeetega
+    return Promise.any([
+      withTimeout(tryTmp(), 15000),
+      withTimeout(try0x0(), 15000),
+      withTimeout(tryCatbox(), 15000),
+      withTimeout(tryFileIo(), 15000),
+    ]);
   };
 
   const handleMediaUpload = async (e: any) => {
@@ -138,38 +136,41 @@ export default function Page() {
     if (isVideo) {
       if (f.size > 100 * 1024 * 1024) { alert("Video 100MB se chhoti rakho!"); return; }
       const dur = await getVideoDuration(f);
-      if (dur > 25) { alert(`Video ${Math.round(dur)} sec ki hai! 10-20 sec ki video chuno. Gallery me Trim karke dobara chuno.`); return; }
+      if (dur > 25) { alert(`Video ${Math.round(dur)} sec ki hai! 10-20 sec ki video chuno.`); return; }
     } else {
       if (f.size > 50 * 1024 * 1024) { alert("Photo 50MB se chhoti rakho!"); return; }
     }
     setMediaType(isVideo ? "video" : "photo");
     setMediaPreview(URL.createObjectURL(f));
-    setUploading(true); setProgress(10); setQrDataUrl(""); setMediaLink("");
+    setUploading(true); setProgress(20); setQrDataUrl(""); setMediaLink("");
     try {
       let toUpload: Blob | File = f;
       let name = f.name;
       if (isImage) {
-        setProgress(30);
         toUpload = await compressImage(f);
         name = "nexora-photo.jpg";
-        setProgress(60);
-      } else {
-        setProgress(50);
       }
-      const link = await uploadToHost(toUpload, name);
+      setProgress(60);
+      const link = await uploadFast(toUpload, name);
       setProgress(100);
       setMediaLink(link);
-      setTimeout(() => generateQRDirect(link), 100);
-    } catch (err: any) {
-      console.log("Upload error:", err);
-      alert("Upload nahi hui. Net check karo, Safari Private mode band karo, dobara try karo.");
+      // QR turant - wait nahi
+      generateQRDirect(link);
+    } catch {
+      alert("Upload nahi hui. Net check karo, dobara try karo.");
     }
     setUploading(false);
   };
 
+  // SPEED FIX - Logo nahi hai to direct QR image, canvas nahi
   const generateQRDirect = async (text: string) => {
-    setLoading(true);
     const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=10&data=${encodeURIComponent(text)}`;
+    if (mode !== "logo" || !logoFile) {
+      setQrDataUrl(apiUrl);
+      setTimeout(() => { document.getElementById("qr-result")?.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
+      return;
+    }
+    setLoading(true);
     try {
       const qrImg = new Image();
       qrImg.crossOrigin = "anonymous";
@@ -180,33 +181,42 @@ export default function Page() {
       const ctx = canvas.getContext("2d")!;
       ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 600, 600);
       ctx.drawImage(qrImg, 0, 0, 600, 600);
-      if (mode === "logo" && logoFile) {
-        const lImg = new Image(); lImg.src = logoFile;
-        await new Promise((res) => { lImg.onload = res; lImg.onerror = res; });
-        const size = 120; const x = (600 - size) / 2, y = (600 - size) / 2;
-        ctx.fillStyle = "#fff"; ctx.fillRect(x - 12, y - 12, size + 24, size + 24);
-        ctx.strokeStyle = "#e5e7eb"; ctx.lineWidth = 3; ctx.strokeRect(x - 12, y - 12, size + 24, size + 24);
-        ctx.drawImage(lImg, x, y, size, size);
-      }
+      const lImg = new Image(); lImg.src = logoFile;
+      await new Promise((res) => { lImg.onload = res; lImg.onerror = res; });
+      const size = 120; const x = (600 - size) / 2, y = (600 - size) / 2;
+      ctx.fillStyle = "#fff"; ctx.fillRect(x - 12, y - 12, size + 24, size + 24);
+      ctx.strokeStyle = "#e5e7eb"; ctx.lineWidth = 3; ctx.strokeRect(x - 12, y - 12, size + 24, size + 24);
+      ctx.drawImage(lImg, x, y, size, size);
       setQrDataUrl(canvas.toDataURL("image/png"));
-      setTimeout(() => { document.getElementById("qr-result")?.scrollIntoView({ behavior: "smooth", block: "center" }); }, 100);
+      setTimeout(() => { document.getElementById("qr-result")?.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
     } catch {}
     setLoading(false);
   };
 
   const generate = async () => {
-    if ((type === "photo" || type === "video") && !mediaLink) { alert("Pehle photo / video chuno! Upload hogi, fir QR banega."); return; }
+    if ((type === "photo" || type === "video") && !mediaLink) { alert("Pehle photo / video chuno!"); return; }
     if (!data) { alert("Pehle data daalo bhai!"); return; }
     if (mode === "logo" && !logoFile) { alert("Logo wala select kiya hai to pehle logo upload karo!"); return; }
     await generateQRDirect(data);
   };
 
-  const download = () => {
+  const download = async () => {
     if (!qrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `NEXORA-QR-${mode}-${type}-${Date.now()}.png`;
-    a.click();
+    try {
+      const res = await fetch(qrDataUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `NEXORA-QR-${mode}-${type}-${Date.now()}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch {
+      const a = document.createElement("a");
+      a.href = qrDataUrl;
+      a.download = `NEXORA-QR-${Date.now()}.png`;
+      a.click();
+    }
   };
 
   const card: any = { background: "#fff", border: "1px solid #e8e8ef", borderRadius: 20, padding: 20, margin: "16px 0", boxShadow: "0 4px 24px rgba(0,0,0,.04)" };
@@ -220,15 +230,15 @@ export default function Page() {
       <header style={{ position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #e8e8ef", zIndex: 50 }}>
         <div style={{ width: "min(900px,calc(100% - 24px))", margin: "auto", minHeight: 56, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", padding: "8px 0" }}>
           <a href="/" style={{ fontSize: 22, fontWeight: 900, color: "#171725", textDecoration: "none" }}>NEX<span style={{ color: "#6c5ce7" }}>ORA</span></a>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ ...badge, margin: 0 }}>⚡ 100x FAST • PHOTO • VIDEO QR</span><a href="/" style={{ fontWeight: 700, fontSize: 12, color: "#6c5ce7", textDecoration: "none" }}>← All Tools</a></div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ ...badge, margin: 0 }}>● UPI QR • LOGO QR • PHOTO QR</span><a href="/" style={{ fontWeight: 700, fontSize: 12, color: "#6c5ce7", textDecoration: "none" }}>← All Tools</a></div>
         </div>
       </header>
 
       <main style={{ width: "min(900px,calc(100% - 24px))", margin: "auto" }}>
         <div style={card}>
-          <span style={badge}>📱 Link, UPI, Text, WiFi, Photo, Video • 100x Fast • No Watermark PNG HD • Free</span>
+          <span style={badge}>📱 Link, UPI, Text, WiFi, Photo, Video • No Watermark PNG HD • Free</span>
           <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.7, marginTop: 8 }}>QR Code Generator</h1>
-          <p style={{ color: "#676778", margin: "8px 0", fontSize: 13 }}>Normal QR ya Logo wala QR banao - Link, UPI, Text, WiFi, Photo, Video sabke liye. 100x Fast Upload. Download PNG HD.</p>
+          <p style={{ color: "#676778", margin: "8px 0", fontSize: 13 }}>Normal QR ya Logo wala QR banao - Link, UPI, Text, WiFi, Photo, Video sabke liye. Download PNG HD.</p>
 
           <label style={{ fontSize: 11, fontWeight: 800, color: "#555" }}>1️⃣ CHOOSE STYLE - Kaisa QR Chahiye?</label>
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
@@ -266,7 +276,7 @@ export default function Page() {
               {mediaPreview ? (
                 <>
                   {mediaType === "video" ? <video src={mediaPreview} controls style={{ width: "100%", maxHeight: 220, borderRadius: 10, background: "#000" }} /> : <img src={mediaPreview} style={{ width: "100%", maxHeight: 180, objectFit: "contain", borderRadius: 10, background: "#fff" }} alt="preview" />}
-                  {uploading ? <><p style={{ fontSize: 12, fontWeight: 800, color: "#6c5ce7", marginTop: 8 }}>⚡ 100x Fast Upload... {progress}%</p><div style={{ width: "100%", background: "#e5e7eb", height: 6, borderRadius: 99, marginTop: 6 }}><div style={{ width: `${progress}%`, background: "#6c5ce7", height: 6, borderRadius: 99 }}></div></div></>
+                  {uploading ? <><p style={{ fontSize: 12, fontWeight: 800, color: "#6c5ce7", marginTop: 8 }}>Upload Ho Rahi Hai... {progress}%</p><div style={{ width: "100%", background: "#e5e7eb", height: 6, borderRadius: 99, marginTop: 6 }}><div style={{ width: `${progress}%`, background: "#6c5ce7", height: 6, borderRadius: 99 }}></div></div></>
                   : mediaLink ? <><p style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", marginTop: 8, wordBreak: "break-all" }}>✅ Link Ban Gaya: {mediaLink}</p><p style={{ fontSize: 11, color: "#666" }}>Scan karte hi ye {mediaType === "video" ? "video chalegi" : "photo khulegi"}.</p></>
                   : <p style={{ fontSize: 12, color: "#666", marginTop: 8 }}>Upload fail hui, dobara chuno.</p>}
                   <button onClick={() => mediaRef.current?.click()} style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: "#fff", color: "#6c5ce7", fontWeight: 800, cursor: "pointer", marginTop: 8, fontSize: 12 }}>{type === "video" ? "🎥 Dusri Video Chuno" : "📷 Dusri Photo Chuno"}</button>
@@ -275,15 +285,15 @@ export default function Page() {
                 <>
                   <div style={{ fontSize: 32 }}>{type === "video" ? "🎥" : "📷"}</div>
                   <p style={{ fontSize: 13, fontWeight: 800, color: "#000", marginTop: 4 }}>{type === "video" ? "Video Chuno - 10-20 Sec - Uska QR Banega" : "Photo Chuno - Badi Photo Bhi Chalegi (50MB Tak) - Uska QR Banega"}</p>
-                  <p style={{ fontSize: 11, color: "#666" }}>{type === "video" ? "QR scan karte hi video chalegi. 10-20 sec ki video best hai." : "QR scan karte hi photo khulegi. Badi photo auto chhoti ho jayegi, fail nahi hogi."}</p>
+                  <p style={{ fontSize: 11, color: "#666" }}>{type === "video" ? "QR scan karte hi video chalegi. 10-20 sec ki video best hai." : "QR scan karte hi photo khulegi. Badi photo auto chhoti ho jayegi."}</p>
                   <button onClick={() => mediaRef.current?.click()} style={{ padding: "10px 18px", borderRadius: 10, border: "none", background: "#6c5ce7", color: "#fff", fontWeight: 800, cursor: "pointer", marginTop: 10, fontSize: 13 }}>{type === "video" ? "🎥 Video Chuno" : "📷 Photo Chuno"}</button>
-                  <p style={{ fontSize: 10, color: "#888", marginTop: 6 }}>⚡ 100x Fast • Photo 50MB tak • Video 100MB tak, 10-20 sec</p>
+                  <p style={{ fontSize: 10, color: "#888", marginTop: 6 }}>Photo 50MB tak • Video 100MB tak, 10-20 sec</p>
                 </>
               )}
             </div>}
           </div>
 
-          <button onClick={generate} disabled={uploading} style={{ width: "100%", padding: 15, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6c5ce7,#a66bff)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", marginTop: 14, opacity: uploading ? 0.6 : 1 }}>{loading ? "⏳ Ban Raha Hai..." : uploading ? `⚡ Upload Ho Rahi Hai... ${progress}%` : type === "photo" ? "📷 Generate Photo QR →" : type === "video" ? "🎥 Generate Video QR →" : "Generate QR Code →"}</button>
+          <button onClick={generate} disabled={uploading} style={{ width: "100%", padding: 15, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6c5ce7,#a66bff)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", marginTop: 14, opacity: uploading ? 0.6 : 1 }}>{loading ? "⏳ Ban Raha Hai..." : uploading ? `Upload Ho Rahi Hai... ${progress}%` : type === "photo" ? "📷 Generate Photo QR →" : type === "video" ? "🎥 Generate Video QR →" : "Generate QR Code →"}</button>
 
           {qrDataUrl && (
             <div id="qr-result" style={{ textAlign: "center", marginTop: 16 }}>
@@ -297,10 +307,10 @@ export default function Page() {
 
         <div style={card}>
           <h2 style={{ fontSize: 17, fontWeight: 900 }}>Why NEXORA QR Generator?</h2>
-          <p style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 8, lineHeight: 1.7 }}>NEXORA QR Generator — 600x600 PNG HD, 100x Fast, clean, no watermark, free forever. Photo QR - 50MB tak ki badi photo bhi chalegi, auto compress hogi. Video QR - 10-20 sec ki video ka QR banao, scan karte hi video chalegi. UPI, Link, Text, WiFi - Sab ek jagah.</p>
+          <p style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 8, lineHeight: 1.7 }}>NEXORA QR Generator — 600x600 PNG HD, clean, no watermark, free forever. Photo QR - 50MB tak ki badi photo bhi chalegi, auto compress hogi. Video QR - 10-20 sec ki video ka QR banao, scan karte hi video chalegi. UPI, Link, Text, WiFi - Sab ek jagah.</p>
           <h3 style={{ fontSize: 13, fontWeight: 900, color: "#6c5ce7", marginTop: 12 }}>How to Create - 3 Steps</h3>
           <p style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 6, lineHeight: 1.7 }}><b>Step 1:</b> Style Chuno — Normal ya Logo<br /><b>Step 2:</b> Type Chuno — Photo / Video / Link / UPI + File Chuno<br /><b>Step 3:</b> Generate + Download — PNG HD</p>
-          <ul style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 6, lineHeight: 1.7, paddingLeft: 18 }}><li>✅ Photo QR - 50MB tak, Auto Compress, 100x Fast</li><li>✅ Video QR - 10-20 Sec Video, Scan karte hi chalegi</li><li>✅ Link, UPI, Text, WiFi - Sab Types</li><li>✅ 600x600 PNG HD - No Watermark</li><li>✅ Free Forever, No Signup</li></ul>
+          <ul style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 6, lineHeight: 1.7, paddingLeft: 18 }}><li>✅ Photo QR - 50MB tak, Auto Compress</li><li>✅ Video QR - 10-20 Sec Video, Scan karte hi chalegi</li><li>✅ Link, UPI, Text, WiFi - Sab Types</li><li>✅ 600x600 PNG HD - No Watermark</li><li>✅ Free Forever, No Signup</li></ul>
         </div>
 
         <div style={card}>
@@ -318,7 +328,7 @@ export default function Page() {
 
         <div style={card}>
           <h2 style={{ fontSize: 17, fontWeight: 900 }}>FAQ - QR Code Generator</h2>
-          <p style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 8, lineHeight: 1.7 }}><b>Q: Badi photo ka QR kaise banaye?</b><br />A: Photo wala button dabao, 50MB tak ki photo chuno - Tool khud chhoti karke upload karega, fail nahi hogi.<br /><br /><b>Q: Video ka QR kaise banaye?</b><br />A: Video wala button dabao, 10-20 sec ki video chuno, Generate dabao - Scan karte hi video chalegi.<br /><br /><b>Q: Video lambi hai to kya karu?</b><br />A: Gallery me video ko Trim karke 15 sec ka kar lo, fir upload karo.<br /><br /><b>Q: Is it free?</b><br />A: Yes, 100% free, no watermark.</p>
+          <p style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 8, lineHeight: 1.7 }}><b>Q: Badi photo ka QR kaise banaye?</b><br />A: Photo wala button dabao, 50MB tak ki photo chuno - Tool khud chhoti karke upload karega.<br /><br /><b>Q: Video ka QR kaise banaye?</b><br />A: Video wala button dabao, 10-20 sec ki video chuno, Generate dabao - Scan karte hi video chalegi.<br /><br /><b>Q: Is it free?</b><br />A: Yes, 100% free, no watermark.</p>
         </div>
       </main>
 
