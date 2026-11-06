@@ -16,7 +16,6 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // PHOTO + VIDEO TO QR
   const [mediaLink, setMediaLink] = useState("");
   const [mediaPreview, setMediaPreview] = useState("");
   const [mediaType, setMediaType] = useState<"photo" | "video">("photo");
@@ -51,13 +50,12 @@ export default function Page() {
     reader.readAsDataURL(f);
   };
 
-  // FIX 1 - Badi photo ko chhota karo - 100x Fast
   const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
-        const max = 1280;
+        const max = 1000;
         let w = img.naturalWidth, h = img.naturalHeight;
         if (Math.max(w, h) > max) {
           const s = max / Math.max(w, h);
@@ -69,13 +67,13 @@ export default function Page() {
         ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        c.toBlob((b) => resolve(b!), "image/jpeg", 0.75);
+        c.toBlob((b) => resolve(b!), "image/jpeg", 0.65);
       };
+      img.onerror = () => resolve(file);
       img.src = url;
     });
   };
 
-  // FIX 2 - Video ki length check karo - 10-20 sec
   const getVideoDuration = (file: File): Promise<number> => {
     return new Promise((res) => {
       const v = document.createElement("video");
@@ -86,24 +84,49 @@ export default function Page() {
     });
   };
 
+  // 4 HOST - Ek fail to dusra - iPhone pe bhi chalega
   const uploadToHost = async (blob: Blob | File, name: string): Promise<string> => {
-    // 100x Fast - Pehle 0x0.st, fail ho to Catbox
-    try {
-      const form = new FormData();
-      form.append("file", blob, name);
-      const res = await fetch("https://0x0.st", { method: "POST", body: form });
-      const t = (await res.text()).trim();
-      if (t.startsWith("http")) return t;
-      throw new Error("fail");
-    } catch {
-      const form2 = new FormData();
-      form2.append("reqtype", "fileupload");
-      form2.append("fileToUpload", blob, name);
-      const res2 = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: form2 });
-      const t2 = (await res2.text()).trim();
-      if (t2.startsWith("http")) return t2;
-      throw new Error("fail2");
+    const hosts = [
+      async () => {
+        const f = new FormData();
+        f.append("file", blob, name);
+        const r = await fetch("https://tmpfiles.org/api/v1/upload", { method: "POST", body: f });
+        const j = await r.json();
+        const u = j?.data?.url?.replace("tmpfiles.org/", "tmpfiles.org/dl/");
+        if (u && u.startsWith("http")) return u;
+        throw new Error("tmp fail");
+      },
+      async () => {
+        const f = new FormData();
+        f.append("file", blob, name);
+        const r = await fetch("https://file.io/?expires=14d", { method: "POST", body: f });
+        const j = await r.json();
+        if (j?.link?.startsWith("http")) return j.link;
+        throw new Error("fileio fail");
+      },
+      async () => {
+        const f = new FormData();
+        f.append("file", blob, name);
+        const r = await fetch("https://0x0.st", { method: "POST", body: f });
+        const t = (await r.text()).trim();
+        if (t.startsWith("http")) return t;
+        throw new Error("0x0 fail");
+      },
+      async () => {
+        const f = new FormData();
+        f.append("reqtype", "fileupload");
+        f.append("fileToUpload", blob, name);
+        const r = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: f });
+        const t = (await r.text()).trim();
+        if (t.startsWith("http")) return t;
+        throw new Error("catbox fail");
+      },
+    ];
+    let lastErr: any = null;
+    for (const h of hosts) {
+      try { return await h(); } catch (e) { lastErr = e; }
     }
+    throw lastErr;
   };
 
   const handleMediaUpload = async (e: any) => {
@@ -112,18 +135,13 @@ export default function Page() {
     const isVideo = f.type.startsWith("video/");
     const isImage = f.type.startsWith("image/");
     if (!isVideo && !isImage) { alert("Sirf Photo ya Video chuno!"); return; }
-
-    // Video check - 10-20 sec
     if (isVideo) {
       if (f.size > 100 * 1024 * 1024) { alert("Video 100MB se chhoti rakho!"); return; }
       const dur = await getVideoDuration(f);
       if (dur > 25) { alert(`Video ${Math.round(dur)} sec ki hai! 10-20 sec ki video chuno. Gallery me Trim karke dobara chuno.`); return; }
-      if (dur > 0 && dur < 2) { alert("Video bahut chhoti hai, 5 sec se badi lo."); return; }
     } else {
-      // Photo - 50MB tak allowed, compress karke chhoti kar denge
       if (f.size > 50 * 1024 * 1024) { alert("Photo 50MB se chhoti rakho!"); return; }
     }
-
     setMediaType(isVideo ? "video" : "photo");
     setMediaPreview(URL.createObjectURL(f));
     setUploading(true); setProgress(10); setQrDataUrl(""); setMediaLink("");
@@ -131,8 +149,7 @@ export default function Page() {
       let toUpload: Blob | File = f;
       let name = f.name;
       if (isImage) {
-        // Badi photo ko compress karo - 10MB -> 800KB
-        setProgress(40);
+        setProgress(30);
         toUpload = await compressImage(f);
         name = "nexora-photo.jpg";
         setProgress(60);
@@ -142,10 +159,10 @@ export default function Page() {
       const link = await uploadToHost(toUpload, name);
       setProgress(100);
       setMediaLink(link);
-      // Video / Photo ka QR turant bana do - 100x Fast
       setTimeout(() => generateQRDirect(link), 100);
-    } catch {
-      alert("Upload nahi hui. Net check karo, dobara try karo.");
+    } catch (err: any) {
+      console.log("Upload error:", err);
+      alert("Upload nahi hui. Net check karo, Safari Private mode band karo, dobara try karo.");
     }
     setUploading(false);
   };
@@ -284,6 +301,19 @@ export default function Page() {
           <h3 style={{ fontSize: 13, fontWeight: 900, color: "#6c5ce7", marginTop: 12 }}>How to Create - 3 Steps</h3>
           <p style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 6, lineHeight: 1.7 }}><b>Step 1:</b> Style Chuno — Normal ya Logo<br /><b>Step 2:</b> Type Chuno — Photo / Video / Link / UPI + File Chuno<br /><b>Step 3:</b> Generate + Download — PNG HD</p>
           <ul style={{ fontSize: 12.5, color: "#4a4a5a", marginTop: 6, lineHeight: 1.7, paddingLeft: 18 }}><li>✅ Photo QR - 50MB tak, Auto Compress, 100x Fast</li><li>✅ Video QR - 10-20 Sec Video, Scan karte hi chalegi</li><li>✅ Link, UPI, Text, WiFi - Sab Types</li><li>✅ 600x600 PNG HD - No Watermark</li><li>✅ Free Forever, No Signup</li></ul>
+        </div>
+
+        <div style={card}>
+          <h2 style={{ fontSize: 17, fontWeight: 900 }}>NEXORA vs Others - Comparison</h2>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, marginTop: 10 }}><tbody>
+            <tr><th style={{ border: "1px solid #e5e7eb", padding: 8, background: "#f5f3ff", textAlign: "left" }}>Feature</th><th style={{ border: "1px solid #e5e7eb", padding: 8, background: "#f5f3ff" }}>NEXORA ✅</th><th style={{ border: "1px solid #e5e7eb", padding: 8, background: "#f5f3ff" }}>Others ❌</th></tr>
+            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Logo QR</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Free Logo QR ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Paid $5+/mo</td></tr>
+            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Photo QR</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Photo to QR ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>No Photo QR</td></tr>
+            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Video QR</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Video to QR ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>No Video QR</td></tr>
+            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Quality</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>600x600 PNG HD ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>200px Low</td></tr>
+            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>UPI QR</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>UPI Payment QR ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>No UPI</td></tr>
+            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Price</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Free Forever ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Paid</td></tr>
+          </tbody></table>
         </div>
 
         <div style={card}>
