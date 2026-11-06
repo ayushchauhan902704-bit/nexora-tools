@@ -15,7 +15,6 @@
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/love-calculator", "destination": "/love-calculator/index.html" },
     { "source": "/passport-size-photo", "destination": "/passport-size-photo/index.html" },
-    { "source": "/background-remover", "destination": "/background-remover/index.html" },
     { "source": "/compress-image", "destination": "/compress-image/index.html" },
     { "source": "/jpg-to-pdf", "destination": "/jpg-to-pdf/index.html" },
     { "source": "/pdf-to-jpg", "destination": "/pdf-to-jpg/index.html" },
