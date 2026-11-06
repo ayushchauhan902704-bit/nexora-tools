@@ -13,22 +13,31 @@ export async function POST(req: Request) {
     const base64 = image.split(",")[1];
     const mime = image.split(";")[0].split(":")[1] || "image/jpeg";
 
-    const prompt = `Read this handwritten image carefully and transcribe EXACTLY.
-    Rules: Keep same line breaks as in image. Keep Hinglish as written. Fix spelling from context. Output ONLY clean text, no explanation.`;
+    const prompt = `You are the best handwriting OCR expert. Read this handwritten page carefully.
+    Rules:
+    1. Transcribe EXACTLY what is written, don't add extra.
+    2. Keep line breaks PROPER - jesi line handwritten me hai, wesi hi line me likho.
+    3. If a word is unclear, guess the most logical word from context.
+    4. Fix spelling but keep Hinglish as written (Hindi in English).
+    5. Output ONLY clean typed text, no explanation, no markdown, no extra notes.
+    6. Headings ko alag line me rakho.`;
 
-    // Naya model - ye zyada stable hai
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: mime, data: base64 } }] }],
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: mime, data: base64 } }
+          ]
+        }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 4000 }
       })
     });
 
     const data = await res.json();
-    console.log("GEMINI ERROR:", JSON.stringify(data).slice(0, 1000));
-    
+
     if (data.error) {
       return NextResponse.json({ text: "ERROR: " + data.error.message });
     }
