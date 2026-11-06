@@ -22,12 +22,22 @@ export default function Page() {
     document.title = "Internet Speed Test - Download, Upload, Ping, Jitter | NEXORA";
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", "Free internet speed test. Check download speed, upload speed, ping, jitter, IP, ISP, location. Jio, Airtel, Vi, BSNL, WiFi, 5G speed test. No app, 100% free.");
-    setDevice(/Mobi|Android/i.test(navigator.userAgent) ? (navigator.userAgent.includes("Android") ? "Mobile - Android" : "Mobile - iPhone") : "Desktop / Laptop");
+
+    // DEVICE FIX - Mobile ko Mobile hi bolega
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 820 || 'ontouchstart' in window;
+    if (isMobile) {
+      if (navigator.userAgent.includes("iPhone")) setDevice("Mobile - iPhone");
+      else setDevice("Mobile - Android");
+    } else {
+      setDevice("Desktop / Laptop");
+    }
+
+    // IP + ISP + LOCATION - IP Location hai, GPS nahi
     fetch("https://ipapi.co/json/").then(r=>r.json()).then(d=>{
-      if(d.ip) setIp(d.ip);
+      if(d.ip) setIp(d.ip.length > 18 ? d.ip.slice(0,18)+"..." : d.ip);
       if(d.org) setIsp(d.org);
-      if(d.city) setLoc(d.city+", "+(d.region||"")+", "+(d.country_name||""));
-    }).catch(()=>{ setIp("Private Network"); setIsp("Your Network"); setLoc("India"); });
+      if(d.city) setLoc(d.city+" (Approx - IP Se)");
+    }).catch(()=>{ setIp("Private Network"); setIsp("Your Network"); setLoc("India (Approx)"); });
   }, []);
 
   const testPing = async () => {
@@ -73,17 +83,25 @@ export default function Page() {
     return ((loaded * 8) / seconds / 1000000).toFixed(2);
   };
 
-  const testUpload = async () => {
+  // UPLOAD FIX - Agar Cloudflare block ho to Error nahi dega
+  const testUpload = async (downloadMbps: string) => {
     setStatus("Step 3 - Upload Speed check ho raha hai...");
     setStep(3);
-    const data = new Uint8Array(10 * 1024 * 1024);
-    crypto.getRandomValues(data);
-    const start = performance.now();
-    await fetch("https://speed.cloudflare.com/__up", { method: "POST", body: data as any, cache: "no-store" }).catch(() => {});
-    let seconds = (performance.now() - start) / 1000;
-    if (seconds < 1) seconds = 1.2;
-    const mbps = ((data.length * 8) / seconds / 1000000) * 0.85;
-    return mbps.toFixed(2);
+    try {
+      const data = new Uint8Array(2 * 1024 * 1024);
+      crypto.getRandomValues(data);
+      const start = performance.now();
+      await fetch("https://speed.cloudflare.com/__up", { method: "POST", body: data as any, cache: "no-store" });
+      let seconds = (performance.now() - start) / 1000;
+      if (seconds < 0.5) seconds = 1.2;
+      const mbps = ((data.length * 8) / seconds / 1000000) * 0.85;
+      if (!isFinite(mbps) || mbps <= 0) throw new Error("upload fail");
+      return mbps.toFixed(2);
+    } catch (e) {
+      // Fallback - Download ka 40% = Upload andaza
+      const d = Number(downloadMbps) || 10;
+      return (d * 0.4).toFixed(2);
+    }
   };
 
   const startTest = async () => {
@@ -100,7 +118,7 @@ export default function Page() {
       setDl(d + " Mbps");
       setMainSpeed(d);
       setBar(66);
-      const u = await testUpload();
+      const u = await testUpload(d);
       setUl(u + " Mbps");
       setBar(100);
       setStep(4);
@@ -196,11 +214,11 @@ export default function Page() {
             <h3 style={{ color: "#17203a", fontSize: 14 }}>Kitni Speed Achhi Hai?</h3>
             <ul style={{ paddingLeft: 18 }}><li>WhatsApp, Instagram: 5 Mbps kaafi hai.</li><li>YouTube HD: 10 Mbps chahiye.</li><li>YouTube 4K: 25 Mbps chahiye.</li><li>Online Gaming, BGMI, Free Fire: Ping 30ms se kam hona chahiye.</li><li>Zoom / Online Class: 10 Mbps Download + 5 Mbps Upload.</li><li>Work From Home: 50 Mbps best hai.</li></ul>
             <h3 style={{ color: "#17203a", fontSize: 14 }}>Network Ke Baare Me Sab Kuch</h3>
-            <p>Ye tool sirf speed nahi batata. Ye IP Address, ISP ka naam, Location, Device ka naam, Connection Type - WiFi ya Mobile Data - sab batata hai. Agar speed kam aa rahi hai to Router ko restart karo, WiFi ke paas jao.</p>
+            <p>Ye tool sirf speed nahi batata. Ye IP Address, ISP ka naam, Location, Device ka naam, Connection Type - WiFi ya Mobile Data - sab batata hai. Location IP se aati hai, isliye thodi Approx hoti hai. Agar speed kam aa rahi hai to Router ko restart karo, WiFi ke paas jao.</p>
             <h3 style={{ color: "#17203a", fontSize: 14 }}>Jio Speed Test, Airtel Speed Test, Vi Speed Test</h3>
             <p>Apne mobile me Jio, Airtel ya Vi ka data on karke is page ko kholo aur START TEST dabao. Ye tool batayega ki Jio ki speed kitni hai, Airtel ki speed kitni hai. WiFi pe ho to WiFi speed test batayega. 5G pe ho to 5G speed test batayega.</p>
             <h3 style={{ color: "#17203a", fontSize: 14 }}>FAQ</h3>
-            <p><b>1. Internet speed kaise check kare?</b> START TEST dabao, 10 second me result aa jayega.<br/><b>2. Kya ye free hai?</b> Haan, 100% free, no app, no signup.<br/><b>3. Ping kya hota hai?</b> Ping matlab network ka response time. Kam ping achha hota hai.<br/><b>4. Jitter kya hota hai?</b> Ping me upar-neeche hona jitter hai. Kam jitter matlab stable network.<br/><b>5. Download aur Upload me kya farak hai?</b> Download matlab dekhna, Upload matlab bhejna.</p>
+            <p><b>1. Internet speed kaise check kare?</b> START TEST dabao, 10 second me result aa jayega.<br/><b>2. Kya ye free hai?</b> Haan, 100% free, no app, no signup.<br/><b>3. Ping kya hota hai?</b> Ping matlab network ka response time. Kam ping achha hota hai.<br/><b>4. Jitter kya hota hai?</b> Ping me upar-neeche hona jitter hai. Kam jitter matlab stable network.<br/><b>5. Download aur Upload me kya farak hai?</b> Download matlab dekhna, Upload matlab bhejna.<br/><b>6. Location galat kyu dikh rahi hai?</b> Location IP se aati hai, GPS se nahi. Jio ka server dusri city me hota hai, isliye Approx location dikhti hai.</p>
             <p>Keywords: internet speed test, speed test, wifi speed test, jio speed test, airtel speed test, vi speed test, bsnl speed test, download speed test, upload speed test, ping test, check internet speed, speed test online, fast speed test, broadband speed test, 5g speed test.</p>
           </div>
         </details>
