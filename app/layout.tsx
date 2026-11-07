@@ -8,7 +8,8 @@ export const metadata: Metadata = {
   description: "29+ Free Tools by NEXORA - Compress Image to Exact KB, Video Compressor to Exact MB, Image to Text OCR, Text to Speech 40+ Languages, PDF Tools HD No Watermark, Private.",
   metadataBase: new URL("https://nexora-tools-drab.vercel.app"),
   robots: { index: true, follow: true },
-    verification: { google: "zqASoTyCvuvQ5i316eF2-OKYLmt7vsrr7zVDET5CslY" },
+  verification: { google: "zqASoTyCvuvQ5i316eF2-OKYLmt7vsrr7zVDET5CslY" },
+  icons: { icon: "/favicon.jpg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
