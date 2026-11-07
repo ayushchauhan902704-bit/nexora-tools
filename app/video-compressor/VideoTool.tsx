@@ -92,7 +92,7 @@ export default function VideoTool() {
       let videoBitrate = Math.max(100000, Math.floor(Math.floor(totalBits - 128000) * 0.85));
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext("2d", { alpha: false } as any)!;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       const canvasStream: any = (canvas as any).captureStream(30);
       // Audio
       let audioTracks: any[] = [];
