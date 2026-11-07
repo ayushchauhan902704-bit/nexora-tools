@@ -1,10 +1,9 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 
 export default function VideoTool() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const sourceVideoRef = useRef<HTMLVideoElement>(null);
-  const outputPreviewRef = useRef<HTMLVideoElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sourceURL, setSourceURL] = useState<string>("");
@@ -18,9 +17,8 @@ export default function VideoTool() {
   const [showProgress, setShowProgress] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [outputURL, setOutputURL] = useState("");
-  const [outputExtension, setOutputExtension] = useState("webm");
+  const [outputExtension, setOutputExtension] = useState("mp4");
   const [isCompressing, setIsCompressing] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
 
   const fmt = (b: number) => {
     if (!b || b <= 0) return "0 KB";
@@ -44,7 +42,7 @@ export default function VideoTool() {
   ];
 
   const selectFile = (f: File | undefined | null) => {
-    setError(""); setResult(null);
+    setError(""); setResult(null); setOutputURL("");
     if (!f) return;
     if (!f.type.startsWith("video/")) { setError("Video file chuno."); return; }
     if (sourceURL) URL.revokeObjectURL(sourceURL);
@@ -65,17 +63,15 @@ export default function VideoTool() {
     }
   };
 
-  // Tera purana wala compress logic - same to same
   const compress = async () => {
     if (!selectedFile || isCompressing) return;
-    setError(""); setResult(null);
+    setError(""); setResult(null); setOutputURL("");
     let targetBytes: number;
     try { targetBytes = getTargetBytes(); } catch (e: any) { setError(e.message); return; }
     const sourceVideo = sourceVideoRef.current!;
     setIsCompressing(true); setShowProgress(true);
     setProgress(2); setProgressLabel("Preparing..."); setStatusText("Video load ho rahi hai.");
 
-    let audioContext: any = null, audioSourceNode: any = null, audioDestination: any = null;
     try {
       await new Promise<void>((res, rej) => {
         if (sourceVideo.readyState >= 1) res();
@@ -94,26 +90,32 @@ export default function VideoTool() {
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       const canvasStream: any = (canvas as any).captureStream(30);
-      // Audio
+
+      // Audio - Purana wala same
       let audioTracks: any[] = [];
+      let audioContext: any = null;
       try {
         const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
         audioContext = new AC();
         if (audioContext.state === "suspended") await audioContext.resume();
-        audioSourceNode = audioContext.createMediaElementSource(sourceVideo);
-        audioDestination = audioContext.createMediaStreamDestination();
+        const srcNode = audioContext.createMediaElementSource(sourceVideo);
+        const dest = audioContext.createMediaStreamDestination();
         const gain = audioContext.createGain(); gain.gain.value = 1;
         const silent = audioContext.createGain(); silent.gain.value = 0;
-        audioSourceNode.connect(gain); gain.connect(audioDestination);
-        audioSourceNode.connect(silent); silent.connect(audioContext.destination);
-        audioTracks = audioDestination.stream.getAudioTracks();
+        srcNode.connect(gain); gain.connect(dest);
+        srcNode.connect(silent); silent.connect(audioContext.destination);
+        audioTracks = dest.stream.getAudioTracks();
       } catch { audioTracks = []; }
 
       const combined = new MediaStream();
       canvasStream.getVideoTracks().forEach((t: any) => combined.addTrack(t));
       audioTracks.forEach((t: any) => combined.addTrack(t));
-      const mime = "video/webm;codecs=vp9,opus";
-      const recorder = new MediaRecorder(combined, { mimeType: (MediaRecorder as any).isTypeSupported(mime) ? mime : "video/webm", videoBitsPerSecond: videoBitrate, audioBitsPerSecond: 128000 } as any);
+
+      // FIX - iPhone ke liye MP4 pehle, nahi to WebM
+      const allMimes = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+      let mime = "video/webm";
+      for (const t of allMimes) { if ((MediaRecorder as any).isTypeSupported(t)) { mime = t; break; } }
+      const recorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: videoBitrate, audioBitsPerSecond: 128000 } as any);
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
       const done = new Promise<void>((res) => { recorder.onstop = () => res(); });
@@ -139,13 +141,13 @@ export default function VideoTool() {
       setProgress(96); setProgressLabel("Finishing..."); setStatusText("Saving...");
       if (recorder.state !== "inactive") recorder.stop();
       await done;
-      const outputBlob = new Blob(chunks, { type: "video/webm" });
+      const outputBlob = new Blob(chunks, { type: mime.split(";")[0] });
       if (!outputBlob.size) throw new Error("Empty file bana.");
       const outUrl = URL.createObjectURL(outputBlob);
-      setOutputURL(outUrl); setOutputExtension("webm");
-      if (outputPreviewRef.current) { outputPreviewRef.current.src = outUrl; outputPreviewRef.current.style.display = "block"; }
+      const ext = outputBlob.type.includes("mp4") ? "mp4" : "webm";
+      setOutputURL(outUrl); setOutputExtension(ext);
       const orig = selectedFile.size, nowB = outputBlob.size, diff = orig - nowB;
-      setResult({ orig: fmt(orig), now: fmt(nowB), saved: diff > 0 ? ((diff / orig) * 100).toFixed(1) + "% kam" : "-", big: `${fmt(orig)} → ${fmt(nowB)}`, note: `Target tha: ${fmt(targetBytes)}. ${nowB <= targetBytes ? "Target ke andar hai." : "Thoda bada hai, dobara try karo."} ${audioTracks.length ? "Audio ke saath." : ""}`, blob: outputBlob, base: selectedFile.name.replace(/\.[^/.]+$/, "") });
+      setResult({ orig: fmt(orig), now: fmt(nowB), saved: diff > 0 ? ((diff / orig) * 100).toFixed(1) + "% kam" : "-", big: `${fmt(orig)} → ${fmt(nowB)}`, note: `Target tha: ${fmt(targetBytes)}. ${nowB <= targetBytes ? "Target ke andar hai." : "Thoda bada hai, dobara try karo."} ${audioTracks.length ? "Audio ke saath." : ""} Format: .${ext}`, blob: outputBlob, base: selectedFile.name.replace(/\.[^/.]+$/, "") });
       setProgress(100); setProgressLabel("Done!"); setStatusText("Ho gaya.");
     } catch (err: any) { setError(err.message); setShowProgress(false); }
     finally { setIsCompressing(false); }
@@ -163,7 +165,6 @@ export default function VideoTool() {
     setSelectedFile(null); setResult(null); setOutputURL(""); setError(""); setShowProgress(false);
     setTargetValue("10"); setCurrentUnit("MB"); setActiveChip("10 MB");
     if (sourceVideoRef.current) { sourceVideoRef.current.pause(); sourceVideoRef.current.removeAttribute("src"); sourceVideoRef.current.load(); }
-    if (outputPreviewRef.current) { outputPreviewRef.current.pause(); outputPreviewRef.current.removeAttribute("src"); outputPreviewRef.current.style.display = "none"; }
     if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
@@ -199,9 +200,9 @@ export default function VideoTool() {
         .result{margin-top:13px;border:1.5px solid #b9eecb;border-radius:13px;padding:12px;background:#f0fff4}
         .big-preview{font-size:16px;font-weight:800;text-align:center;background:#fff;border-radius:9px;padding:10px;margin:8px 0}
         .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;text-align:center}.stats div{background:#fff;border:1px solid #e5e8f5;border-radius:9px;padding:9px 5px}.stats strong{display:block;font-size:14px}.stats small{color:#6b7690;font-size:11px}
-        .preview{width:100%;max-height:280px;background:#000;border-radius:11px;margin-top:10px;display:none}
+        .preview{width:100%;max-height:280px;background:#000;border-radius:11px;margin-top:10px}
         .big-gap{height:90px}.green-note{margin-top:0;background:#e9fff1;border:1px solid #1ed06a;border-radius:9px;padding:8px 10px;text-align:center;font-size:12px}.green-note a{color:#0a9e4a;font-weight:800;text-decoration:underline}
-        .loop{margin-top:12px;background:linear-gradient(90deg,#1e5bff,#7a3cff);color:#fff;border-radius:12px;padding:11px;text-align:center}.loop marquee{font-weight:800;font-size:12px}
+        .loop{margin-top:12px;background:linear-gradient(90deg,#1e5bff,#7a3cff);color:#fff;border-radius:12px;padding:11px;text-align:center}
         .seo-details{margin-top:18px;border:1px solid #e9edf7;border-radius:12px;background:#fff;overflow:hidden}.seo-details summary{padding:12px 14px;font-size:13px;font-weight:800;color:#1e5bff;cursor:pointer;list-style:none}
         .seo-inner{padding:0 14px 14px;font-size:13px;line-height:1.8;color:#4b5568}.seo-inner h3{color:#17203a;font-size:14px;margin:14px 0 6px}
         footer{text-align:center;color:#8793ad;border-top:1px solid #e9edf7;padding:16px 14px;font-size:11px;background:#fff;line-height:1.7} footer a{color:#1e5bff}
@@ -251,14 +252,14 @@ export default function VideoTool() {
             <div className="big-preview">{result.big}</div>
             <div className="stats"><div><strong>{result.orig}</strong><small>Original</small></div><div><strong>{result.now}</strong><small>New Size</small></div><div><strong>{result.saved}</strong><small>Kitna Kam Hua</small></div></div>
             <p style={{ fontSize: 12, color: "#334155", lineHeight: 1.6, marginTop: 8 }}>{result.note}</p>
-            <video ref={outputPreviewRef} className="preview" controls playsInline />
-            <button className="btn btn-big" onClick={download} style={{ marginTop: 12 }}>⬇️ Download Compressed Video</button>
+            {outputURL && <video src={outputURL} className="preview" controls playsInline autoPlay muted />}
+            <button className="btn btn-big" onClick={download} style={{ marginTop: 12 }}>⬇️ Download Compressed Video (. {outputExtension.toUpperCase()})</button>
           </div>}
         </section>
 
         <div className="big-gap"></div>
         <div className="green-note">Photo Compressor Karna Hai To Yaha Kare - <a href="/compress-image">Photo Compressor</a></div>
-        <div className="loop"><div style={{fontWeight:800, fontSize:12, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>🔥 NEXORA - Free Tools • Video Compressor • Photo Compressor • PDF Compressor • 100% Free • No Watermark 🔥</div></div>
+        <div className="loop"><div style={{ fontWeight: 800, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>🔥 NEXORA - Free Tools • Video Compressor • Photo Compressor • PDF Compressor • 100% Free • No Watermark 🔥</div></div>
 
         <details className="seo-details">
           <summary>▼ Video Compressor Ke Baare Me Aur Jano - Click Karo</summary>
@@ -278,7 +279,6 @@ export default function VideoTool() {
       </main>
       <footer><div>© {new Date().getFullYear()} NEXORA. Free online tools for everyone.</div><div><a href="/">Home</a> · <a href="/compress-image">Photo Compressor</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy">Privacy Policy</a></div></footer>
 
-      {/* Google Schema - Same to Same */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "WebApplication", name: "NEXORA Video Compressor", applicationCategory: "MultimediaApplication", operatingSystem: "Any", offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, description: "Free video compressor to 500KB, 1MB, 5MB, 10MB, 20MB, 100MB. MP4, WhatsApp, Discord compressor, 100x fast, no watermark." }) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [{ "@type": "Question", name: "How to compress video to 10MB?", acceptedAnswer: { "@type": "Answer", text: "Upload video, select 10MB, click Generate. Tool makes 10MB to 9MB." } }, { "@type": "Question", name: "Is video compressor free?", acceptedAnswer: { "@type": "Answer", text: "Yes 100% free, no watermark, no signup." } }] }) }} />
     </>
