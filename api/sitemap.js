@@ -10,6 +10,7 @@ export default function handler(req, res) {
     { loc: `${baseUrl}/terms`, priority: '0.5', changefreq: 'monthly' },
     { loc: `${baseUrl}/disclaimer`, priority: '0.5', changefreq: 'monthly' },
 
+    { loc: `${baseUrl}/tools`, priority: '0.9', changefreq: 'weekly' },
     { loc: `${baseUrl}/age-calculator`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/ai-text-humanizer`, priority: '0.8', changefreq: 'weekly' },
     { loc: `${baseUrl}/background-remover`, priority: '0.9', changefreq: 'weekly' },
