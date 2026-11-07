@@ -258,7 +258,7 @@ export default function VideoTool() {
 
         <div className="big-gap"></div>
         <div className="green-note">Photo Compressor Karna Hai To Yaha Kare - <a href="/compress-image">Photo Compressor</a></div>
-        <div className="loop"><marquee>🔥 NEXORA - Free Tools • Video Compressor • Photo Compressor • PDF Compressor • 100% Free • No Watermark 🔥</marquee></div>
+        <div className="loop"><div style={{fontWeight:800, fontSize:12, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>🔥 NEXORA - Free Tools • Video Compressor • Photo Compressor • PDF Compressor • 100% Free • No Watermark 🔥</div></div>
 
         <details className="seo-details">
           <summary>▼ Video Compressor Ke Baare Me Aur Jano - Click Karo</summary>
