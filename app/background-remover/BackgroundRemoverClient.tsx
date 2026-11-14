@@ -43,9 +43,7 @@ export default function BackgroundRemoverClient() {
     try {
       const gpuAvailable = typeof navigator !== "undefined" && "gpu" in navigator;
       setIsGpu(gpuAvailable);
-    } catch {
-      setIsGpu(false);
-    }
+    } catch { setIsGpu(false); }
   }, []);
 
   const setProgressTarget = (value: number) => {
@@ -95,9 +93,7 @@ export default function BackgroundRemoverClient() {
     libraryPromiseRef.current = import("@imgly/background-removal")
       .then((module) => {
         const removeBackground = module.default as unknown as RemoveBackgroundFunction;
-        if (typeof removeBackground !== "function") {
-          throw new Error("Background removal library failed to load.");
-        }
+        if (typeof removeBackground !== "function") throw new Error("Background removal library failed to load.");
         setLibReady(true);
         return removeBackground;
       })
@@ -108,6 +104,17 @@ export default function BackgroundRemoverClient() {
       });
     return libraryPromiseRef.current;
   };
+
+  // ✅ SPEED: Page khulte hi AI pehle se load ho jayega, upload pe wait nahi karna padega
+  useEffect(() => {
+    const preload = () => { loadLibrary().catch(() => {}); };
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(preload, { timeout: 1500 });
+    } else {
+      const t = setTimeout(preload, 800);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   const prepareImage = async (file: File): Promise<File> => {
     const objectUrl = URL.createObjectURL(file);
@@ -121,8 +128,9 @@ export default function BackgroundRemoverClient() {
       let width = image.naturalWidth;
       let height = image.naturalHeight;
       const pixels = width * height;
-      const MAX_PIXELS = 12_000_000;
-      const MAX_DIMENSION = 3200;
+      // ✅ SPEED + QUALITY BALANCE: 8MP - fast bhi, saaf bhi
+      const MAX_PIXELS = 8_000_000;
+      const MAX_DIMENSION = 2400;
       const dimensionScale = Math.min(1, MAX_DIMENSION / width, MAX_DIMENSION / height);
       const pixelScale = pixels > MAX_PIXELS ? Math.sqrt(MAX_PIXELS / pixels) : 1;
       const scale = Math.min(dimensionScale, pixelScale);
@@ -257,6 +265,8 @@ export default function BackgroundRemoverClient() {
 
   const handleUploadClick = () => {
     if (!isProcessing) fileInputRef.current?.click();
+    // Hover / Tap pe bhi preload - speed ke liye
+    loadLibrary().catch(() => {});
   };
 
   const download = () => {
@@ -292,7 +302,6 @@ export default function BackgroundRemoverClient() {
 
   return (
     <main style={{ minHeight: "100vh", background: "#ffffff", color: "#111827" }}>
-      {/* HEADER - Sirf NEXORA ka color blue kiya */}
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid #e5e7eb" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "13px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <a href="/" style={{ textDecoration: "none", fontWeight: 950, fontSize: 22, color: "#2563eb" }}>NEXORA</a>
@@ -302,18 +311,17 @@ export default function BackgroundRemoverClient() {
           </nav>
         </div>
       </header>
-      {/* HERO - Sirf heading me DPI wala gradient lagaya */}
       <section style={{ maxWidth: 850, margin: "0 auto", padding: "42px 20px 22px", textAlign: "center" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 999, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", fontWeight: 800, fontSize: 11, letterSpacing: "0.04em" }}>
           {libReady ? (isGpu ? "FREE • GPU AI • HD PNG • NO WATERMARK" : "FREE • AI • HD PNG • NO WATERMARK") : "FREE • AI BACKGROUND REMOVER"}
         </div>
-        <h1 style={{ fontSize: "clamp(36px, 8vw, 62px)", lineHeight: 1.04, margin: "17px 0 12px", fontWeight: 950, letterSpacing: "-0.045em", background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Background Remover</h1>
-        <p style={{ maxWidth: 700, margin: "0 auto", fontSize: 17, lineHeight: 1.65, color: "#64748b" }}>Remove photo backgrounds automatically with AI and create a clean transparent PNG in your browser.</p>
+        <h1 style={{ fontSize: "clamp(36px, 8vw, 62px)", lineHeight: 1.04, margin: "17px 0 12px", fontWeight: 950, letterSpacing: "-0.045em", background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Remove Background from Photo in 1 Sec</h1>
+        <p style={{ maxWidth: 700, margin: "0 auto", fontSize: 17, lineHeight: 1.65, color: "#64748b" }}>Remove photo backgrounds automatically with AI and create a clean transparent PNG in your browser. No Photoshop, no sign-up, no watermark.</p>
       </section>
       <section style={{ maxWidth: 760, margin: "0 auto", padding: "8px 18px 48px" }}>
         <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 18, padding: 18, boxShadow: "0 15px 45px rgba(15,23,42,0.07)" }}>
           {!showPreview ? (
-            <div onClick={handleUploadClick} style={{ minHeight: 210, border: "2px dashed #cbd5e1", borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "24px 18px", cursor: isProcessing ? "not-allowed" : "pointer", background: "#f8fafc" }}>
+            <div onClick={handleUploadClick} onMouseEnter={() => loadLibrary().catch(() => {})} style={{ minHeight: 210, border: "2px dashed #cbd5e1", borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "24px 18px", cursor: isProcessing ? "not-allowed" : "pointer", background: "#f8fafc" }}>
               <div style={{ width: 58, height: 58, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#2563eb", fontSize: 28, marginBottom: 12 }}>✨</div>
               <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 900 }}>{uploadText}</h2>
               <p style={{ margin: "0 0 5px", color: "#64748b", fontSize: 14 }}>JPG, PNG or WebP • Up to 25 MB</p>
@@ -341,8 +349,7 @@ export default function BackgroundRemoverClient() {
                   })}
                 </div>
               </div>
-              {/* Sirf ye button orange kiya */}
-              <button type="button" onClick={download} style={{ width: "100%", marginTop: 16, border: 0, borderRadius: 11, padding: "13px 16px", background: "#f97316", color: "#ffffff", fontSize: 15, fontWeight: 900, cursor: "pointer" }}>Download PNG</button>
+              <button type="button" onClick={download} style={{ width: "100%", marginTop: 16, border: 0, borderRadius: 11, padding: "13px 16px", background: "#f97316", color: "#ffffff", fontSize: 15, fontWeight: 900, cursor: "pointer" }}>Download PNG - FREE →</button>
             </div>
           )}
           {isProcessing && (
@@ -359,7 +366,6 @@ export default function BackgroundRemoverClient() {
           {!isProcessing && !showPreview && <p style={{ margin: "13px 0 0", textAlign: "center", color: "#64748b", fontSize: 13 }}>{status}</p>}
         </div>
       </section>
-      {/* Niche ka sab kuch bilkul wahi hai - kuch nahi badla */}
       <section style={{ maxWidth: 760, margin: "0 auto", padding: "0 18px 42px" }}>
         <div style={{ background: "#111827", color: "#ffffff", borderRadius: 18, padding: "24px 20px", textAlign: "center" }}>
           <h2 style={{ margin: "0 0 8px", fontSize: 24 }}>Remove Backgrounds for Free</h2>
@@ -368,16 +374,17 @@ export default function BackgroundRemoverClient() {
       </section>
       <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 18px 50px" }}>
         <article style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 18, padding: "25px", lineHeight: 1.8, color: "#475569" }}>
-          <h2 style={{ color: "#111827", fontSize: 28, marginTop: 0 }}>Free AI Background Remover</h2>
-          <p>NEXORA Background Remover is a free online tool for removing backgrounds from photos. Upload a JPG, PNG, or WebP image and AI automatically separates the main subject from the background.</p>
-          <p>The result is generated as a PNG with transparency preserved. You can also replace the removed background with white, blue, or red.</p>
+          <h2 style={{ color: "#111827", fontSize: 28, marginTop: 0 }}>Free AI Background Remover - Remove Background from Photo Without Photoshop</h2>
+          <p>NEXORA Background Remover is a free online tool for removing backgrounds from photos. Upload a JPG, PNG, or WebP image and AI automatically separates the main subject from the background. No Photoshop needed.</p>
+          <p>The result is generated as a PNG with transparency preserved. You can also replace the removed background with white, blue, or red. Perfect for passport photos, product photos, profile pictures, and shop listings.</p>
+          <p>How to remove background from photo without Photoshop? Just upload your photo, AI will remove background automatically in 1 second, and download your transparent PNG for free.</p>
           <h3 style={{ color: "#111827" }}>Background Removal for Photos</h3>
           <p>The tool is designed for product photos, profile pictures, social media images, passport-photo preparation, ID images, presentations, and other everyday image editing tasks.</p>
           <h3 style={{ color: "#111827" }}>Fast Browser-Based Processing</h3>
-          <p>NEXORA performs the background-removal processing in the browser using AI. Supported devices may use GPU acceleration to improve processing performance.</p>
+          <p>NEXORA performs the background-removal processing in the browser using AI. Supported devices may use GPU acceleration to improve processing performance. Your photo never leaves your phone - 100% private.</p>
           <h3 style={{ color: "#111827" }}>Transparent PNG and No Watermark</h3>
           <p>Download the processed image as a PNG without a NEXORA watermark. Transparent results can be used directly in other design and editing applications.</p>
-          <img src="/background-remover-example.jpg" alt="NEXORA AI background remover example" style={{ display: "block", width: "100%", maxWidth: 760, height: "auto", margin: "22px auto", borderRadius: 14 }} />
+          <img src="/background-remover-example.jpg" alt="Remove background from photo example - NEXORA AI background remover before after" width={760} height={400} loading="lazy" style={{ display: "block", width: "100%", maxWidth: 760, height: "auto", margin: "22px auto", borderRadius: 14 }} />
         </article>
       </section>
       <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 18px 50px" }}>
@@ -393,7 +400,7 @@ export default function BackgroundRemoverClient() {
       </section>
       <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 18px 50px" }}>
         <h2 style={{ fontSize: 30, color: "#111827" }}>Frequently Asked Questions</h2>
-        {[["Is NEXORA Background Remover free?","Yes. NEXORA Background Remover is free to use without requiring an account."],["What image formats are supported?","JPG, PNG, and WebP images are supported. The maximum upload size is 25 MB."],["Can I make the background transparent?","Yes. The processed result is generated as a PNG with a transparent background."],["Can I use a white background?","Yes. Select White after the background has been removed."],["Does NEXORA add a watermark?","No. The downloaded PNG does not include a NEXORA watermark."]].map(([question, answer]) => (
+        {[["Is NEXORA Background Remover free?","Yes. NEXORA Background Remover is free to use without requiring an account."],["What image formats are supported?","JPG, PNG, and WebP images are supported. The maximum upload size is 25 MB."],["Can I make the background transparent?","Yes. The processed result is generated as a PNG with a transparent background."],["Can I use a white background?","Yes. Select White after the background has been removed."],["Does NEXORA add a watermark?","No. The downloaded PNG does not include a NEXORA watermark."],["How to remove background from photo without Photoshop?","Upload your photo to NEXORA, AI will remove background automatically. No Photoshop needed. Download transparent PNG for free."]].map(([question, answer]) => (
           <details key={question} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "11px 13px", marginTop: 9, background: "#ffffff" }}>
             <summary style={{ cursor: "pointer", fontWeight: 800, fontSize: 14 }}>{question}</summary>
             <p style={{ marginBottom: 2, color: "#64748b", lineHeight: 1.7, fontSize: 14 }}>{answer}</p>
