@@ -6,7 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 export const metadata: Metadata = {
   title: "NEXORA Tools - 29+ Free Tools - Compress Image, Video Compressor, Image to Text",
   description: "29+ Free Tools by NEXORA - Compress Image to Exact KB, Video Compressor to Exact MB, Image to Text OCR, Text to Speech 40+ Languages, PDF Tools HD No Watermark, Private.",
-  metadataBase: new URL("https://nexora-tools-drab.vercel.app"),
+  metadataBase: new URL("https://thenexoratools.com"),
   robots: { index: true, follow: true },
   verification: { google: "zqASoTyCvuvQ5i316eF2-OKYLmt7vsrr7zVDET5CslY" },
   icons: { icon: "/favicon.jpg" },
@@ -24,6 +24,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           gtag('js', new Date());
           gtag('config', 'G-61NV39S2VE');`}
         </Script>
+
+        {/* AdSense - Verification Code */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3441427422658895"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </head>
       <body>
         {children}
