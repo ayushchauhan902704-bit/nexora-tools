@@ -2018,7 +2018,7 @@ export default function BackgroundRemoverClient() {
             }}
           >
             <img
-              src="/background-remover-example.webp"
+              src="/background-remover-example.jpg"
               alt="Background remover before and after example"
               width="1200"
               height="630"
