@@ -1,63 +1,432 @@
 import type { Metadata } from "next";
 import BackgroundRemoverClient from "./BackgroundRemoverClient";
 
+const SITE_URL =
+  "https://thenexoratools.com";
+
+const PAGE_URL =
+  `${SITE_URL}/background-remover`;
+
 export const metadata: Metadata = {
-  // CLICKABLE TITLE - FREE + No Watermark sabse pehle
-  title: "Background Remover FREE ✅ Remove BG in 1 Sec - HD, No Watermark | NEXORA",
-  description: "✅ 100% FREE Background Remover - Remove background in 1 sec! Transparent, White Passport, Blue Visa. HD PNG, No Watermark, No Sign-Up, Unlimited. Best FREE remove.bg alternative!",
-  keywords: ["background remover free", "remove background free no watermark", "remove bg free", "background remover free no watermark", "passport photo background remover free", "transparent background maker free", "remove.bg alternative free", "photo background changer free"],
-  authors: [{ name: "Ayush Chauhan" }],
-  robots: "index, follow, max-image-preview:large",
-  alternates: { canonical: "https://thenexoratools.com/background-remover" },
-  openGraph: {
-    title: "Background Remover FREE ✅ 1 Sec - HD, No Watermark",
-    description: "✅ 100% FREE - Remove background in 1 sec! HD PNG, No Watermark, Unlimited. Try Now!",
-    url: "https://thenexoratools.com/background-remover",
-    type: "website",
-    locale: "en_US",
-    images: [{ url: "https://thenexoratools.com/og-background-remover.png", width: 1200, height: 630, alt: "Free Background Remover - No Watermark" }],
+  title:
+    "Background Remover FREE – No Watermark | NEXORA",
+
+  description:
+    "Remove image backgrounds FREE with NEXORA. Create transparent PNGs or add a white, blue, or red background. No watermark, no sign-up, and browser-based.",
+
+  authors: [
+    {
+      name: "Ayush Chauhan",
+    },
+  ],
+
+  robots: {
+    index: true,
+    follow: true,
+    "max-image-preview":
+      "large",
   },
+
+  alternates: {
+    canonical:
+      PAGE_URL,
+  },
+
+  openGraph: {
+    title:
+      "Background Remover FREE – No Watermark | NEXORA",
+
+    description:
+      "Remove image backgrounds FREE. Create transparent PNGs or add a white, blue, or red background with no NEXORA watermark.",
+
+    url: PAGE_URL,
+
+    siteName:
+      "NEXORA",
+
+    type: "website",
+
+    locale:
+      "en_US",
+
+    images: [
+      {
+        url:
+          `${SITE_URL}/og-background-remover.png`,
+
+        width: 1200,
+
+        height: 630,
+
+        alt:
+          "NEXORA Free Background Remover - No Watermark",
+      },
+    ],
+  },
+
   twitter: {
-    card: "summary_large_image",
-    title: "Background Remover FREE ✅ - HD, No Watermark",
-    description: "Remove background in 1 sec FREE! HD PNG, No Watermark.",
-    images: ["https://thenexoratools.com/og-background-remover.png"],
+    card:
+      "summary_large_image",
+
+    title:
+      "Background Remover FREE – No Watermark | NEXORA",
+
+    description:
+      "Remove image backgrounds FREE and download transparent PNGs with no NEXORA watermark.",
+
+    images: [
+      `${SITE_URL}/og-background-remover.png`,
+    ],
   },
 };
 
+/*
+ * FAQ structured data.
+ */
 const faqSchema = {
-  "@context": "https://schema.org", "@type": "FAQPage",
+  "@context":
+    "https://schema.org",
+
+  "@type":
+    "FAQPage",
+
   mainEntity: [
-    { "@type": "Question", name: "Is this background remover 100% free, no watermark?", acceptedAnswer: { "@type": "Answer", text: "Yes, 100% free, no watermark, unlimited. Best free alternative to remove.bg. Your photo never leaves your phone." } },
-    { "@type": "Question", name: "How to make passport photo with white background free?", acceptedAnswer: { "@type": "Answer", text: "Upload photo, remove background, select White for passport, Blue for visa, then download HD PNG free." } },
-    { "@type": "Question", name: "Is my photo safe and private?", acceptedAnswer: { "@type": "Answer", text: "Yes, 100% private. AI runs in your browser, photo never goes to any server." } },
-    { "@type": "Question", name: "Does it work on iPhone?", acceptedAnswer: { "@type": "Answer", text: "Yes, works on iPhone, Android, Laptop. No app needed, 100% free." } },
-    { "@type": "Question", name: "Will quality remain HD?", acceptedAnswer: { "@type": "Answer", text: "Yes, HD PNG in original quality, no blur, no watermark." } },
+    {
+      "@type":
+        "Question",
+
+      name:
+        "How do I remove a background from a photo?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Upload a JPG, PNG, or WebP image to NEXORA Background Remover. The browser-based AI processes the image, removes the background, and lets you download the result as a PNG.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Can I remove a background without Photoshop?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Yes. NEXORA Background Remover works directly in a modern web browser, so you do not need Photoshop or another desktop image editor.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Can I make a transparent PNG?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Yes. After removing the background, choose Transparent and download the result as a PNG with a transparent background.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Can I create a white background for a passport photo?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Yes. You can choose the White background option after removing the original background. However, photo requirements vary by country and document, so always check the official requirements for your application.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Does the background remover work on iPhone and Android?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Yes. The tool is designed to work in modern mobile and desktop browsers, including supported iPhone, Android, Windows, and Mac devices.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Is the background remover free?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Yes. NEXORA Background Remover is available to use for free without requiring an account or sign-up.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Is my photo uploaded to a server?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "The background-removal processing is performed in the browser. Your selected image is processed locally by the browser rather than being sent to a NEXORA image-processing server. The AI library may download model resources from its external CDN.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "What image formats are supported?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "The tool supports common JPG, PNG, and WebP images. The exact file size and image dimensions that can be processed depend on the device and browser.",
+      },
+    },
+
+    {
+      "@type":
+        "Question",
+
+      name:
+        "Can I download the result without a watermark?",
+
+      acceptedAnswer: {
+        "@type":
+          "Answer",
+
+        text:
+          "Yes. NEXORA does not add a watermark to the generated PNG.",
+      },
+    },
   ],
 };
 
+/*
+ * Software structured data.
+ */
 const softwareSchema = {
-  "@context": "https://schema.org", "@type": "SoftwareApplication",
-  name: "NEXORA Background Remover - FREE",
-  applicationCategory: "MultimediaApplication",
-  operatingSystem: "Any - iPhone, Android, Windows",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", ratingCount: "2841" },
-  description: "100% Free Background Remover. Remove background in 1 sec. HD PNG, No Watermark, Unlimited, Private.",
+  "@context":
+    "https://schema.org",
+
+  "@type":
+    "SoftwareApplication",
+
+  name:
+    "NEXORA Background Remover",
+
+  applicationCategory:
+    "MultimediaApplication",
+
+  operatingSystem:
+    "Any",
+
+  description:
+    "Free browser-based image background remover for creating transparent PNGs and images with selectable background colors.",
+
+  offers: {
+    "@type":
+      "Offer",
+
+    price:
+      "0",
+
+    priceCurrency:
+      "USD",
+  },
+};
+
+/*
+ * Breadcrumb structured data.
+ */
+const breadcrumbSchema = {
+  "@context":
+    "https://schema.org",
+
+  "@type":
+    "BreadcrumbList",
+
+  itemListElement: [
+    {
+      "@type":
+        "ListItem",
+
+      position: 1,
+
+      name:
+        "Home",
+
+      item:
+        `${SITE_URL}/`,
+    },
+
+    {
+      "@type":
+        "ListItem",
+
+      position: 2,
+
+      name:
+        "Background Remover",
+
+      item:
+        PAGE_URL,
+    },
+  ],
+};
+
+/*
+ * HowTo structured data.
+ */
+const howToSchema = {
+  "@context":
+    "https://schema.org",
+
+  "@type":
+    "HowTo",
+
+  name:
+    "How to Remove an Image Background",
+
+  description:
+    "Remove an image background and download a transparent PNG using NEXORA.",
+
+  totalTime:
+    "PT1M",
+
+  step: [
+    {
+      "@type":
+        "HowToStep",
+
+      position: 1,
+
+      name:
+        "Upload an image",
+
+      text:
+        "Upload a JPG, PNG, or WebP image to the NEXORA Background Remover.",
+    },
+
+    {
+      "@type":
+        "HowToStep",
+
+      position: 2,
+
+      name:
+        "Remove the background",
+
+      text:
+        "The browser-based AI processes the image and removes the background.",
+    },
+
+    {
+      "@type":
+        "HowToStep",
+
+      position: 3,
+
+      name:
+        "Choose a background",
+
+      text:
+        "Choose Transparent, White, Blue, or Red as the output background.",
+    },
+
+    {
+      "@type":
+        "HowToStep",
+
+      position: 4,
+
+      name:
+        "Download the result",
+
+      text:
+        "Download the processed image as a PNG without a NEXORA watermark.",
+    },
+  ],
 };
 
 export default function Page() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org", "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: "https://thenexoratools.com/" },
-          { "@type": "ListItem", position: 2, name: "Background Remover", item: "https://thenexoratools.com/background-remover" }
-        ]
-      }) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              faqSchema
+            ),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              softwareSchema
+            ),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              breadcrumbSchema
+            ),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              howToSchema
+            ),
+        }}
+      />
+
       <BackgroundRemoverClient />
     </>
   );
