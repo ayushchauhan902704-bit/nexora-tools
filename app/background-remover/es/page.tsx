@@ -24,15 +24,21 @@ export const metadata: Metadata = {
     follow: true,
     "max-image-preview": "large",
   },
-  alternates: {
-    canonical: PAGE_URL,
-    languages: {
-      en: `${SITE_URL}/background-remover`,
-      "hi-Latn": `${SITE_URL}/background-remover/hi`,
-      es: PAGE_URL,
-      "x-default": `${SITE_URL}/background-remover`,
-    },
+alternates: {
+  canonical: PAGE_URL,
+  languages: {
+    en: `${SITE_URL}/background-remover`,
+    "hi-Latn": `${SITE_URL}/background-remover/hi`,
+    es: PAGE_URL,
+    pt: `${SITE_URL}/background-remover/pt`,
+    fr: `${SITE_URL}/background-remover/fr`,
+    "zh-CN": `${SITE_URL}/background-remover/zh`,
+    ar: `${SITE_URL}/background-remover/ar`,
+    de: `${SITE_URL}/background-remover/de`,
+    id: `${SITE_URL}/background-remover/id`,
+    "x-default": `${SITE_URL}/background-remover`,
   },
+},
   openGraph: {
     title: "Elimina el Fondo de tu Foto en 5 Segundos - Gratis, Sin Marca de Agua | NEXORA",
     description:
