@@ -35,14 +35,20 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: PAGE_URL,
-    languages: {
-      en: PAGE_URL,
-      "hi-Latn": `${SITE_URL}/background-remover/hi`,
-      es: `${SITE_URL}/background-remover/es`,
-      "x-default": PAGE_URL,
-    },
+  canonical: PAGE_URL,
+  languages: {
+    en: PAGE_URL,
+    "hi-Latn": `${SITE_URL}/background-remover/hi`,
+    es: `${SITE_URL}/background-remover/es`,
+    pt: `${SITE_URL}/background-remover/pt`,
+    fr: `${SITE_URL}/background-remover/fr`,
+    "zh-CN": `${SITE_URL}/background-remover/zh`,
+    ar: `${SITE_URL}/background-remover/ar`,
+    de: `${SITE_URL}/background-remover/de`,
+    id: `${SITE_URL}/background-remover/id`,
+    "x-default": PAGE_URL,
   },
+},
 
   openGraph: {
     title:
