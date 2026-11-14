@@ -203,34 +203,22 @@ export default function BackgroundRemoverClient() {
       loadLibrary().catch(() => {});
     };
 
-    if (
-      "requestIdleCallback" in window
-    ) {
-      const idleId = (
-        window as any
-      ).requestIdleCallback(
-        preload,
-        { timeout: 1500 }
-      );
+    const win = window as any;
+
+    if (typeof win.requestIdleCallback === "function") {
+      const idleId = win.requestIdleCallback(preload, { timeout: 1500 });
 
       return () => {
-        if (
-          "cancelIdleCallback" in window
-        ) {
-          (
-            window as any
-          ).cancelIdleCallback(idleId);
+        if (typeof win.cancelIdleCallback === "function") {
+          win.cancelIdleCallback(idleId);
         }
       };
     }
 
-    const timer = window.setTimeout(
-      preload,
-      800
-    );
+    const timer = setTimeout(preload, 800);
 
     return () => {
-      window.clearTimeout(timer);
+      clearTimeout(timer);
     };
   }, []);
 
