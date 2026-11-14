@@ -5,9 +5,9 @@ const SITE_URL = "https://thenexoratools.com";
 const PAGE_URL = `${SITE_URL}/background-remover/es`;
 
 export const metadata: Metadata = {
-  title: "Eliminar Fondo de Foto Gratis - Removedor de Fondo con IA | NEXORA",
+  title: "Elimina el Fondo de tu Foto en 5 Segundos - Gratis, Sin Marca de Agua | NEXORA",
   description:
-    "Elimina el fondo de tus fotos gratis con NEXORA. Crea imágenes PNG transparentes o cambia el fondo a blanco, azul o rojo. Sin Photoshop, sin registro y sin marca de agua.",
+    "Elimina el fondo de cualquier foto en solo 5 segundos - 100% Gratis, IA de 1 Clic. Crea PNG transparente o fondo Blanco / Azul / Rojo. Sin Photoshop, Sin Registro, Sin Marca de Agua. ¡Prueba Ahora!",
   keywords: [
     "eliminar fondo de foto",
     "removedor de fondo",
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Eliminar Fondo de Foto Gratis - Removedor de Fondo con IA | NEXORA",
+    title: "Elimina el Fondo de tu Foto en 5 Segundos - Gratis, Sin Marca de Agua | NEXORA",
     description:
-      "Elimina el fondo de tus fotos gratis con IA. Crea PNG transparentes o elige fondo blanco, azul o rojo. Sin marca de agua ni registro.",
+      "IA de 1 Clic - Elimina el fondo de tu foto en 5 segundos. PNG transparente o fondo Blanco / Azul / Rojo. 100% Gratis, Sin Marca de Agua, Sin Registro.",
     url: PAGE_URL,
     siteName: "NEXORA",
     type: "website",
@@ -46,15 +46,15 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/og-background-remover.jpg`,
         width: 1200,
         height: 630,
-        alt: "NEXORA Removedor de Fondo con IA Gratis",
+        alt: "NEXORA Removedor de Fondo con IA Gratis - Elimina el fondo en 5 segundos",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Eliminar Fondo de Foto Gratis - Removedor de Fondo con IA",
+    title: "Elimina el Fondo de tu Foto en 5 Segundos - Gratis, Sin Marca de Agua",
     description:
-      "Elimina el fondo de tus fotos gratis y crea imágenes PNG transparentes sin marca de agua.",
+      "Elimina el fondo de cualquier foto en 5 segundos. IA gratis, PNG transparente, Sin Marca de Agua. ¡Pruébalo ahora!",
     images: [`${SITE_URL}/og-background-remover.jpg`],
   },
 };
