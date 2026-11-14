@@ -51,7 +51,6 @@ const softwareSchema = {
   name: "NEXORA Background Remover",
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Any",
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", ratingCount: "1247" },
   description: "Free browser-based image background remover for creating transparent PNGs and images with selectable background colors.",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
