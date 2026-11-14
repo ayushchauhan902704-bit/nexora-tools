@@ -1,642 +1,887 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
-
-type BackgroundColor = "transparent" | "white" | "#6366f1" | "#ef4444";
-
+type BackgroundColor =
+  | "transparent"
+  | "white"
+  | "#6366f1"
+  | "#ef4444";
+type RemoveBackgroundFunction = (
+  input: File | Blob,
+  config?: {
+    progress?: (
+      key: string,
+      current: number,
+      total: number
+    ) => void;
+    device?: "cpu" | "gpu";
+    model?: "isnet" | "isnet_fp16" | "isnet_quint8";
+    proxyToWorker?: boolean;
+    output?: {
+      format?: "image/png" | "image/jpeg" | "image/webp";
+      quality?: number;
+      type?: "foreground";
+    };
+  }
+) => Promise<Blob>;
 export default function BackgroundRemoverClient() {
   const [bgColor, setBgColor] =
     useState<BackgroundColor>("transparent");
-
-  const [status, setStatus] = useState(
-    "Upload a photo to start"
-  );
-
-  const [progress, setProgress] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
-  const [info, setInfo] = useState("");
+  const [status, setStatus] =
+    useState("Upload a photo to start");
+  const [progress, setProgress] =
+    useState(0);
+  const [showPreview, setShowPreview] =
+    useState(false);
+  const [info, setInfo] =
+    useState("");
   const [uploadText, setUploadText] =
     useState("Tap to Upload Photo");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [libReady, setLibReady] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const blobRef = useRef<Blob | null>(null);
-
-  const smoothProgressTargetRef = useRef(0);
-  const smoothProgressDisplayRef = useRef(0);
-  const animationFrameRef = useRef<number | null>(null);
-
-  const loadingRef = useRef(false);
-  const objectUrlRef = useRef<string | null>(null);
-
-  // Local npm package loader.
-  // IMPORTANT: This does NOT use https://esm.sh
+  const [isProcessing, setIsProcessing] =
+    useState(false);
+  const [libReady, setLibReady] =
+    useState(false);
+  const [isGpu, setIsGpu] =
+    useState(false);
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(null);
+  const canvasRef =
+    useRef<HTMLCanvasElement | null>(null);
+  const imgRef =
+    useRef<HTMLImageElement | null>(null);
+  const blobRef =
+    useRef<Blob | null>(null);
   const libraryPromiseRef =
-    useRef<Promise<any> | null>(null);
-
-  const setProgressTarget = (value: number) => {
+    useRef<Promise<RemoveBackgroundFunction> | null>(null);
+  const loadingRef =
+    useRef(false);
+  const objectUrlRef =
+    useRef<string | null>(null);
+  const smoothProgressTargetRef =
+    useRef(0);
+  const smoothProgressDisplayRef =
+    useRef(0);
+  const animationFrameRef =
+    useRef<number | null>(null);
+  /*
+   * Detect WebGPU.
+   *
+   * If WebGPU is available, the AI library will use GPU.
+   * Otherwise it automatically falls back to CPU.
+   */
+  useEffect(() => {
+    try {
+      const gpuAvailable =
+        typeof navigator !== "undefined" &&
+        "gpu" in navigator;
+      setIsGpu(gpuAvailable);
+    } catch {
+      setIsGpu(false);
+    }
+  }, []);
+  /*
+   * Smooth progress animation.
+   */
+  const setProgressTarget = (
+    value: number
+  ) => {
     const safeValue = Math.max(
       0,
       Math.min(100, value)
     );
-
-    smoothProgressTargetRef.current = safeValue;
-
-    if (animationFrameRef.current !== null) {
+    smoothProgressTargetRef.current =
+      safeValue;
+    if (
+      animationFrameRef.current !== null
+    ) {
       return;
     }
-
     const animate = () => {
       const current =
         smoothProgressDisplayRef.current;
-
       const target =
         smoothProgressTargetRef.current;
-
       let next = current;
-
-      if (Math.abs(target - current) < 0.5) {
+      if (
+        Math.abs(target - current) < 0.5
+      ) {
         next = target;
       } else {
         next =
-          current + (target - current) * 0.12;
+          current +
+          (target - current) *
+            0.18;
       }
-
-      smoothProgressDisplayRef.current = next;
-      setProgress(Math.round(next));
-
-      if (Math.abs(target - next) >= 0.5) {
+      smoothProgressDisplayRef.current =
+        next;
+      setProgress(
+        Math.round(next)
+      );
+      if (
+        Math.abs(target - next) >= 0.5
+      ) {
         animationFrameRef.current =
-          requestAnimationFrame(animate);
+          requestAnimationFrame(
+            animate
+          );
       } else {
-        animationFrameRef.current = null;
+        animationFrameRef.current =
+          null;
       }
     };
-
     animationFrameRef.current =
-      requestAnimationFrame(animate);
+      requestAnimationFrame(
+        animate
+      );
   };
-
-  const finishProgress = async () => {
-    setProgressTarget(100);
-
-    await new Promise<void>((resolve) => {
-      const check = () => {
-        if (
-          smoothProgressDisplayRef.current >=
-          99.5
-        ) {
-          smoothProgressDisplayRef.current = 100;
-          setProgress(100);
-          resolve();
-          return;
-        }
-
-        requestAnimationFrame(check);
-      };
-
-      check();
-    });
-  };
-
-  const cleanupObjectUrl = () => {
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
-  };
-
-  /**
-   * Loads @imgly/background-removal from the local
-   * node_modules package.
-   *
-   * Vercel/Webpack can resolve this package normally.
-   * There is NO external https://esm.sh import.
+  /*
+   * Wait until progress reaches 100%.
    */
-  const loadLibrary = async (): Promise<any> => {
-    if (libraryPromiseRef.current) {
-      return libraryPromiseRef.current;
-    }
-
-    libraryPromiseRef.current =
-      import("@imgly/background-removal")
-        .then((module) => {
-          const removeBackground =
-            module.default;
-
-          if (
-            typeof removeBackground !==
-            "function"
-          ) {
-            throw new Error(
-              "Background removal library failed to load."
+  const finishProgress =
+    async () => {
+      setProgressTarget(100);
+      await new Promise<void>(
+        (resolve) => {
+          const check = () => {
+            if (
+              smoothProgressDisplayRef.current >=
+              99.5
+            ) {
+              smoothProgressDisplayRef.current =
+                100;
+              setProgress(100);
+              resolve();
+              return;
+            }
+            requestAnimationFrame(
+              check
             );
+          };
+          check();
+        }
+      );
+    };
+  /*
+   * Cleanup temporary object URL.
+   */
+  const cleanupObjectUrl =
+    () => {
+      if (
+        objectUrlRef.current
+      ) {
+        URL.revokeObjectURL(
+          objectUrlRef.current
+        );
+        objectUrlRef.current =
+          null;
+      }
+    };
+  /*
+   * Load the LOCAL npm package.
+   *
+   * IMPORTANT:
+   * There is NO esm.sh import here.
+   */
+  const loadLibrary =
+    async (): Promise<RemoveBackgroundFunction> => {
+      if (
+        libraryPromiseRef.current
+      ) {
+        return libraryPromiseRef.current;
+      }
+      libraryPromiseRef.current =
+        import(
+          "@imgly/background-removal"
+        )
+          .then(
+            (module) => {
+              const removeBackground =
+                module.default as RemoveBackgroundFunction;
+              if (
+                typeof removeBackground !==
+                "function"
+              ) {
+                throw new Error(
+                  "Background removal library failed to load."
+                );
+              }
+              setLibReady(true);
+              return removeBackground;
+            }
+          )
+          .catch(
+            (error) => {
+              libraryPromiseRef.current =
+                null;
+              setLibReady(false);
+              throw error;
+            }
+          );
+      return libraryPromiseRef.current;
+    };
+  /*
+   * Prepare image.
+   *
+   * We do NOT convert every image to JPEG.
+   * This keeps edges/details cleaner.
+   *
+   * Very large images are resized only when needed
+   * to keep processing fast on phones.
+   */
+  const prepareImage =
+    async (
+      file: File
+    ): Promise<File> => {
+      const objectUrl =
+        URL.createObjectURL(
+          file
+        );
+      try {
+        const image =
+          new Image();
+        await new Promise<void>(
+          (
+            resolve,
+            reject
+          ) => {
+            image.onload =
+              () => resolve();
+            image.onerror =
+              () =>
+                reject(
+                  new Error(
+                    "Unable to read the image."
+                  )
+                );
+            image.src =
+              objectUrl;
           }
-
-          setLibReady(true);
-
-          return removeBackground;
-        })
-        .catch((error) => {
-          libraryPromiseRef.current = null;
-          setLibReady(false);
-          throw error;
-        });
-
-    return libraryPromiseRef.current;
-  };
-
-  const redraw = () => {
-    const canvas = canvasRef.current;
-    const img = imgRef.current;
-
-    if (!canvas || !img) {
-      return;
-    }
-
-    if (!img.complete || !img.naturalWidth) {
-      return;
-    }
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      return;
-    }
-
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-
-    ctx.clearRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-    if (bgColor !== "transparent") {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(
+        );
+        let width =
+          image.naturalWidth;
+        let height =
+          image.naturalHeight;
+        const pixels =
+          width * height;
+        /*
+         * Good balance between:
+         * - speed
+         * - subject detail
+         * - mobile memory
+         *
+         * 8 million pixels is enough for
+         * normal photos while avoiding
+         * extremely heavy AI inference.
+         */
+        const MAX_PIXELS =
+          8_000_000;
+        const MAX_DIMENSION =
+          2400;
+        const dimensionScale =
+          Math.min(
+            1,
+            MAX_DIMENSION /
+              width,
+            MAX_DIMENSION /
+              height
+          );
+        const pixelScale =
+          pixels > MAX_PIXELS
+            ? Math.sqrt(
+                MAX_PIXELS /
+                  pixels
+              )
+            : 1;
+        const scale =
+          Math.min(
+            dimensionScale,
+            pixelScale
+          );
+        /*
+         * Normal-size images:
+         * keep original file exactly as it is.
+         */
+        if (
+          scale >= 1
+        ) {
+          return file;
+        }
+        width =
+          Math.max(
+            1,
+            Math.round(
+              width *
+                scale
+            )
+          );
+        height =
+          Math.max(
+            1,
+            Math.round(
+              height *
+                scale
+            )
+          );
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+        canvas.width =
+          width;
+        canvas.height =
+          height;
+        const ctx =
+          canvas.getContext(
+            "2d",
+            {
+              alpha: true,
+              willReadFrequently: false,
+            }
+          );
+        if (!ctx) {
+          return file;
+        }
+        ctx.imageSmoothingEnabled =
+          true;
+        ctx.imageSmoothingQuality =
+          "high";
+        ctx.drawImage(
+          image,
+          0,
+          0,
+          width,
+          height
+        );
+        /*
+         * Preserve PNG when input is PNG.
+         * Otherwise use WebP when supported.
+         */
+        let outputType =
+          file.type ===
+          "image/png"
+            ? "image/png"
+            : "image/webp";
+        const blob =
+          await new Promise<Blob | null>(
+            (resolve) => {
+              canvas.toBlob(
+                (result) =>
+                  resolve(
+                    result
+                  ),
+                outputType,
+                0.95
+              );
+            }
+          );
+        if (!blob) {
+          return file;
+        }
+        return new File(
+          [blob],
+          file.name,
+          {
+            type:
+              outputType,
+            lastModified:
+              Date.now(),
+          }
+        );
+      } finally {
+        URL.revokeObjectURL(
+          objectUrl
+        );
+      }
+    };
+  /*
+   * Validate input.
+   */
+  const validateFile =
+    (
+      file: File
+    ): boolean => {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+      ];
+      if (
+        !allowedTypes.includes(
+          file.type
+        )
+      ) {
+        setStatus(
+          "Please upload a JPG, PNG, or WebP image."
+        );
+        return false;
+      }
+      if (
+        file.size >
+        25 *
+          1024 *
+          1024
+      ) {
+        setStatus(
+          "Image size must be 25 MB or less."
+        );
+        return false;
+      }
+      return true;
+    };
+  /*
+   * Draw final result on canvas.
+   */
+  const redraw =
+    () => {
+      const canvas =
+        canvasRef.current;
+      const img =
+        imgRef.current;
+      if (
+        !canvas ||
+        !img
+      ) {
+        return;
+      }
+      if (
+        !img.complete ||
+        !img.naturalWidth
+      ) {
+        return;
+      }
+      const ctx =
+        canvas.getContext(
+          "2d"
+        );
+      if (!ctx) {
+        return;
+      }
+      canvas.width =
+        img.naturalWidth;
+      canvas.height =
+        img.naturalHeight;
+      ctx.clearRect(
         0,
         0,
         canvas.width,
         canvas.height
       );
-    }
-
-    ctx.drawImage(
-      img,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-  };
-
-  useEffect(() => {
-    redraw();
-  }, [bgColor, showPreview]);
-
-  const prepareImage = async (
-    file: File
-  ): Promise<File | Blob> => {
-    const objectUrl =
-      URL.createObjectURL(file);
-
-    try {
-      const img = new Image();
-
-      await new Promise<void>(
-        (resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () =>
-            reject(
-              new Error(
-                "Unable to read the image."
-              )
-            );
-
-          img.src = objectUrl;
-        }
-      );
-
-      const maxDimension = 2400;
-      const maxPixels = 12_000_000;
-
-      let width = img.naturalWidth;
-      let height = img.naturalHeight;
-
-      const currentPixels =
-        width * height;
-
-      const dimensionScale =
-        Math.min(
-          1,
-          maxDimension / width,
-          maxDimension / height
-        );
-
-      const pixelScale =
-        currentPixels > maxPixels
-          ? Math.sqrt(
-              maxPixels / currentPixels
-            )
-          : 1;
-
-      const scale = Math.min(
-        dimensionScale,
-        pixelScale
-      );
-
+      /*
+       * Background is added AFTER
+       * AI has removed the original background.
+       */
       if (
-        scale >= 1 &&
-        file.size <= 8 * 1024 * 1024
+        bgColor !==
+        "transparent"
       ) {
-        return file;
+        ctx.fillStyle =
+          bgColor;
+        ctx.fillRect(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
       }
-
-      width = Math.max(
-        1,
-        Math.round(width * scale)
-      );
-
-      height = Math.max(
-        1,
-        Math.round(height * scale)
-      );
-
-      const canvas =
-        document.createElement("canvas");
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx =
-        canvas.getContext("2d");
-
-      if (!ctx) {
-        return file;
-      }
-
       ctx.drawImage(
         img,
         0,
         0,
-        width,
-        height
+        canvas.width,
+        canvas.height
       );
-
-      const blob =
-        await new Promise<Blob | null>(
-          (resolve) => {
-            canvas.toBlob(
-              (result) =>
-                resolve(result),
-              "image/jpeg",
-              0.9
-            );
-          }
-        );
-
-      if (!blob) {
-        return file;
+    };
+  useEffect(() => {
+    if (
+      showPreview
+    ) {
+      requestAnimationFrame(
+        redraw
+      );
+    }
+  }, [
+    bgColor,
+    showPreview,
+  ]);
+  /*
+   * Main background removal.
+   */
+  const handleFile =
+    async (
+      file: File
+    ) => {
+      if (
+        !validateFile(
+          file
+        )
+      ) {
+        return;
       }
-
-      return new File(
-        [blob],
-        "nexora-input.jpg",
-        {
-          type: "image/jpeg",
-          lastModified:
-            Date.now(),
-        }
+      if (
+        loadingRef.current
+      ) {
+        return;
+      }
+      loadingRef.current =
+        true;
+      if (
+        fileInputRef.current
+      ) {
+        fileInputRef.current.value =
+          "";
+      }
+      cleanupObjectUrl();
+      setIsProcessing(
+        true
       );
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
-  };
-
-  const validateFile = (
-    file: File
-  ): boolean => {
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (
-      !allowedTypes.includes(file.type)
-    ) {
+      setShowPreview(
+        false
+      );
+      setInfo(
+        ""
+      );
+      setUploadText(
+        file.name
+      );
       setStatus(
-        "Please upload a JPG, PNG, or WebP image."
+        "Preparing your image..."
       );
-
-      return false;
-    }
-
-    if (
-      file.size >
-      25 * 1024 * 1024
-    ) {
-      setStatus(
-        "Image size must be 25 MB or less."
+      smoothProgressDisplayRef.current =
+        0;
+      smoothProgressTargetRef.current =
+        0;
+      setProgress(
+        0
       );
-
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleFile = async (
-    file: File
-  ) => {
-    if (!validateFile(file)) {
-      return;
-    }
-
-    if (loadingRef.current) {
-      return;
-    }
-
-    loadingRef.current = true;
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-
-    cleanupObjectUrl();
-
-    setIsProcessing(true);
-    setShowPreview(false);
-    setInfo("");
-    setUploadText(file.name);
-    setStatus(
-      "Preparing your image..."
-    );
-
-    smoothProgressDisplayRef.current = 0;
-    smoothProgressTargetRef.current = 0;
-    setProgress(0);
-
-    try {
-      setStatus(
-        "Loading AI background remover..."
-      );
-
-      setProgressTarget(5);
-
-      const removeBackground =
-        await loadLibrary();
-
-      setProgressTarget(15);
-
-      setStatus(
-        "Preparing image..."
-      );
-
-      const preparedFile =
-        await prepareImage(file);
-
-      setProgressTarget(30);
-
-      setStatus(
-        "Removing background with AI..."
-      );
-
-      const result =
-        await removeBackground(
-          preparedFile,
-          {
-            progress: (
-              _key: string,
-              current: number,
-              total: number
-            ) => {
-              let percent = 0;
-
-              if (
-                total > 0
-              ) {
-                percent =
-                  (current / total) *
+      try {
+        /*
+         * Load library.
+         */
+        setStatus(
+          isGpu
+            ? "Starting GPU AI..."
+            : "Starting AI..."
+        );
+        setProgressTarget(
+          5
+        );
+        const removeBackground =
+          await loadLibrary();
+        setProgressTarget(
+          12
+        );
+        /*
+         * Prepare image.
+         */
+        setStatus(
+          "Optimizing image..."
+        );
+        const preparedFile =
+          await prepareImage(
+            file
+          );
+        setProgressTarget(
+          20
+        );
+        /*
+         * Select fastest available
+         * execution device.
+         */
+        const device =
+          isGpu
+            ? "gpu"
+            : "cpu";
+        setStatus(
+          isGpu
+            ? "Removing background with GPU AI..."
+            : "Removing background with AI..."
+        );
+        /*
+         * Important:
+         *
+         * isnet_fp16 is the balanced model:
+         * much lighter than the full ISNet model
+         * while keeping strong general background
+         * removal quality.
+         *
+         * proxyToWorker keeps heavy inference
+         * away from the main UI thread.
+         */
+        const result =
+          await removeBackground(
+            preparedFile,
+            {
+              device,
+              model:
+                "isnet_fp16",
+              proxyToWorker:
+                true,
+              output: {
+                format:
+                  "image/png",
+                type:
+                  "foreground",
+              },
+              progress: (
+                _key,
+                current,
+                total
+              ) => {
+                if (
+                  total <= 0
+                ) {
+                  return;
+                }
+                const percent =
+                  (current /
+                    total) *
                   100;
-              }
-
-              const mapped =
-                30 +
-                percent * 0.69;
-
-              setProgressTarget(
-                mapped
+                /*
+                 * AI processing:
+                 * 20 -> 96
+                 */
+                const mapped =
+                  20 +
+                  percent *
+                    0.76;
+                setProgressTarget(
+                  mapped
+                );
+              },
+            }
+          );
+        setProgressTarget(
+          97
+        );
+        setStatus(
+          "Finishing your transparent PNG..."
+        );
+        const resultBlob =
+          result instanceof
+          Blob
+            ? result
+            : new Blob(
+                [result],
+                {
+                  type:
+                    "image/png",
+                }
               );
-            },
+        blobRef.current =
+          resultBlob;
+        cleanupObjectUrl();
+        const resultUrl =
+          URL.createObjectURL(
+            resultBlob
+          );
+        objectUrlRef.current =
+          resultUrl;
+        /*
+         * Load final image.
+         */
+        const previewImage =
+          new Image();
+        await new Promise<void>(
+          (
+            resolve,
+            reject
+          ) => {
+            previewImage.onload =
+              () =>
+                resolve();
+            previewImage.onerror =
+              () =>
+                reject(
+                  new Error(
+                    "Could not load the processed image."
+                  )
+                );
+            previewImage.src =
+              resultUrl;
           }
         );
-
-      setProgressTarget(99);
-
-      setStatus(
-        "Finalizing your image..."
-      );
-
-      const resultBlob =
-        result instanceof Blob
-          ? result
-          : new Blob(
-              [result],
-              {
-                type: "image/png",
-              }
+        imgRef.current =
+          previewImage;
+        setInfo(
+          `${previewImage.naturalWidth} × ${previewImage.naturalHeight} • PNG • Transparent • No Watermark`
+        );
+        setShowPreview(
+          true
+        );
+        setProgressTarget(
+          99
+        );
+        /*
+         * Draw result immediately.
+         */
+        requestAnimationFrame(
+          () => {
+            redraw();
+          }
+        );
+        await finishProgress();
+        setStatus(
+          "Background removed successfully!"
+        );
+      } catch (error) {
+        console.error(
+          "NEXORA Background Removal Error:",
+          error
+        );
+        setProgressTarget(
+          0
+        );
+        setStatus(
+          "Could not remove the background. Please try another photo."
+        );
+        setInfo(
+          ""
+        );
+        cleanupObjectUrl();
+        blobRef.current =
+          null;
+        imgRef.current =
+          null;
+        setShowPreview(
+          false
+        );
+      } finally {
+        setIsProcessing(
+          false
+        );
+        loadingRef.current =
+          false;
+      }
+    };
+  /*
+   * File input.
+   */
+  const handleInputChange =
+    (
+      event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+      const file =
+        event.target.files?.[0];
+      if (
+        file
+      ) {
+        handleFile(
+          file
+        );
+      }
+    };
+  /*
+   * Upload button.
+   */
+  const handleUploadClick =
+    () => {
+      if (
+        !isProcessing
+      ) {
+        fileInputRef.current?.click();
+      }
+    };
+  /*
+   * Download final image.
+   */
+  const download =
+    () => {
+      const canvas =
+        canvasRef.current;
+      if (
+        !canvas
+      ) {
+        return;
+      }
+      canvas.toBlob(
+        (blob) => {
+          if (
+            !blob
+          ) {
+            return;
+          }
+          const url =
+            URL.createObjectURL(
+              blob
             );
-
+          const link =
+            document.createElement(
+              "a"
+            );
+          link.href =
+            url;
+          link.download =
+            `nexora-background-removed-${Date.now()}.png`;
+          document.body.appendChild(
+            link
+          );
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(
+            url
+          );
+        },
+        "image/png"
+      );
+    };
+  /*
+   * Reset tool.
+   */
+  const resetTool =
+    () => {
+      cleanupObjectUrl();
       blobRef.current =
-        resultBlob;
-
-      cleanupObjectUrl();
-
-      const resultUrl =
-        URL.createObjectURL(
-          resultBlob
-        );
-
-      objectUrlRef.current =
-        resultUrl;
-
-      const previewImage =
-        new Image();
-
-      await new Promise<void>(
-        (resolve, reject) => {
-          previewImage.onload =
-            () => resolve();
-
-          previewImage.onerror =
-            () =>
-              reject(
-                new Error(
-                  "Could not load the processed image."
-                )
-              );
-
-          previewImage.src =
-            resultUrl;
-        }
-      );
-
+        null;
       imgRef.current =
-        previewImage;
-
-      setShowPreview(true);
-
+        null;
+      setShowPreview(
+        false
+      );
       setInfo(
-        `${previewImage.naturalWidth} × ${previewImage.naturalHeight} • PNG • No Watermark`
+        ""
       );
-
-      await finishProgress();
-
+      setProgress(
+        0
+      );
+      smoothProgressDisplayRef.current =
+        0;
+      smoothProgressTargetRef.current =
+        0;
       setStatus(
-        "Background removed successfully!"
+        "Upload a photo to start"
       );
-    } catch (error) {
-      console.error(
-        "Background removal error:",
-        error
+      setUploadText(
+        "Tap to Upload Photo"
       );
-
-      setProgressTarget(0);
-
-      setStatus(
-        "Something went wrong. Please try another image."
+      setBgColor(
+        "transparent"
       );
-
-      setInfo("");
-
-      cleanupObjectUrl();
-
-      blobRef.current = null;
-      imgRef.current = null;
-      setShowPreview(false);
-    } finally {
-      setIsProcessing(false);
-      loadingRef.current = false;
-    }
-  };
-
-  const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file =
-      event.target.files?.[0];
-
-    if (file) {
-      handleFile(file);
-    }
-  };
-
-  const handleUploadClick = () => {
-    if (!isProcessing) {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const download = () => {
-    const canvas =
-      canvasRef.current;
-
-    if (!canvas) {
-      return;
-    }
-
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          return;
-        }
-
-        const url =
-          URL.createObjectURL(
-            blob
-          );
-
-        const link =
-          document.createElement(
-            "a"
-          );
-
-        link.href = url;
-
-        link.download =
-          `nexora-background-removed-${Date.now()}.png`;
-
-        document.body.appendChild(
-          link
-        );
-
-        link.click();
-
-        link.remove();
-
-        URL.revokeObjectURL(
-          url
-        );
-      },
-      "image/png"
-    );
-  };
-
-  const resetTool = () => {
-    cleanupObjectUrl();
-
-    blobRef.current = null;
-    imgRef.current = null;
-
-    setShowPreview(false);
-    setInfo("");
-    setProgress(0);
-
-    smoothProgressDisplayRef.current = 0;
-    smoothProgressTargetRef.current = 0;
-
-    setStatus(
-      "Upload a photo to start"
-    );
-
-    setUploadText(
-      "Tap to Upload Photo"
-    );
-
-    setBgColor(
-      "transparent"
-    );
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value =
-        "";
-    }
-  };
-
+      if (
+        fileInputRef.current
+      ) {
+        fileInputRef.current.value =
+          "";
+      }
+    };
   return (
     <main
       style={{
-        minHeight: "100vh",
+        minHeight:
+          "100vh",
         background:
           "#f8fafc",
-        color: "#111827",
+        color:
+          "#111827",
       }}
     >
       {/* HEADER */}
       <header
         style={{
-          position: "sticky",
+          position:
+            "sticky",
           top: 0,
           zIndex: 20,
           background:
-            "rgba(255,255,255,0.92)",
+            "rgba(255,255,255,0.94)",
           backdropFilter:
             "blur(12px)",
           borderBottom:
@@ -645,18 +890,20 @@ export default function BackgroundRemoverClient() {
       >
         <div
           style={{
-            maxWidth: 1180,
+            maxWidth:
+              1180,
             margin:
               "0 auto",
             padding:
-              "14px 20px",
+              "13px 20px",
             display:
               "flex",
             alignItems:
               "center",
             justifyContent:
               "space-between",
-            gap: 16,
+            gap:
+              16,
           }}
         >
           <a
@@ -664,21 +911,26 @@ export default function BackgroundRemoverClient() {
             style={{
               textDecoration:
                 "none",
-              fontWeight: 900,
-              fontSize: 22,
-              color: "#111827",
+              fontWeight:
+                950,
+              fontSize:
+                22,
+              color:
+                "#111827",
             }}
           >
             NEXORA
           </a>
-
           <nav
             style={{
               display:
                 "flex",
-              gap: 16,
-              fontSize: 14,
-              fontWeight: 700,
+              gap:
+                16,
+              fontSize:
+                14,
+              fontWeight:
+                700,
             }}
           >
             <a
@@ -692,7 +944,6 @@ export default function BackgroundRemoverClient() {
             >
               Home
             </a>
-
             <a
               href="/passport-photo-maker"
               style={{
@@ -707,15 +958,15 @@ export default function BackgroundRemoverClient() {
           </nav>
         </div>
       </header>
-
       {/* HERO */}
       <section
         style={{
-          maxWidth: 900,
+          maxWidth:
+            850,
           margin:
             "0 auto",
           padding:
-            "54px 20px 28px",
+            "42px 20px 22px",
           textAlign:
             "center",
         }}
@@ -726,66 +977,74 @@ export default function BackgroundRemoverClient() {
               "inline-flex",
             alignItems:
               "center",
-            gap: 8,
+            gap:
+              8,
             padding:
-              "8px 14px",
-            borderRadius: 999,
+              "7px 12px",
+            borderRadius:
+              999,
             background:
               "#eef2ff",
             color:
               "#4f46e5",
-            fontWeight: 800,
-            fontSize: 12,
+            fontWeight:
+              800,
+            fontSize:
+              11,
             letterSpacing:
               "0.04em",
           }}
         >
           {libReady
-            ? "FREE • HD PNG • NO WATERMARK • AI READY ✅"
-            : "FREE • HD PNG • NO WATERMARK • AI READY"}
+            ? isGpu
+              ? "FREE • GPU AI • HD PNG • NO WATERMARK"
+              : "FREE • AI • HD PNG • NO WATERMARK"
+            : "FREE • AI BACKGROUND REMOVER"}
         </div>
-
         <h1
           style={{
             fontSize:
-              "clamp(38px, 8vw, 68px)",
+              "clamp(36px, 8vw, 62px)",
             lineHeight:
-              1.05,
+              1.04,
             margin:
-              "20px 0 14px",
-            fontWeight: 950,
+              "17px 0 12px",
+            fontWeight:
+              950,
             letterSpacing:
-              "-0.04em",
+              "-0.045em",
           }}
         >
           Background Remover
         </h1>
-
         <p
           style={{
-            maxWidth: 720,
+            maxWidth:
+              700,
             margin:
               "0 auto",
-            fontSize: 18,
-            lineHeight: 1.7,
+            fontSize:
+              17,
+            lineHeight:
+              1.65,
             color:
               "#64748b",
           }}
         >
-          Remove image backgrounds automatically with
-          AI. Create clean transparent PNGs directly in
-          your browser.
+          Remove photo backgrounds automatically
+          with AI and create a clean transparent
+          PNG in your browser.
         </p>
       </section>
-
-      {/* TOOL */}
+      {/* MAIN TOOL */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            760,
           margin:
             "0 auto",
           padding:
-            "10px 20px 60px",
+            "8px 18px 48px",
         }}
       >
         <div
@@ -794,11 +1053,12 @@ export default function BackgroundRemoverClient() {
               "#ffffff",
             border:
               "1px solid #e5e7eb",
-            borderRadius: 24,
+            borderRadius:
+              18,
             padding:
-              "26px",
+              18,
             boxShadow:
-              "0 20px 60px rgba(15,23,42,0.08)",
+              "0 15px 45px rgba(15,23,42,0.07)",
           }}
         >
           {!showPreview ? (
@@ -807,10 +1067,12 @@ export default function BackgroundRemoverClient() {
                 handleUploadClick
               }
               style={{
-                minHeight: 300,
+                minHeight:
+                  210,
                 border:
                   "2px dashed #cbd5e1",
-                borderRadius: 20,
+                borderRadius:
+                  16,
                 display:
                   "flex",
                 flexDirection:
@@ -822,7 +1084,7 @@ export default function BackgroundRemoverClient() {
                 textAlign:
                   "center",
                 padding:
-                  "30px 20px",
+                  "24px 18px",
                 cursor:
                   isProcessing
                     ? "not-allowed"
@@ -833,9 +1095,12 @@ export default function BackgroundRemoverClient() {
             >
               <div
                 style={{
-                  width: 74,
-                  height: 74,
-                  borderRadius: 20,
+                  width:
+                    58,
+                  height:
+                    58,
+                  borderRadius:
+                    16,
                   display:
                     "flex",
                   alignItems:
@@ -846,47 +1111,50 @@ export default function BackgroundRemoverClient() {
                     "#eef2ff",
                   color:
                     "#4f46e5",
-                  fontSize: 34,
-                  marginBottom: 16,
+                  fontSize:
+                    28,
+                  marginBottom:
+                    12,
                 }}
               >
                 ✨
               </div>
-
               <h2
                 style={{
                   margin:
-                    "0 0 8px",
-                  fontSize: 23,
-                  fontWeight: 900,
+                    "0 0 6px",
+                  fontSize:
+                    20,
+                  fontWeight:
+                    900,
                 }}
               >
                 {uploadText}
               </h2>
-
               <p
                 style={{
                   margin:
-                    "0 0 8px",
+                    "0 0 5px",
                   color:
                     "#64748b",
+                  fontSize:
+                    14,
                 }}
               >
                 JPG, PNG or WebP • Up to 25 MB
               </p>
-
               <p
                 style={{
-                  margin: 0,
-                  fontSize: 13,
+                  margin:
+                    0,
+                  fontSize:
+                    12,
                   color:
                     "#94a3b8",
                 }}
               >
-                Processing happens in your browser.
-                No sign-up required.
+                Free • No sign-up • Browser-based
               </p>
-
               <input
                 ref={
                   fileInputRef
@@ -904,42 +1172,47 @@ export default function BackgroundRemoverClient() {
             </div>
           ) : (
             <div>
+              {/* RESULT HEADER */}
               <div
                 style={{
                   display:
                     "flex",
                   flexWrap:
                     "wrap",
-                  gap: 12,
+                  gap:
+                    10,
                   justifyContent:
                     "space-between",
                   alignItems:
                     "center",
-                  marginBottom: 18,
+                  marginBottom:
+                    14,
                 }}
               >
                 <div>
                   <div
                     style={{
-                      fontWeight: 900,
-                      fontSize: 20,
+                      fontWeight:
+                        900,
+                      fontSize:
+                        19,
                     }}
                   >
                     Your Result
                   </div>
-
                   <div
                     style={{
-                      marginTop: 5,
+                      marginTop:
+                        4,
                       color:
                         "#64748b",
-                      fontSize: 14,
+                      fontSize:
+                        13,
                     }}
                   >
                     {info}
                   </div>
                 </div>
-
                 <button
                   type="button"
                   onClick={
@@ -950,26 +1223,32 @@ export default function BackgroundRemoverClient() {
                       "1px solid #cbd5e1",
                     background:
                       "#ffffff",
-                    borderRadius: 10,
+                    borderRadius:
+                      9,
                     padding:
-                      "10px 14px",
-                    fontWeight: 800,
+                      "9px 12px",
+                    fontWeight:
+                      800,
+                    fontSize:
+                      13,
                     cursor:
                       "pointer",
                   }}
                 >
-                  Remove Another Background
+                  Remove Another
                 </button>
               </div>
-
+              {/* IMAGE RESULT */}
               <div
                 style={{
                   border:
                     "1px solid #e5e7eb",
-                  borderRadius: 18,
-                  padding: 14,
+                  borderRadius:
+                    15,
+                  padding:
+                    10,
                   background:
-                    "#f8fafc",
+                    "repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%) 50% / 20px 20px",
                   overflow:
                     "auto",
                 }}
@@ -986,37 +1265,43 @@ export default function BackgroundRemoverClient() {
                     height:
                       "auto",
                     maxHeight:
-                      650,
+                      560,
                     objectFit:
                       "contain",
                     borderRadius:
-                      12,
+                      10,
+                    margin:
+                      "0 auto",
                   }}
                 />
               </div>
-
-              {/* BACKGROUND OPTIONS */}
+              {/* BACKGROUND */}
               <div
                 style={{
-                  marginTop: 22,
+                  marginTop:
+                    16,
                 }}
               >
                 <div
                   style={{
-                    fontWeight: 900,
-                    marginBottom: 10,
+                    fontWeight:
+                      900,
+                    fontSize:
+                      14,
+                    marginBottom:
+                      8,
                   }}
                 >
                   Background
                 </div>
-
                 <div
                   style={{
                     display:
                       "flex",
                     flexWrap:
                       "wrap",
-                    gap: 10,
+                    gap:
+                      8,
                   }}
                 >
                   {(
@@ -1027,11 +1312,11 @@ export default function BackgroundRemoverClient() {
                       ],
                       [
                         "white",
-                        "White - Passport",
+                        "White",
                       ],
                       [
                         "#6366f1",
-                        "Blue - Visa",
+                        "Blue",
                       ],
                       [
                         "#ef4444",
@@ -1039,9 +1324,16 @@ export default function BackgroundRemoverClient() {
                       ],
                     ] as const
                   ).map(
-                    ([value, label]) => (
+                    (
+                      [
+                        value,
+                        label,
+                      ]
+                    ) => (
                       <button
-                        key={value}
+                        key={
+                          value
+                        }
                         type="button"
                         onClick={() =>
                           setBgColor(
@@ -1057,11 +1349,13 @@ export default function BackgroundRemoverClient() {
                           background:
                             "#ffffff",
                           borderRadius:
-                            12,
+                            9,
                           padding:
-                            "10px 14px",
+                            "8px 11px",
                           fontWeight:
                             800,
+                          fontSize:
+                            13,
                           cursor:
                             "pointer",
                         }}
@@ -1072,7 +1366,7 @@ export default function BackgroundRemoverClient() {
                   )}
                 </div>
               </div>
-
+              {/* DOWNLOAD */}
               <button
                 type="button"
                 onClick={
@@ -1081,31 +1375,44 @@ export default function BackgroundRemoverClient() {
                 style={{
                   width:
                     "100%",
-                  marginTop: 22,
-                  border: 0,
-                  borderRadius: 14,
+                  marginTop:
+                    16,
+                  border:
+                    0,
+                  borderRadius:
+                    11,
                   padding:
-                    "16px 18px",
+                    "13px 16px",
                   background:
                     "#111827",
                   color:
                     "#ffffff",
-                  fontSize: 16,
-                  fontWeight: 900,
+                  fontSize:
+                    15,
+                  fontWeight:
+                    900,
                   cursor:
                     "pointer",
                 }}
               >
-                Download PNG FREE
+                Download PNG
               </button>
             </div>
           )}
-
-          {/* PROGRESS */}
+          {/* PROCESSING */}
           {isProcessing && (
             <div
               style={{
-                marginTop: 22,
+                marginTop:
+                  16,
+                padding:
+                  "14px",
+                border:
+                  "1px solid #e5e7eb",
+                borderRadius:
+                  12,
+                background:
+                  "#ffffff",
               }}
             >
               <div
@@ -1114,27 +1421,38 @@ export default function BackgroundRemoverClient() {
                     "flex",
                   justifyContent:
                     "space-between",
-                  gap: 10,
-                  marginBottom: 8,
-                  fontSize: 14,
-                  fontWeight: 800,
+                  alignItems:
+                    "center",
+                  gap:
+                    10,
+                  marginBottom:
+                    8,
+                  fontSize:
+                    13,
+                  fontWeight:
+                    800,
                 }}
               >
                 <span>
                   {status}
                 </span>
-
-                <span>
+                <span
+                  style={{
+                    color:
+                      "#4f46e5",
+                  }}
+                >
                   {progress}%
                 </span>
               </div>
-
               <div
                 style={{
                   width:
                     "100%",
-                  height: 10,
-                  borderRadius: 999,
+                  height:
+                    9,
+                  borderRadius:
+                    999,
                   background:
                     "#e5e7eb",
                   overflow:
@@ -1148,28 +1466,42 @@ export default function BackgroundRemoverClient() {
                     height:
                       "100%",
                     background:
-                      "#4f46e5",
+                      "linear-gradient(90deg,#4f46e5,#6366f1,#8b5cf6)",
                     borderRadius:
                       999,
                     transition:
-                      "width 120ms linear",
+                      "width 100ms linear",
                   }}
                 />
               </div>
+              <div
+                style={{
+                  marginTop:
+                    8,
+                  fontSize:
+                    11,
+                  color:
+                    "#94a3b8",
+                }}
+              >
+                {isGpu
+                  ? "GPU acceleration available"
+                  : "Optimized browser processing"}
+              </div>
             </div>
           )}
-
           {!isProcessing &&
             !showPreview && (
               <p
                 style={{
                   margin:
-                    "18px 0 0",
+                    "13px 0 0",
                   textAlign:
                     "center",
                   color:
                     "#64748b",
-                  fontSize: 14,
+                  fontSize:
+                    13,
                 }}
               >
                 {status}
@@ -1177,15 +1509,15 @@ export default function BackgroundRemoverClient() {
             )}
         </div>
       </section>
-
-      {/* MONEY / TRUST SECTION */}
+      {/* TRUST */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            760,
           margin:
             "0 auto",
           padding:
-            "0 20px 55px",
+            "0 18px 42px",
         }}
       >
         <div
@@ -1194,9 +1526,10 @@ export default function BackgroundRemoverClient() {
               "#111827",
             color:
               "#ffffff",
-            borderRadius: 22,
+            borderRadius:
+              18,
             padding:
-              "30px 24px",
+              "24px 20px",
             textAlign:
               "center",
           }}
@@ -1204,38 +1537,42 @@ export default function BackgroundRemoverClient() {
           <h2
             style={{
               margin:
-                "0 0 10px",
-              fontSize: 28,
+                "0 0 8px",
+              fontSize:
+                24,
             }}
           >
             Remove Backgrounds for Free
           </h2>
-
           <p
             style={{
-              maxWidth: 700,
+              maxWidth:
+                620,
               margin:
                 "0 auto",
               color:
                 "#cbd5e1",
-              lineHeight: 1.7,
+              lineHeight:
+                1.65,
+              fontSize:
+                14,
             }}
           >
-            NEXORA lets you remove backgrounds without
-            watermarks, account creation, or complicated
+            Remove photo backgrounds without
+            watermarks, accounts, or complicated
             software.
           </p>
         </div>
       </section>
-
       {/* SEO CONTENT */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            900,
           margin:
             "0 auto",
           padding:
-            "0 20px 60px",
+            "0 18px 50px",
         }}
       >
         <article
@@ -1244,10 +1581,12 @@ export default function BackgroundRemoverClient() {
               "#ffffff",
             border:
               "1px solid #e5e7eb",
-            borderRadius: 20,
+            borderRadius:
+              18,
             padding:
-              "28px",
-            lineHeight: 1.8,
+              "25px",
+            lineHeight:
+              1.8,
             color:
               "#475569",
           }}
@@ -1256,107 +1595,99 @@ export default function BackgroundRemoverClient() {
             style={{
               color:
                 "#111827",
-              fontSize: 30,
-              marginTop: 0,
+              fontSize:
+                28,
+              marginTop:
+                0,
             }}
           >
             Free AI Background Remover
           </h2>
-
           <p>
-            NEXORA Background Remover is a free online
-            tool for removing backgrounds from photos.
-            Upload a JPG, PNG, or WebP image and the AI
-            background-removal technology automatically
-            separates the main subject from the background.
+            NEXORA Background Remover is a free
+            online tool for removing backgrounds
+            from photos. Upload a JPG, PNG, or WebP
+            image and AI automatically separates the
+            main subject from the background.
           </p>
-
           <p>
-            The processed result is provided as a PNG so
-            transparent backgrounds can be preserved.
-            You can also choose a white, blue, or red
-            background when you need a ready-to-use image.
+            The result is generated as a PNG with
+            transparency preserved. You can also
+            replace the removed background with white,
+            blue, or red.
           </p>
-
           <h3
             style={{
               color:
                 "#111827",
             }}
           >
-            Background Removal for Passport and Visa Photos
+            Background Removal for Photos
           </h3>
-
           <p>
-            A white or colored background can be useful
-            when preparing images for passport, visa,
-            identification, application, and document
-            purposes. Always check the exact photo
-            requirements of the organization or country
-            before submitting an image.
+            The tool is designed for product photos,
+            profile pictures, social media images,
+            passport-photo preparation, ID images,
+            presentations, and other everyday image
+            editing tasks.
           </p>
-
           <h3
             style={{
               color:
                 "#111827",
             }}
           >
-            Private Browser-Based Processing
+            Fast Browser-Based Processing
           </h3>
-
           <p>
-            Image processing is performed in your browser
-            using the background-removal technology.
-            NEXORA does not need to send your original
-            image to a NEXORA image-processing server.
-            The AI package may download required model
-            resources from its configured external resources.
+            NEXORA performs the background-removal
+            processing in the browser using AI.
+            Supported devices may use GPU acceleration
+            to improve processing performance.
           </p>
-
           <h3
             style={{
               color:
                 "#111827",
             }}
           >
-            No Watermark
+            Transparent PNG and No Watermark
           </h3>
-
           <p>
-            Download your processed PNG without a NEXORA
-            watermark. The tool is designed to make
-            background removal simple on phones, tablets,
-            and desktop browsers.
+            Download the processed image as a PNG
+            without a NEXORA watermark. Transparent
+            results can be used directly in other
+            design and editing applications.
           </p>
-
           <img
             src="/background-remover-example.jpg"
-            alt="Background remover example"
+            alt="NEXORA AI background remover example"
             style={{
               display:
                 "block",
               width:
                 "100%",
-              maxWidth: 760,
+              maxWidth:
+                760,
               height:
                 "auto",
               margin:
-                "24px auto",
-              borderRadius: 16,
+                "22px auto",
+              borderRadius:
+                14,
             }}
           />
         </article>
       </section>
-
-      {/* COMPARISON */}
+      {/* FEATURES */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            900,
           margin:
             "0 auto",
           padding:
-              "0 20px 60px",
+            "0 18px 50px",
         }}
       >
         <div
@@ -1365,7 +1696,8 @@ export default function BackgroundRemoverClient() {
               "#ffffff",
             border:
               "1px solid #e5e7eb",
-            borderRadius: 20,
+            borderRadius:
+              18,
             overflow:
               "hidden",
           }}
@@ -1373,14 +1705,15 @@ export default function BackgroundRemoverClient() {
           <div
             style={{
               padding:
-                "22px 24px",
+                "20px",
             }}
           >
             <h2
               style={{
                 margin:
                   0,
-                fontSize: 28,
+                fontSize:
+                  26,
                 color:
                   "#111827",
               }}
@@ -1388,7 +1721,6 @@ export default function BackgroundRemoverClient() {
               NEXORA Background Remover Features
             </h2>
           </div>
-
           <div
             style={{
               overflowX:
@@ -1402,7 +1734,7 @@ export default function BackgroundRemoverClient() {
                 borderCollapse:
                   "collapse",
                 minWidth:
-                  620,
+                  560,
               }}
             >
               <thead>
@@ -1412,7 +1744,7 @@ export default function BackgroundRemoverClient() {
                       textAlign:
                         "left",
                       padding:
-                        "14px 20px",
+                        "12px 18px",
                       borderTop:
                         "1px solid #e5e7eb",
                       background:
@@ -1421,13 +1753,12 @@ export default function BackgroundRemoverClient() {
                   >
                     Feature
                   </th>
-
                   <th
                     style={{
                       textAlign:
                         "left",
                       padding:
-                        "14px 20px",
+                        "12px 18px",
                       borderTop:
                         "1px solid #e5e7eb",
                       background:
@@ -1438,7 +1769,6 @@ export default function BackgroundRemoverClient() {
                   </th>
                 </tr>
               </thead>
-
               <tbody>
                 {[
                   [
@@ -1448,6 +1778,10 @@ export default function BackgroundRemoverClient() {
                   [
                     "AI background removal",
                     "Yes",
+                  ],
+                  [
+                    "GPU acceleration",
+                    "Supported",
                   ],
                   [
                     "Transparent PNG",
@@ -1466,11 +1800,16 @@ export default function BackgroundRemoverClient() {
                     "25 MB",
                   ],
                   [
-                    "Browser-based image processing",
+                    "Browser-based processing",
                     "Yes",
                   ],
                 ].map(
-                  ([feature, value]) => (
+                  (
+                    [
+                      feature,
+                      value,
+                    ]
+                  ) => (
                     <tr
                       key={
                         feature
@@ -1479,18 +1818,17 @@ export default function BackgroundRemoverClient() {
                       <td
                         style={{
                           padding:
-                            "14px 20px",
+                            "12px 18px",
                           borderTop:
                             "1px solid #e5e7eb",
                         }}
                       >
                         {feature}
                       </td>
-
                       <td
                         style={{
                           padding:
-                            "14px 20px",
+                            "12px 18px",
                           borderTop:
                             "1px solid #e5e7eb",
                           fontWeight:
@@ -1507,188 +1845,111 @@ export default function BackgroundRemoverClient() {
           </div>
         </div>
       </section>
-
       {/* FAQ */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            900,
           margin:
             "0 auto",
           padding:
-            "0 20px 60px",
+            "0 18px 50px",
         }}
       >
         <h2
           style={{
-            fontSize: 32,
+            fontSize:
+              30,
             color:
               "#111827",
           }}
         >
           Frequently Asked Questions
         </h2>
-
-        <div>
-          <details
-            style={{
-              border:
-                "1px solid #e5e7eb",
-              borderRadius:
-                10,
-              padding:
-                "12px 14px",
-              marginTop: 10,
-              background:
-                "#ffffff",
-            }}
-          >
-            <summary
+        {[
+          [
+            "Is NEXORA Background Remover free?",
+            "Yes. NEXORA Background Remover is free to use without requiring an account.",
+          ],
+          [
+            "What image formats are supported?",
+            "JPG, PNG, and WebP images are supported. The maximum upload size is 25 MB.",
+          ],
+          [
+            "Can I make the background transparent?",
+            "Yes. The processed result is generated as a PNG with a transparent background.",
+          ],
+          [
+            "Can I use a white background?",
+            "Yes. Select White after the background has been removed.",
+          ],
+          [
+            "Does NEXORA add a watermark?",
+            "No. The downloaded PNG does not include a NEXORA watermark.",
+          ],
+        ].map(
+          (
+            [
+              question,
+              answer,
+            ]
+          ) => (
+            <details
+              key={
+                question
+              }
               style={{
-                cursor:
-                  "pointer",
-                fontWeight:
-                  800,
+                border:
+                  "1px solid #e5e7eb",
+                borderRadius:
+                  10,
+                padding:
+                  "11px 13px",
+                marginTop:
+                  9,
+                background:
+                  "#ffffff",
               }}
             >
-              Is NEXORA Background Remover free?
-            </summary>
-
-            <p>
-              Yes. NEXORA Background Remover is available
-              for free without requiring an account.
-            </p>
-          </details>
-
-          <details
-            style={{
-              border:
-                "1px solid #e5e7eb",
-              borderRadius:
-                10,
-              padding:
-                "12px 14px",
-              marginTop: 10,
-              background:
-                "#ffffff",
-            }}
-          >
-            <summary
-              style={{
-                cursor:
-                  "pointer",
-                fontWeight:
-                  800,
-              }}
-            >
-              What image formats are supported?
-            </summary>
-
-            <p>
-              JPG, PNG, and WebP images are supported.
-              The maximum upload size is 25 MB.
-            </p>
-          </details>
-
-          <details
-            style={{
-              border:
-                "1px solid #e5e7eb",
-              borderRadius:
-                10,
-              padding:
-                "12px 14px",
-              marginTop: 10,
-              background:
-                "#ffffff",
-            }}
-          >
-            <summary
-              style={{
-                cursor:
-                  "pointer",
-                fontWeight:
-                  800,
-              }}
-            >
-              Can I make the background transparent?
-            </summary>
-
-            <p>
-              Yes. The processed image can be downloaded
-              as a PNG with a transparent background.
-            </p>
-          </details>
-
-          <details
-            style={{
-              border:
-                "1px solid #e5e7eb",
-              borderRadius:
-                10,
-              padding:
-                "12px 14px",
-              marginTop: 10,
-              background:
-                "#ffffff",
-            }}
-          >
-            <summary
-              style={{
-                cursor:
-                  "pointer",
-                fontWeight:
-                800,
-              }}
-            >
-              Can I use a white background?
-            </summary>
-
-            <p>
-              Yes. Select “White - Passport” after the
-              background has been removed.
-            </p>
-          </details>
-
-          <details
-            style={{
-              border:
-                "1px solid #e5e7eb",
-              borderRadius:
-                10,
-              padding:
-                "12px 14px",
-              marginTop: 10,
-              background:
-                "#ffffff",
-            }}
-          >
-            <summary
-              style={{
-                cursor:
-                  "pointer",
-                fontWeight:
-                  800,
-              }}
-            >
-              Does NEXORA add a watermark?
-            </summary>
-
-            <p>
-              No. The downloaded PNG does not include a
-              NEXORA watermark.
-            </p>
-          </details>
-        </div>
+              <summary
+                style={{
+                  cursor:
+                    "pointer",
+                  fontWeight:
+                    800,
+                  fontSize:
+                    14,
+                }}
+              >
+                {question}
+              </summary>
+              <p
+                style={{
+                  marginBottom:
+                    2,
+                  color:
+                    "#64748b",
+                  lineHeight:
+                    1.7,
+                  fontSize:
+                    14,
+                }}
+              >
+                {answer}
+              </p>
+            </details>
+          )
+        )}
       </section>
-
       {/* INTERNAL LINKS */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            900,
           margin:
             "0 auto",
           padding:
-            "0 20px 50px",
+            "0 18px 42px",
         }}
       >
         <div
@@ -1696,8 +1957,9 @@ export default function BackgroundRemoverClient() {
             display:
               "grid",
             gridTemplateColumns:
-              "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 12,
+              "repeat(auto-fit, minmax(170px, 1fr))",
+            gap:
+              10,
           }}
         >
           {[
@@ -1718,10 +1980,19 @@ export default function BackgroundRemoverClient() {
               "All NEXORA Tools",
             ],
           ].map(
-            ([href, label]) => (
+            (
+              [
+                href,
+                label,
+              ]
+            ) => (
               <a
-                key={href}
-                href={href}
+                key={
+                  href
+                }
+                href={
+                  href
+                }
                 style={{
                   textDecoration:
                     "none",
@@ -1730,13 +2001,15 @@ export default function BackgroundRemoverClient() {
                   border:
                     "1px solid #e5e7eb",
                   borderRadius:
-                    14,
+                    12,
                   padding:
-                    "16px",
+                    "14px",
                   color:
                     "#111827",
                   fontWeight:
                     800,
+                  fontSize:
+                    13,
                 }}
               >
                 {label}
@@ -1745,32 +2018,30 @@ export default function BackgroundRemoverClient() {
           )}
         </div>
       </section>
-
       {/* AUTHOR */}
       <section
         style={{
-          maxWidth: 980,
+          maxWidth:
+            900,
           margin:
             "0 auto",
           padding:
-            "0 20px 40px",
+            "0 18px 35px",
           textAlign:
             "center",
           color:
             "#64748b",
-          fontSize: 14,
+          fontSize:
+            13,
         }}
       >
         <p>
           By Ayush Chauhan • Tool: NEXORA
         </p>
-
         <p>
-          Last Updated: 14 Nov 2026 • Free &
-          Browser-Based
+          Last Updated: 14 Nov 2026 • Free & Browser-Based
         </p>
       </section>
-
       {/* FOOTER */}
       <footer
         style={{
@@ -1779,12 +2050,13 @@ export default function BackgroundRemoverClient() {
           background:
             "#ffffff",
           padding:
-            "26px 20px",
+            "23px 18px",
         }}
       >
         <div
           style={{
-            maxWidth: 980,
+            maxWidth:
+              900,
             margin:
               "0 auto",
             display:
@@ -1793,8 +2065,10 @@ export default function BackgroundRemoverClient() {
               "wrap",
             justifyContent:
               "center",
-            gap: 18,
-            fontSize: 14,
+            gap:
+              18,
+            fontSize:
+              13,
           }}
         >
           <a
@@ -1808,7 +2082,6 @@ export default function BackgroundRemoverClient() {
           >
             About
           </a>
-
           <a
             href="/privacy-policy"
             style={{
@@ -1820,7 +2093,6 @@ export default function BackgroundRemoverClient() {
           >
             Privacy Policy
           </a>
-
           <a
             href="/contact"
             style={{
