@@ -34,19 +34,21 @@ export const metadata: Metadata = {
     "max-image-preview": "large",
   },
 
-  alternates: {
-    canonical: PAGE_URL,
-    languages: {
-      en: `${SITE_URL}/background-remover`,
-      "hi-Latn": `${SITE_URL}/background-remover/hi`,
-      es: `${SITE_URL}/background-remover/es`,
-      pt: `${SITE_URL}/background-remover/pt`,
-      fr: `${SITE_URL}/background-remover/fr`,
-      "zh-CN": `${SITE_URL}/background-remover/zh`,
-      ar: PAGE_URL,
-      "x-default": `${SITE_URL}/background-remover`,
-    },
+alternates: {
+  canonical: PAGE_URL,
+  languages: {
+    en: `${SITE_URL}/background-remover`,
+    "hi-Latn": `${SITE_URL}/background-remover/hi`,
+    es: `${SITE_URL}/background-remover/es`,
+    pt: `${SITE_URL}/background-remover/pt`,
+    fr: `${SITE_URL}/background-remover/fr`,
+    "zh-CN": `${SITE_URL}/background-remover/zh`,
+    ar: PAGE_URL,
+    de: `${SITE_URL}/background-remover/de`,
+    id: `${SITE_URL}/background-remover/id`,
+    "x-default": `${SITE_URL}/background-remover`,
   },
+},
 
   openGraph: {
     title:
