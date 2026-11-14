@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     images: [
       {
         url:
-          `${SITE_URL}/og-background-remover.png`,
+          `${SITE_URL}/og-background-remover.jpg`,
 
         width: 1200,
 
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
       "Remove image backgrounds FREE and download transparent PNGs with no NEXORA watermark.",
 
     images: [
-      `${SITE_URL}/og-background-remover.png`,
+      `${SITE_URL}/og-background-remover.jpg`,
     ],
   },
 };
