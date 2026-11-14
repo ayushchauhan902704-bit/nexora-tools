@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  const baseUrl = 'https://nexora-tools-drab.vercel.app';
+  const baseUrl = 'https://thenexoratools.com';
   const today = new Date().toISOString().split('T')[0];
 
   const pages = [
