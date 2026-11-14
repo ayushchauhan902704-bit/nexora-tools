@@ -38,6 +38,7 @@ export const metadata: Metadata = {
     canonical: PAGE_URL,
     languages: {
       en: PAGE_URL,
+      "hi-Latn": `${SITE_URL}/background-remover/hi`,
       es: `${SITE_URL}/background-remover/es`,
       "x-default": PAGE_URL,
     },
