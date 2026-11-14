@@ -14,5 +14,13 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/blog/:path*", "destination": "/blog/:path*" }
+  ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "nexora-tools-drab.vercel.app" }],
+      "destination": "https://thenexoratools.com/$1",
+      "permanent": true
+    }
   ]
 }
