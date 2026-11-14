@@ -6,10 +6,10 @@ const PAGE_URL = `${SITE_URL}/background-remover/hi`;
 
 export const metadata: Metadata = {
   title:
-    "Photo ka Background Remove Karein - Free AI Background Remover | NEXORA",
+    "Photo Ka Background 5 Second Me Hataye - 1 Click, Free, No Watermark | NEXORA",
 
   description:
-    "Photo ka background free me remove karein NEXORA se. Transparent PNG banayein ya background ko white, blue ya red karein. No Photoshop, no sign-up, no watermark.",
+    "Kisi bhi photo ka background sirf 5 second me hataye - 100% Free, 1-Click AI. Transparent PNG banaye ya White / Blue / Red background lagaye. No Photoshop, No Sign-up, No Watermark. Abhi Try Karein!",
 
   keywords: [
     "photo ka background remove karein",
@@ -46,10 +46,10 @@ export const metadata: Metadata = {
 
   openGraph: {
     title:
-      "Photo ka Background Remove Karein - Free AI Background Remover | NEXORA",
+      "Photo Ka Background 5 Second Me Hataye - 1 Click, Free, No Watermark | NEXORA",
 
     description:
-      "Photo ka background free me AI se remove karein. Transparent PNG banayein ya white, blue ya red background choose karein. No watermark, no sign-up.",
+      "1-Click AI - Photo ka background 5 second me hataye. Transparent PNG ya White / Blue / Red background. 100% Free, No Watermark, No Sign-up.",
 
     url: PAGE_URL,
 
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/og-background-remover.jpg`,
         width: 1200,
         height: 630,
-        alt: "NEXORA Free AI Background Remover - Photo ka background remove karein",
+        alt: "NEXORA Free AI Background Remover - Photo ka background 5 second me hataye",
       },
     ],
   },
@@ -72,10 +72,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
 
-    title: "Photo ka Background Remove Karein - Free AI Background Remover",
+    title: "Photo Ka Background 5 Second Me Hataye - 1 Click, Free",
 
     description:
-      "Photo ka background free me remove karein aur bina watermark ke transparent PNG download karein.",
+      "Kisi bhi photo ka background 5 second me hataye. Free AI, Transparent PNG, No Watermark. Abhi try karein!",
 
     images: [`${SITE_URL}/og-background-remover.jpg`],
   },
