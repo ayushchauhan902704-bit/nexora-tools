@@ -17,7 +17,6 @@ export default function BackgroundRemoverClient() {
   const progressRef = useRef(0);
   const loadingRef = useRef(false);
 
-  // FIX 2 + FIX 3: Library sirf jab user Upload dabaye tab load hogi
   const loadLibrary = () => {
     return new Promise((resolve) => {
       if ((window as any).__nexoraRemoveBg) return resolve(true);
@@ -28,7 +27,6 @@ export default function BackgroundRemoverClient() {
         return;
       }
       loadingRef.current = true;
-      // FIX: Importmap PEHLE, Module BAAD me
       if (!document.querySelector('script[data-nexora-importmap]')) {
         const im = document.createElement("script");
         im.setAttribute("type", "importmap");
@@ -58,7 +56,6 @@ export default function BackgroundRemoverClient() {
     ctx.drawImage(img, 0, 0);
   };
 
-  // FIX 4: Badi photo ko pehle chhota karo
   const compressIfLarge = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
       if (file.size < 4 * 1024 * 1024) return resolve(file);
@@ -81,9 +78,25 @@ export default function BackgroundRemoverClient() {
     if (!file) return;
     setIsProcessing(true);
     setShowPreview(false);
-    setStatus("⏳ AI Loading... Please wait");
-    setUploadText("⏳ Loading AI...");
+    setUploadText("⏳ AI Start Ho Raha Hai...");
     progressRef.current = 0; setProgress(0);
+
+    // ✅ FIX: 0% pe atka nahi dikhega - Timer se progress aage badhega
+    let fakeProgress = 0;
+    const fakeTimer = setInterval(() => {
+      if (fakeProgress < 65) {
+        fakeProgress += Math.floor(Math.random() * 3) + 1;
+        if (fakeProgress > 65) fakeProgress = 65;
+        if (progressRef.current < fakeProgress) {
+          progressRef.current = fakeProgress;
+          setProgress(fakeProgress);
+          if (fakeProgress < 20) setStatus(`⏳ AI Model Download Ho Raha Hai... ${fakeProgress}%`);
+          else if (fakeProgress < 45) setStatus(`🤖 AI Ready Ho Raha Hai... ${fakeProgress}%`);
+          else setStatus(`📸 Photo Ko Padha Ja Raha Hai... ${fakeProgress}%`);
+        }
+      }
+    }, 200);
+
     try {
       await loadLibrary();
       setLibReady(true);
@@ -92,16 +105,19 @@ export default function BackgroundRemoverClient() {
       const blob = await removeBg(smallFile, {
         progress: (_key: string, current: number, total: number) => {
           if (!total) return;
-          const pct = Math.round((current / total) * 100);
-          if (pct > progressRef.current) {
-            progressRef.current = pct; setProgress(pct);
-            if (pct < 30) setStatus(`⏳ AI Loading... ${pct}%`);
-            else if (pct < 90) setStatus(`🤖 Background Hata Raha Hu... ${pct}%`);
-            else setStatus(`✨ Almost Done... ${pct}%`);
+          const realPct = Math.round((current / total) * 100);
+          const mappedPct = 65 + Math.round((realPct / 100) * 35);
+          if (mappedPct > progressRef.current) {
+            progressRef.current = mappedPct;
+            setProgress(mappedPct);
+            if (mappedPct < 85) setStatus(`🤖 Background Hata Raha Hu... ${mappedPct}%`);
+            else setStatus(`✨ Almost Done... ${mappedPct}%`);
           }
         },
       });
+      clearInterval(fakeTimer);
       progressRef.current = 100; setProgress(100);
+      setStatus("✅ Done! Choose background color");
       blobRef.current = blob;
       const url = URL.createObjectURL(blob);
       const img = new Image();
@@ -110,13 +126,13 @@ export default function BackgroundRemoverClient() {
         setTimeout(() => redraw(), 50);
         setShowPreview(true);
         setUploadText("✅ Background Removed");
-        setStatus("✅ Done! Choose background color");
         setInfo(`${img.naturalWidth}x${img.naturalHeight} • HD PNG • No Watermark`);
         setIsProcessing(false);
-        URL.revokeObjectURL(url); // FIX 5: Memory leak fix
+        URL.revokeObjectURL(url);
       };
       img.src = url;
     } catch (err: any) {
+      clearInterval(fakeTimer);
       setStatus("❌ Error: " + err.message + " - Phir se try karo");
       setIsProcessing(false);
     }
@@ -173,6 +189,7 @@ export default function BackgroundRemoverClient() {
             <div style={{ marginTop: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 6 }}><span style={{ color: "#2563eb" }}>{status}</span><span>{progress}%</span></div>
               <div style={{ width: "100%", height: 8, background: "#eef2f7", borderRadius: 999, overflow: "hidden" }}><div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #2563eb, #7c3aed)", transition: "width 0.3s ease" }} /></div>
+              <p style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", margin: "8px 0 0" }}>Pehli baar 10-15 sec lag sakta hai, 2nd baar 1 sec me hoga</p>
             </div>
           )}
           {!isProcessing && <p style={{ fontSize: 13, fontWeight: 700, textAlign: "center", margin: "12px 0 0", color: "#2563eb" }}>{status}</p>}
