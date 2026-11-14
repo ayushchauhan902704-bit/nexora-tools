@@ -7,8 +7,7 @@ type RemoveBackgroundFunction = (
   input: File | Blob,
   config?: {
     progress?: (key: string, current: number, total: number) => void;
-    device?: "cpu" | "gpu";
-    model?: "isnet" | "isnet_fp16" | "isnet_quint8";
+    model?: "small" | "medium";
     proxyToWorker?: boolean;
     output?: {
       format?: "image/png" | "image/jpeg" | "image/webp";
@@ -44,7 +43,9 @@ export default function BackgroundRemoverClient() {
     try {
       const gpuAvailable = typeof navigator !== "undefined" && "gpu" in navigator;
       setIsGpu(gpuAvailable);
-    } catch { setIsGpu(false); }
+    } catch {
+      setIsGpu(false);
+    }
   }, []);
 
   const setProgressTarget = (value: number) => {
@@ -91,20 +92,23 @@ export default function BackgroundRemoverClient() {
 
   const loadLibrary = async (): Promise<RemoveBackgroundFunction> => {
     if (libraryPromiseRef.current) return libraryPromiseRef.current;
-    libraryPromiseRef.current = import("@imgly/background-removal").then((module) => {
-      const removeBackground = module.default as RemoveBackgroundFunction;
-      if (typeof removeBackground !== "function") throw new Error("Background removal library failed to load.");
-      setLibReady(true);
-      return removeBackground;
-    }).catch((error) => {
-      libraryPromiseRef.current = null;
-      setLibReady(false);
-      throw error;
-    });
+    libraryPromiseRef.current = import("@imgly/background-removal")
+      .then((module) => {
+        const removeBackground = module.default as unknown as RemoveBackgroundFunction;
+        if (typeof removeBackground !== "function") {
+          throw new Error("Background removal library failed to load.");
+        }
+        setLibReady(true);
+        return removeBackground;
+      })
+      .catch((error) => {
+        libraryPromiseRef.current = null;
+        setLibReady(false);
+        throw error;
+      });
     return libraryPromiseRef.current;
   };
 
-  // ✅ FIXED: Original quality rakhta hai, WebP me kharab nahi karta
   const prepareImage = async (file: File): Promise<File> => {
     const objectUrl = URL.createObjectURL(file);
     try {
@@ -117,16 +121,12 @@ export default function BackgroundRemoverClient() {
       let width = image.naturalWidth;
       let height = image.naturalHeight;
       const pixels = width * height;
-
-      // ✅ 12MP tak original rakho - edge saaf aayenge, fast bhi rahega
       const MAX_PIXELS = 12_000_000;
       const MAX_DIMENSION = 3200;
       const dimensionScale = Math.min(1, MAX_DIMENSION / width, MAX_DIMENSION / height);
       const pixelScale = pixels > MAX_PIXELS ? Math.sqrt(MAX_PIXELS / pixels) : 1;
       const scale = Math.min(dimensionScale, pixelScale);
-
       if (scale >= 1) return file;
-
       width = Math.max(1, Math.round(width * scale));
       height = Math.max(1, Math.round(height * scale));
       const canvas = document.createElement("canvas");
@@ -137,8 +137,6 @@ export default function BackgroundRemoverClient() {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(image, 0, 0, width, height);
-
-      // ✅ Hamesha PNG - WebP se edge kharab hote the
       const blob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob((result) => resolve(result), "image/png", 1);
       });
@@ -205,13 +203,9 @@ export default function BackgroundRemoverClient() {
       setStatus("Optimizing image...");
       const preparedFile = await prepareImage(file);
       setProgressTarget(20);
-      const device = isGpu ? "gpu" : "cpu";
       setStatus(isGpu ? "Removing background with GPU AI..." : "Removing background with AI...");
-
-      // ✅ BEST MODEL: isnet = sabse saaf cutting, fast bhi hai GPU pe
       const result = await removeBackground(preparedFile, {
-        device,
-        model: "isnet",
+        model: "medium",
         proxyToWorker: true,
         output: { format: "image/png", quality: 1, type: "foreground" },
         progress: (_key, current, total) => {
@@ -221,7 +215,6 @@ export default function BackgroundRemoverClient() {
           setProgressTarget(mapped);
         },
       });
-
       setProgressTarget(97);
       setStatus("Finishing your transparent PNG...");
       const resultBlob = result instanceof Blob ? result : new Blob([result], { type: "image/png" });
