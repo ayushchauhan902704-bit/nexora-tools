@@ -7,9 +7,11 @@
     "start": "next start"
   },
   "dependencies": {
+    "@imgly/background-removal": "1.4.5",
     "@vercel/analytics": "^2.0.1",
     "jspdf": "^2.5.1",
     "next": "14.2.5",
+    "onnxruntime-web": "1.21.0-dev.20250206-d981b153d3",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
