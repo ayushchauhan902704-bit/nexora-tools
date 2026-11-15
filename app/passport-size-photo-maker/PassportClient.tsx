@@ -1,191 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import * as BackgroundRemoval from "@imgly/background-removal";
+import { useRef, useState } from "react";
 
-declare global {
-  interface Window {
-    gtag?: (
-      command: string,
-      eventName: string,
-      params?: Record<string, unknown>
-    ) => void;
-  }
-}
-
-type BackgroundMode = "original" | "color";
+type Doc = {
+  label: string;
+  sub: string;
+  w: number;
+  h: number;
+  kb: number;
+};
 
 type CropPosition = {
   x: number;
   y: number;
 };
 
-type DocPreset = {
-  id: string;
-  name: string;
-  size: string;
-  width: number;
-  height: number;
-  kb?: number;
-};
-
-const DOCS: DocPreset[] = [
-  {
-    id: "india-passport",
-    name: "Passport India",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "usa-passport",
-    name: "Passport USA",
-    size: "600 × 600 • 2 × 2 inch",
-    width: 600,
-    height: 600,
-  },
-  {
-    id: "usa-visa",
-    name: "Visa USA",
-    size: "600 × 600 • 2 × 2 inch",
-    width: 600,
-    height: 600,
-  },
-  {
-    id: "uk-visa",
-    name: "Visa UK",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "schengen-visa",
-    name: "Visa Schengen",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "canada-visa",
-    name: "Visa Canada",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "australia-visa",
-    name: "Visa Australia",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "japan-visa",
-    name: "Visa Japan",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "korea-visa",
-    name: "Visa South Korea",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "dubai-visa",
-    name: "Visa Dubai",
-    size: "413 × 531 • 35 × 45mm",
-    width: 413,
-    height: 531,
-  },
-  {
-    id: "china-visa",
-    name: "Visa China",
-    size: "390 × 567 • 33 × 48mm",
-    width: 390,
-    height: 567,
-  },
-  {
-    id: "ssc-ibps-railway",
-    name: "SSC / IBPS / Railway",
-    size: "200 × 230 • ≤20KB",
-    width: 200,
-    height: 230,
-    kb: 20,
-  },
-  {
-    id: "upsc-bank",
-    name: "UPSC / Bank",
-    size: "300 × 350 • ≤50KB",
-    width: 300,
-    height: 350,
-    kb: 50,
-  },
-  {
-    id: "pan-card",
-    name: "PAN Card",
-    size: "400 × 300 • 35 × 25mm",
-    width: 400,
-    height: 300,
-  },
-  {
-    id: "aadhaar",
-    name: "Aadhaar",
-    size: "300 × 400",
-    width: 300,
-    height: 400,
-  },
-  {
-    id: "driving-license",
-    name: "Driving License",
-    size: "300 × 350",
-    width: 300,
-    height: 350,
-  },
-  {
-    id: "voter-id",
-    name: "Voter ID",
-    size: "300 × 400",
-    width: 300,
-    height: 400,
-  },
-  {
-    id: "oci",
-    name: "OCI",
-    size: "600 × 600",
-    width: 600,
-    height: 600,
-  },
-  {
-    id: "stamp",
-    name: "Stamp Photo",
-    size: "300 × 400",
-    width: 300,
-    height: 400,
-  },
-  {
-    id: "one-inch",
-    name: "1 × 1 Inch",
-    size: "400 × 400",
-    width: 400,
-    height: 400,
-  },
-  {
-    id: "college-id",
-    name: "College ID",
-    size: "300 × 400",
-    width: 300,
-    height: 400,
-  },
-  {
-    id: "job-resume",
-    name: "Job / Resume",
-    size: "400 × 500",
-    width: 400,
-    height: 500,
-  },
+const DOCS: Doc[] = [
+  { label: "Passport India", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Passport USA", sub: "600 × 600 • 2 × 2 inch", w: 600, h: 600, kb: 0 },
+  { label: "Visa USA 2 × 2", sub: "600 × 600 • 2 × 2 inch", w: 600, h: 600, kb: 0 },
+  { label: "Visa UK", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Schengen", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Canada", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Australia", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa China", sub: "390 × 567 • 33 × 48 mm", w: 390, h: 567, kb: 0 },
+  { label: "Visa Japan", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Korea", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "Visa Dubai", sub: "413 × 531 • 35 × 45 mm", w: 413, h: 531, kb: 0 },
+  { label: "SSC • 20 KB", sub: "200 × 230 • Target ≤ 20 KB", w: 200, h: 230, kb: 20 },
+  { label: "UPSC • 50 KB", sub: "300 × 350 • Target ≤ 50 KB", w: 300, h: 350, kb: 50 },
+  { label: "IBPS • 20 KB", sub: "200 × 230 • Target ≤ 20 KB", w: 200, h: 230, kb: 20 },
+  { label: "Railway • 20 KB", sub: "200 × 230 • Target ≤ 20 KB", w: 200, h: 230, kb: 20 },
+  { label: "Bank Form", sub: "300 × 350 • Target ≤ 50 KB", w: 300, h: 350, kb: 50 },
+  { label: "PAN Card", sub: "400 × 300 • 35 × 25 mm", w: 400, h: 300, kb: 0 },
+  { label: "Aadhaar Card", sub: "300 × 400 • HD", w: 300, h: 400, kb: 0 },
+  { label: "Driving License", sub: "300 × 350 • HD", w: 300, h: 350, kb: 0 },
+  { label: "Voter ID", sub: "300 × 400 • HD", w: 300, h: 400, kb: 0 },
+  { label: "OCI Card", sub: "600 × 600 • 2 × 2 inch", w: 600, h: 600, kb: 0 },
+  { label: "Stamp Size", sub: "300 × 400 • 25 × 35 mm", w: 300, h: 400, kb: 0 },
+  { label: "1 × 1 Inch", sub: "400 × 400 • HD", w: 400, h: 400, kb: 0 },
+  { label: "College ID", sub: "300 × 400 • HD", w: 300, h: 400, kb: 0 },
+  { label: "Job Resume", sub: "400 × 500 • HD", w: 400, h: 500, kb: 0 },
 ];
 
 const MAX_SOURCE_DIMENSION = 6000;
@@ -194,2361 +49,401 @@ const MAX_DIMENSION = 2000;
 const MIN_TARGET_KB = 5;
 const MAX_TARGET_KB = 5000;
 
-const COLORS = [
-  { name: "White", value: "#ffffff" },
-  { name: "Blue", value: "#2f6fed" },
-  { name: "Red", value: "#d62828" },
-  { name: "Green", value: "#168a45" },
-  { name: "Black", value: "#000000" },
-];
-
 export default function PassportClient() {
-  const [img, setImg] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  const [sel, setSel] = useState("india-passport");
-
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [preview, setPreview] = useState("");
+  const [sel, setSel] = useState(0);
   const [customW, setCustomW] = useState("");
   const [customH, setCustomH] = useState("");
   const [customKB, setCustomKB] = useState("");
-
-  const [backgroundMode, setBackgroundMode] =
-    useState<BackgroundMode>("original");
-
-  const [backgroundColor, setBackgroundColor] =
-    useState("#ffffff");
-
   const [status, setStatus] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [processing, setProcessing] = useState(false);
-
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [origW, setOrigW] = useState(0);
   const [origH, setOrigH] = useState(0);
   const [origKB, setOrigKB] = useState(0);
   const [newKB, setNewKB] = useState(0);
-
-  const [cropPosition, setCropPosition] =
-    useState<CropPosition>({
-      x: 0.5,
-      y: 0.5,
-    });
-
-  const canvasRef =
-    useRef<HTMLCanvasElement | null>(null);
-
-  const currentFileRef =
-    useRef<File | null>(null);
-
-  const sourceImageRef =
-    useRef<HTMLImageElement | null>(null);
-
-  const processedForegroundRef =
-    useRef<HTMLImageElement | null>(null);
-
-  const previewUrlRef =
-    useRef<string | null>(null);
-
-  function getCurrent(): DocPreset {
-    const customWidth = Number(customW);
-    const customHeight = Number(customH);
-    const customKb = Number(customKB);
-
-    if (
-      customWidth >= MIN_DIMENSION &&
-      customWidth <= MAX_DIMENSION &&
-      customHeight >= MIN_DIMENSION &&
-      customHeight <= MAX_DIMENSION
-    ) {
-      return {
-        id: "custom",
-        name: "Custom Size",
-        size: `${customWidth} × ${customHeight}${
-          customKb ? ` • ≤${customKb}KB` : ""
-        }`,
-        width: Math.round(customWidth),
-        height: Math.round(customHeight),
-        kb:
-          customKb >= MIN_TARGET_KB &&
-          customKb <= MAX_TARGET_KB
-            ? Math.round(customKb)
-            : undefined,
-      };
-    }
-
-    return (
-      DOCS.find((d) => d.id === sel) ||
-      DOCS[0]
-    );
-  }
-
-  function revokePreviewUrl() {
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(
-        previewUrlRef.current
-      );
-      previewUrlRef.current = null;
-    }
-  }
-
-  function loadImage(
-    src: string
-  ): Promise<HTMLImageElement> {
-    return new Promise(
-      (resolve, reject) => {
-        const image =
-          new Image();
-
-        image.onload = () =>
-          resolve(image);
-
-        image.onerror = () =>
-          reject(
-            new Error(
-              "Unable to load the image."
-            )
-          );
-
-        image.src = src;
-      }
-    );
-  }
-
-  function fileToDataURL(
-    file: File
-  ): Promise<string> {
-    return new Promise(
-      (resolve, reject) => {
-        const reader =
-          new FileReader();
-
-        reader.onload = () => {
-          if (
-            typeof reader.result ===
-            "string"
-          ) {
-            resolve(
-              reader.result
-            );
-          } else {
-            reject(
-              new Error(
-                "Unable to read image."
-              )
-            );
-          }
-        };
-
-        reader.onerror = () =>
-          reject(
-            new Error(
-              "Unable to read the selected file."
-            )
-          );
-
-        reader.readAsDataURL(
-          file
-        );
-      }
-    );
-  }
-
-  async function getSourceImage(
-    file: File
-  ): Promise<HTMLImageElement> {
-    const dataUrl =
-      await fileToDataURL(
-        file
-      );
-
-    const original =
-      await loadImage(dataUrl);
-
-    if (
-      original.naturalWidth <=
-        MAX_SOURCE_DIMENSION &&
-      original.naturalHeight <=
-        MAX_SOURCE_DIMENSION
-    ) {
-      return original;
-    }
-
-    const scale =
-      Math.min(
-        MAX_SOURCE_DIMENSION /
-          original.naturalWidth,
-        MAX_SOURCE_DIMENSION /
-          original.naturalHeight
-      );
-
-    const width =
-      Math.max(
-        1,
-        Math.round(
-          original.naturalWidth *
-            scale
-        )
-      );
-
-    const height =
-      Math.max(
-        1,
-        Math.round(
-          original.naturalHeight *
-            scale
-        )
-      );
-
-    const canvas =
-      document.createElement(
-        "canvas"
-      );
-
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx =
-      canvas.getContext("2d");
-
-    if (!ctx) {
-      throw new Error(
-        "Canvas is not supported by this browser."
-      );
-    }
-
-    ctx.drawImage(
-      original,
-      0,
-      0,
-      width,
-      height
-    );
-
-    return loadImage(
-      canvas.toDataURL(
-        "image/jpeg",
-        0.95
-      )
-    );
-  }
-
-  async function createForegroundFromBackgroundRemoval(
-    file: File
-  ): Promise<HTMLImageElement> {
-    setStatus(
-      "Removing the original background…"
-    );
-
-    setIsSuccess(false);
-
-    const removeBackground =
-      (
-        BackgroundRemoval as any
-      ).default ||
-      (
-        BackgroundRemoval as any
-      ).removeBackground;
-
-    if (
-      typeof removeBackground !==
-      "function"
-    ) {
-      throw new Error(
-        "Background removal module is not available. Please install @imgly/background-removal."
-      );
-    }
-
-    const resultBlob =
-      await removeBackground(
-        file,
-        {
-          model: "medium",
-
-          proxyToWorker: true,
-
-          output: {
-            format: "image/png",
-            quality: 1,
-            type: "foreground",
-          },
-
-          progress: (
-            key: string,
-            current: number,
-            total: number
-          ) => {
-            if (total > 0) {
-              const percent =
-                Math.round(
-                  (current /
-                    total) *
-                    100
-                );
-
-              setStatus(
-                `Removing background… ${Math.min(
-                  100,
-                  percent
-                )}%`
-              );
-            }
-          },
-        }
-      );
-
-    const resultUrl =
-      URL.createObjectURL(
-        resultBlob
-      );
-
-    try {
-      return await loadImage(
-        resultUrl
-      );
-    } finally {
-      URL.revokeObjectURL(
-        resultUrl
-      );
-    }
-  }
-
-  function createCanvas(
-    source: HTMLImageElement,
-    width: number,
-    height: number
-  ): HTMLCanvasElement {
-    const canvas =
-      document.createElement(
-        "canvas"
-      );
-
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx =
-      canvas.getContext(
-        "2d",
-        { alpha: false }
-      );
-
-    if (!ctx) {
-      throw new Error(
-        "Canvas is not supported by this browser."
-      );
-    }
-
-    ctx.imageSmoothingEnabled =
-      true;
-
-    ctx.imageSmoothingQuality =
-      "high";
-
-    ctx.fillStyle =
-      "#ffffff";
-
-    ctx.fillRect(
-      0,
-      0,
-      width,
-      height
-    );
-
-    const sourceWidth =
-      source.naturalWidth ||
-      source.width;
-
-    const sourceHeight =
-      source.naturalHeight ||
-      source.height;
-
-    const targetRatio =
-      width / height;
-
-    const sourceRatio =
-      sourceWidth /
-      sourceHeight;
-
-    let drawWidth: number;
-    let drawHeight: number;
-
-    if (
-      sourceRatio >
-      targetRatio
-    ) {
-      drawHeight =
-        height;
-
-      drawWidth =
-        height *
-        sourceRatio;
-    } else {
-      drawWidth =
-        width;
-
-      drawHeight =
-        width /
-        sourceRatio;
-    }
-
-    const extraX =
-      drawWidth -
-      width;
-
-    const extraY =
-      drawHeight -
-      height;
-
-    const dx =
-      -(extraX *
-        cropPosition.x);
-
-    const dy =
-      -(extraY *
-        cropPosition.y);
-
-    ctx.drawImage(
-      source,
-      dx,
-      dy,
-      drawWidth,
-      drawHeight
-    );
-
-    return canvas;
-  }
-
-  function createColorBackgroundCanvas(
-    foreground: HTMLImageElement,
-    width: number,
-    height: number,
-    color: string
-  ): HTMLCanvasElement {
-    const canvas =
-      document.createElement(
-        "canvas"
-      );
-
-    canvas.width =
-      width;
-
-    canvas.height =
-      height;
-
-    const ctx =
-      canvas.getContext(
-        "2d",
-        { alpha: false }
-      );
-
-    if (!ctx) {
-      throw new Error(
-        "Canvas is not supported by this browser."
-      );
-    }
-
-    ctx.imageSmoothingEnabled =
-      true;
-
-    ctx.imageSmoothingQuality =
-      "high";
-
-    ctx.fillStyle =
-      color;
-
-    ctx.fillRect(
-      0,
-      0,
-      width,
-      height
-    );
-
-    const sourceWidth =
-      foreground.naturalWidth ||
-      foreground.width;
-
-    const sourceHeight =
-      foreground.naturalHeight ||
-      foreground.height;
-
-    const targetRatio =
-      width / height;
-
-    const sourceRatio =
-      sourceWidth /
-      sourceHeight;
-
-    let drawWidth: number;
-    let drawHeight: number;
-
-    if (
-      sourceRatio >
-      targetRatio
-    ) {
-      drawHeight =
-        height;
-
-      drawWidth =
-        height *
-        sourceRatio;
-    } else {
-      drawWidth =
-        width;
-
-      drawHeight =
-        width /
-        sourceRatio;
-    }
-
-    const extraX =
-      drawWidth -
-      width;
-
-    const extraY =
-      drawHeight -
-      height;
-
-    const dx =
-      -(extraX *
-        cropPosition.x);
-
-    const dy =
-      -(extraY *
-        cropPosition.y);
-
-    ctx.drawImage(
-      foreground,
-      dx,
-      dy,
-      drawWidth,
-      drawHeight
-    );
-
-    return canvas;
-  }
-
-  async function processImage(
-    file?: File,
-    forceBackgroundRemoval = false
-  ) {
-    const currentFile =
-      file ||
-      currentFileRef.current;
-
-    if (!currentFile) {
-      return;
-    }
-
-    setProcessing(true);
-    setIsSuccess(false);
-
-    try {
-      const current =
-        getCurrent();
-
-      let finalCanvas:
-        HTMLCanvasElement;
-
-      if (
-        backgroundMode ===
-          "color" ||
-        forceBackgroundRemoval
-      ) {
-        let foreground =
-          processedForegroundRef.current;
-
-        if (
-          !foreground ||
-          forceBackgroundRemoval
-        ) {
-          foreground =
-            await createForegroundFromBackgroundRemoval(
-              currentFile
-            );
-
-          processedForegroundRef.current =
-            foreground;
-        }
-
-        setStatus(
-          "Applying the selected background…"
-        );
-
-        finalCanvas =
-          createColorBackgroundCanvas(
-            foreground,
-            current.width,
-            current.height,
-            backgroundColor
-          );
-      } else {
-        setStatus(
-          "Creating your photo…"
-        );
-
-        let source =
-          sourceImageRef.current;
-
-        if (!source) {
-          source =
-            await getSourceImage(
-              currentFile
-            );
-
-          sourceImageRef.current =
-            source;
-        }
-
-        finalCanvas =
-          createCanvas(
-            source,
-            current.width,
-            current.height
-          );
-      }
-
-      canvasRef.current =
-        finalCanvas;
-
-      revokePreviewUrl();
-
-      const previewBlob =
-        await new Promise<Blob | null>(
-          (resolve) => {
-            finalCanvas.toBlob(
-              resolve,
-              "image/jpeg",
-              0.92
-            );
-          }
-        );
-
-      if (!previewBlob) {
-        throw new Error(
-          "Unable to create the photo preview."
-        );
-      }
-
-      const previewUrl =
-        URL.createObjectURL(
-          previewBlob
-        );
-
-      previewUrlRef.current =
-        previewUrl;
-
-      setPreview(
-        previewUrl
-      );
-
-      setNewKB(
-        Math.max(
-          1,
-          Math.round(
-            previewBlob.size /
-              1024
-          )
-        )
-      );
-
-      setIsSuccess(true);
-
-      setStatus(
-        backgroundMode ===
-          "original"
-          ? "Photo ready with original background."
-          : "Photo ready with the selected color background."
-      );
-    } catch (error) {
-      console.error(
-        "Photo processing error:",
-        error
-      );
-
-      setPreview(null);
-      setIsSuccess(false);
-
-      setStatus(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while processing the photo."
-      );
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  async function handleFile(
-    file: File
-  ) {
-    if (
-      !file.type.startsWith(
-        "image/"
-      )
-    ) {
-      setStatus(
-        "Please select a valid image file."
-      );
-
-      return;
-    }
-
-    if (
-      file.size >
-      25 *
-        1024 *
-        1024
-    ) {
-      setStatus(
-        "Maximum upload size is 25MB."
-      );
-
-      return;
-    }
-
-    currentFileRef.current =
-      file;
-
-    sourceImageRef.current =
-      null;
-
-    processedForegroundRef.current =
-      null;
-
-    revokePreviewUrl();
-
-    setPreview(null);
-    setIsSuccess(false);
-    setProcessing(true);
-
-    try {
-      setStatus(
-        "Loading your photo…"
-      );
-
-      const source =
-        await getSourceImage(
-          file
-        );
-
-      sourceImageRef.current =
-        source;
-
-      setOrigW(
-        source.naturalWidth ||
-          source.width
-      );
-
-      setOrigH(
-        source.naturalHeight ||
-          source.height
-      );
-
-      setOrigKB(
-        Math.max(
-          1,
-          Math.round(
-            file.size /
-              1024
-          )
-        )
-      );
-
-      const dataUrl =
-        await fileToDataURL(
-          file
-        );
-
-      setImg(dataUrl);
-
-      await processImage(
-        file
-      );
-    } catch (error) {
-      console.error(
-        error
-      );
-
-      setStatus(
-        "Unable to load this image. Please try another photo."
-      );
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  function selectDoc(
-    id: string
-  ) {
-    setSel(id);
-
-    setCustomW("");
-    setCustomH("");
-    setCustomKB("");
-
-    if (
-      currentFileRef.current
-    ) {
-      setTimeout(
-        () => {
-          void processImage();
-        },
-        0
-      );
-    }
-  }
-
-  function applyCustom() {
-    const width =
-      Number(customW);
-
-    const height =
-      Number(customH);
-
-    const kb =
-      Number(customKB);
-
-    if (
-      !Number.isFinite(
-        width
-      ) ||
-      !Number.isFinite(
-        height
-      ) ||
-      width <
-        MIN_DIMENSION ||
-      height <
-        MIN_DIMENSION ||
-      width >
-        MAX_DIMENSION ||
-      height >
-        MAX_DIMENSION
-    ) {
-      setStatus(
-        `Enter a valid width and height between ${MIN_DIMENSION} and ${MAX_DIMENSION}px.`
-      );
-
-      return;
-    }
-
-    if (
-      customKB &&
-      (
-        !Number.isFinite(
-          kb
-        ) ||
-        kb <
-          MIN_TARGET_KB ||
-        kb >
-          MAX_TARGET_KB
-      )
-    ) {
-      setStatus(
-        `Target file size must be between ${MIN_TARGET_KB}KB and ${MAX_TARGET_KB}KB.`
-      );
-
-      return;
-    }
-
-    setSel("custom");
-
-    if (
-      currentFileRef.current
-    ) {
-      setTimeout(
-        () => {
-          void processImage();
-        },
-        0
-      );
-    }
-  }
-
-  async function updateBackgroundMode(
-    mode: BackgroundMode
-  ) {
-    setBackgroundMode(
-      mode
-    );
-
-    if (
-      !currentFileRef.current
-    ) {
-      return;
-    }
-
-    setProcessing(true);
-    setIsSuccess(false);
-
-    try {
-      if (
-        mode ===
-        "original"
-      ) {
-        processedForegroundRef.current =
-          null;
-
-        await processImage(
-          currentFileRef.current
-        );
-      } else {
-        await processImage(
-          currentFileRef.current,
-          true
-        );
-      }
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  async function updateBackgroundColor(
-    color: string
-  ) {
-    setBackgroundColor(
-      color
-    );
-
-    if (
-      backgroundMode !==
-        "color" ||
-      !currentFileRef.current
-    ) {
-      return;
-    }
-
-    setProcessing(true);
-    setIsSuccess(false);
-
-    try {
-      await processImage(
-        currentFileRef.current
-      );
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  function updateCrop(
-    axis: "x" | "y",
-    value: number
-  ) {
-    setCropPosition(
-      (prev) => ({
-        ...prev,
-        [axis]:
-          value,
-      })
-    );
-
-    if (
-      !currentFileRef.current
-    ) {
-      return;
-    }
-
-    setTimeout(
-      () => {
-        void processImage();
-      },
-      0
-    );
-  }
-
-  function canvasToBlob(
-    canvas: HTMLCanvasElement,
-    quality: number
-  ): Promise<Blob> {
-    return new Promise(
-      (
-        resolve,
-        reject
-      ) => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(
-                new Error(
-                  "Unable to create the final image."
-                )
-              );
-
-              return;
-            }
-
-            resolve(
-              blob
-            );
-          },
-          "image/jpeg",
-          quality
-        );
-      }
-    );
-  }
-
-  async function compressToTarget(
-    canvas: HTMLCanvasElement,
-    targetKB?: number
-  ): Promise<Blob> {
-    if (!targetKB) {
-      return canvasToBlob(
-        canvas,
-        0.95
-      );
-    }
-
-    const targetBytes =
-      targetKB *
-      1024;
-
-    let bestBlob =
-      await canvasToBlob(
-        canvas,
-        0.95
-      );
-
-    if (
-      bestBlob.size <=
-      targetBytes
-    ) {
-      return bestBlob;
-    }
-
-    let low = 0.05;
-    let high = 0.95;
-
-    for (
-      let i = 0;
-      i < 10;
-      i++
-    ) {
-      const quality =
-        (low +
-          high) /
-        2;
-
-      const blob =
-        await canvasToBlob(
-          canvas,
-          quality
-        );
-
-      if (
-        blob.size <=
-        targetBytes
-      ) {
-        bestBlob =
-          blob;
-
-        low =
-          quality;
-      } else {
-        high =
-          quality;
-      }
-    }
-
-    if (
-      bestBlob.size <=
-      targetBytes
-    ) {
-      return bestBlob;
-    }
-
-    let scale = 0.95;
-
-    for (
-      let i = 0;
-      i < 8;
-      i++
-    ) {
-      const scaled =
-        document.createElement(
-          "canvas"
-        );
-
-      scaled.width =
-        Math.max(
-          50,
-          Math.round(
-            canvas.width *
-              scale
-          )
-        );
-
-      scaled.height =
-        Math.max(
-          50,
-          Math.round(
-            canvas.height *
-              scale
-          )
-        );
-
-      const ctx =
-        scaled.getContext(
-          "2d"
-        );
-
-      if (!ctx) {
-        break;
-      }
-
-      ctx.imageSmoothingEnabled =
-        true;
-
-      ctx.imageSmoothingQuality =
-        "high";
-
-      ctx.drawImage(
-        canvas,
-        0,
-        0,
-        scaled.width,
-        scaled.height
-      );
-
-      let qLow =
-        0.05;
-
-      let qHigh =
-        0.9;
-
-      for (
-        let j = 0;
-        j < 8;
-        j++
-      ) {
-        const q =
-          (qLow +
-            qHigh) /
-          2;
-
-        const blob =
-          await canvasToBlob(
-            scaled,
-            q
-          );
-
-        if (
-          blob.size <=
-          targetBytes
-        ) {
-          bestBlob =
-            blob;
-
-          qLow =
-            q;
-        } else {
-          qHigh =
-            q;
-        }
-      }
-
-      if (
-        bestBlob.size <=
-        targetBytes
-      ) {
-        return bestBlob;
-      }
-
-      scale *=
-        0.9;
-    }
-
-    return bestBlob;
-  }
-
-  async function download() {
-    if (
-      !canvasRef.current ||
-      !preview
-    ) {
-      setStatus(
-        "Please upload and process a photo first."
-      );
-
-      return;
-    }
-
-    if (processing) {
-      return;
-    }
-
-    setProcessing(true);
-    setIsSuccess(false);
-
-    let popup:
-      Window | null =
-      null;
-
-    const userAgent =
-      navigator.userAgent ||
-      navigator.vendor ||
-      "";
-
-    const isIOS =
-      /iPad|iPhone|iPod/i.test(
-        userAgent
-      ) ||
-      (
-        navigator.platform ===
-          "MacIntel" &&
-        navigator.maxTouchPoints >
-          1
-      );
-
-    /*
-      Open immediately for iOS.
-      This avoids Safari popup blocking
-      after asynchronous image processing.
-    */
-    if (isIOS) {
-      popup =
-        window.open(
-          "about:blank",
-          "_blank"
-        );
-    }
-
-    try {
-      const current =
-        getCurrent();
-
-      setStatus(
-        current.kb
-          ? `Preparing your download under ${current.kb}KB…`
-          : "Preparing your download…"
-      );
-
-      const blob =
-        await compressToTarget(
-          canvasRef.current,
-          current.kb
-        );
-
-      setNewKB(
-        Math.max(
-          1,
-          Math.round(
-            blob.size /
-              1024
-          )
-        )
-      );
-
-      const filename =
-        `nexora-passport-photo-${current.width}x${current.height}.jpg`;
-
-      const file =
-        new File(
-          [blob],
-          filename,
-          {
-            type: "image/jpeg",
-          }
-        );
-
-      /*
-        Native Share Sheet on iPhone/iPad.
-      */
-      if (
-        isIOS &&
-        typeof navigator.share ===
-          "function" &&
-        typeof navigator.canShare ===
-          "function" &&
-        navigator.canShare({
-          files: [file],
-        })
-      ) {
-        try {
-          if (
-            popup &&
-            !popup.closed
-          ) {
-            popup.close();
-          }
-
-          popup = null;
-
-          await navigator.share({
-            files: [file],
-            title:
-              "NEXORA Passport Photo",
-          });
-
-          setStatus(
-            "Photo ready. Choose Save to Photos from the Share menu."
-          );
-
-          setIsSuccess(
-            true
-          );
-
-          if (
-            typeof window.gtag ===
-            "function"
-          ) {
-            window.gtag(
-              "event",
-              "passport_photo_download",
-              {
-                width:
-                  current.width,
-                height:
-                  current.height,
-                background:
-                  backgroundMode,
-              }
-            );
-          }
-
-          return;
-        } catch (
-          shareError
-        ) {
-          if (
-            shareError &&
-            typeof shareError ===
-              "object" &&
-            "name" in
-              shareError &&
-            (
-              shareError as {
-                name?: string;
-              }
-            ).name ===
-              "AbortError"
-          ) {
-            setStatus(
-              "Share cancelled."
-            );
-
-            return;
-          }
-        }
-      }
-
-      const url =
-        URL.createObjectURL(
-          blob
-        );
-
-      if (isIOS) {
-        if (
-          popup &&
-          !popup.closed
-        ) {
-          popup.location.href =
-            url;
-
-          setStatus(
-            "Your photo is ready. Tap Share, then choose Save to Photos."
-          );
-        } else {
-          window.location.href =
-            url;
-
-          setStatus(
-            "Your photo is ready. Use Share → Save to Photos."
-          );
-        }
-
-        setIsSuccess(
-          true
-        );
-
-        setTimeout(
-          () => {
-            URL.revokeObjectURL(
-              url
-            );
-          },
-          60000
-        );
-
-        if (
-          typeof window.gtag ===
-          "function"
-        ) {
-          window.gtag(
-            "event",
-            "passport_photo_download",
-            {
-              width:
-                current.width,
-              height:
-                current.height,
-              background:
-                backgroundMode,
-            }
-          );
-        }
-
-        return;
-      }
-
-      /*
-        Normal browser download.
-      */
-      const link =
-        document.createElement(
-          "a"
-        );
-
-      link.href =
-        url;
-
-      link.download =
-        filename;
-
-      link.style.display =
-        "none";
-
-      document.body.appendChild(
-        link
-      );
-
-      link.click();
-
-      document.body.removeChild(
-        link
-      );
-
-      setTimeout(
-        () => {
-          URL.revokeObjectURL(
-            url
-          );
-        },
-        60000
-      );
-
-      setStatus(
-        "Photo downloaded successfully."
-      );
-
-      setIsSuccess(
-        true
-      );
-
-      if (
-        typeof window.gtag ===
-        "function"
-      ) {
-        window.gtag(
-          "event",
-          "passport_photo_download",
-          {
-            width:
-              current.width,
-            height:
-              current.height,
-            background:
-              backgroundMode,
-          }
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Download error:",
-        error
-      );
-
-      if (
-        popup &&
-        !popup.closed
-      ) {
-        popup.close();
-      }
-
-      setStatus(
-        "Download failed. Please try again."
-      );
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  function clearAll() {
-    currentFileRef.current =
-      null;
-
-    sourceImageRef.current =
-      null;
-
-    processedForegroundRef.current =
-      null;
-
-    revokePreviewUrl();
-
-    setImg(null);
-    setPreview(null);
-
-    setStatus("");
-    setIsSuccess(false);
-
-    setOrigW(0);
-    setOrigH(0);
-    setOrigKB(0);
-    setNewKB(0);
-
-    setBackgroundMode(
-      "original"
-    );
-
-    setBackgroundColor(
-      "#ffffff"
-    );
-
-    setCropPosition({
-      x: 0.5,
-      y: 0.5,
-    });
-
-    setCustomW("");
-    setCustomH("");
-    setCustomKB("");
-
-    const input =
-      document.getElementById(
-        "passport-file"
-      ) as HTMLInputElement | null;
-
-    if (input) {
-      input.value = "";
-    }
-  }
-
-  useEffect(() => {
-    return () => {
-      revokePreviewUrl();
+  const [cropPosition, setCropPosition] = useState<CropPosition>({ x: 0.5, y: 0.5 });
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const hasCustom = customW.trim() !== "" || customH.trim() !== "" || customKB.trim() !== "";
+
+  const getCurrent = (): Doc => {
+    const d = DOCS[sel];
+    const parsedW = Number.parseInt(customW, 10);
+    const parsedH = Number.parseInt(customH, 10);
+    const parsedKB = Number.parseInt(customKB, 10);
+    const w = Number.isFinite(parsedW) ? parsedW : d.w;
+    const h = Number.isFinite(parsedH) ? parsedH : d.h;
+    const kb = Number.isFinite(parsedKB) ? parsedKB : d.kb;
+    return {
+      label: hasCustom ? "Custom Size" : d.label,
+      sub: `${w} × ${h}${kb ? ` • Target ≤ ${kb} KB` : " • HD"}`,
+      w, h, kb,
     };
-  }, []);
+  };
+
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+  const getSourceImage = (image: HTMLImageElement): HTMLImageElement => {
+    if (image.naturalWidth <= MAX_SOURCE_DIMENSION && image.naturalHeight <= MAX_SOURCE_DIMENSION) return image;
+    const scale = Math.min(MAX_SOURCE_DIMENSION / image.naturalWidth, MAX_SOURCE_DIMENSION / image.naturalHeight);
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    c.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const ctx = c.getContext("2d");
+    if (!ctx) return image;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(image, 0, 0, c.width, c.height);
+    const resized = new Image();
+    resized.src = c.toDataURL("image/jpeg", 0.92);
+    return resized;
+  };
+
+  const createCanvas = (image: HTMLImageElement, doc: Doc, position: CropPosition): HTMLCanvasElement => {
+    const c = document.createElement("canvas");
+    c.width = doc.w; c.height = doc.h;
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("Canvas is not supported by this browser.");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    const imgRatio = image.naturalWidth / image.naturalHeight;
+    const canvasRatio = c.width / c.height;
+    let sx = 0, sy = 0, sW = image.naturalWidth, sH = image.naturalHeight;
+    if (imgRatio > canvasRatio) {
+      sH = image.naturalHeight; sW = sH * canvasRatio;
+      const maxX = image.naturalWidth - sW; sx = maxX * clamp(position.x, 0, 1);
+    } else {
+      sW = image.naturalWidth; sH = sW / canvasRatio;
+      const maxY = image.naturalHeight - sH; sy = maxY * clamp(position.y, 0, 1);
+    }
+    ctx.drawImage(image, sx, sy, sW, sH, 0, 0, c.width, c.height);
+    return c;
+  };
+
+  const canvasToBlob = (targetCanvas: HTMLCanvasElement, quality: number): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      targetCanvas.toBlob((blob) => resolve(blob), "image/jpeg", clamp(quality, 0.05, 0.98));
+    });
+  };
+
+  const renderPreview = (c: HTMLCanvasElement) => {
+    setCanvas(c);
+    setPreview(c.toDataURL("image/jpeg", 0.9));
+    c.toBlob((blob) => { if (blob) setNewKB(Math.max(1, Math.round(blob.size / 1024))); }, "image/jpeg", 0.9);
+  };
+
+  const processImage = async (image: HTMLImageElement, doc: Doc, position = cropPosition) => {
+    setProcessing(true);
+    try {
+      const source = getSourceImage(image);
+      if (!source.complete) {
+        await new Promise<void>((resolve, reject) => {
+          source.onload = () => resolve();
+          source.onerror = () => reject(new Error("Unable to process the image."));
+        });
+      }
+      const c = createCanvas(source, doc, position);
+      renderPreview(c);
+    } catch {
+      setStatus("Unable to process this image. Please try another photo.");
+      setIsSuccess(false);
+    } finally { setProcessing(false); }
+  };
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setStatus("Please select a valid JPG, JPEG, PNG, or WebP image."); setIsSuccess(false); return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      setStatus("Image is too large. Please choose an image under 25 MB."); setIsSuccess(false); return;
+    }
+    setStatus("Processing your photo..."); setIsSuccess(false); setProcessing(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = async () => {
+        setImg(image);
+        setOrigW(image.naturalWidth); setOrigH(image.naturalHeight);
+        setOrigKB(Math.max(1, Math.round(file.size / 1024)));
+        await processImage(image, getCurrent(), cropPosition);
+        setStatus("Photo ready. Choose a document or enter your own size and KB target."); setIsSuccess(true);
+      };
+      image.onerror = () => {
+        setStatus("This image could not be opened. Please try another JPG, PNG, or WebP file."); setIsSuccess(false); setProcessing(false);
+      };
+      image.src = reader.result as string;
+    };
+    reader.onerror = () => {
+      setStatus("Unable to read this image. Please try another file."); setIsSuccess(false); setProcessing(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const selectDoc = async (idx: number) => {
+    setSel(idx); setCustomW(""); setCustomH(""); setCustomKB("");
+    const nextDoc = DOCS[idx];
+    if (img) {
+      setStatus("Applying document size..."); setIsSuccess(false);
+      await processImage(img, nextDoc, cropPosition);
+      setStatus(`${nextDoc.label} size applied successfully.`); setIsSuccess(true);
+    }
+  };
+
+  const applyCustom = async () => {
+    if (!img) { setStatus("Please upload a photo first."); setIsSuccess(false); return; }
+    const cur = getCurrent();
+    if (cur.w < MIN_DIMENSION || cur.w > MAX_DIMENSION || cur.h < MIN_DIMENSION || cur.h > MAX_DIMENSION) {
+      setStatus(`Width and height must be between ${MIN_DIMENSION} and ${MAX_DIMENSION} pixels.`); setIsSuccess(false); return;
+    }
+    if (customKB !== "" && (cur.kb < MIN_TARGET_KB || cur.kb > MAX_TARGET_KB)) {
+      setStatus(`KB target must be between ${MIN_TARGET_KB} and ${MAX_TARGET_KB} KB.`); setIsSuccess(false); return;
+    }
+    setStatus("Applying custom size..."); setIsSuccess(false);
+    await processImage(img, cur, cropPosition);
+    setStatus(`${cur.w} × ${cur.h} pixels applied${cur.kb ? ` • Target ≤ ${cur.kb} KB` : ""}.`); setIsSuccess(true);
+  };
+
+  const updateCrop = async (axis: "x" | "y", value: number) => {
+    const next = { ...cropPosition, [axis]: value };
+    setCropPosition(next);
+    if (img) await processImage(img, getCurrent(), next);
+  };
+
+  const compressToTarget = async (sourceCanvas: HTMLCanvasElement, targetKB: number): Promise<{ blob: Blob | null; canvas: HTMLCanvasElement }> => {
+    const targetBytes = targetKB * 1024;
+    let bestUnderTarget: Blob | null = null;
+    let low = 0.05; let high = 0.98;
+    for (let i = 0; i < 10; i++) {
+      const quality = (low + high) / 2;
+      const blob = await canvasToBlob(sourceCanvas, quality);
+      if (!blob) continue;
+      if (blob.size <= targetBytes) { bestUnderTarget = blob; low = quality; } else { high = quality; }
+    }
+    if (bestUnderTarget) return { blob: bestUnderTarget, canvas: sourceCanvas };
+    let workingCanvas = sourceCanvas;
+    for (let step = 0; step < 8; step++) {
+      const scale = 0.9;
+      const next = document.createElement("canvas");
+      next.width = Math.max(50, Math.floor(workingCanvas.width * scale));
+      next.height = Math.max(50, Math.floor(workingCanvas.height * scale));
+      const ctx = next.getContext("2d");
+      if (!ctx) break;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, next.width, next.height);
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(workingCanvas, 0, 0, workingCanvas.width, workingCanvas.height, 0, 0, next.width, next.height);
+      let lowQ = 0.05; let highQ = 0.95; let under: Blob | null = null;
+      for (let i = 0; i < 8; i++) {
+        const q = (lowQ + highQ) / 2;
+        const blob = await canvasToBlob(next, q);
+        if (!blob) continue;
+        if (blob.size <= targetBytes) { under = blob; lowQ = q; } else { highQ = q; }
+      }
+      if (under) return { blob: under, canvas: next };
+      workingCanvas = next;
+    }
+    const finalBlob = await canvasToBlob(workingCanvas, 0.05);
+    return { blob: finalBlob, canvas: workingCanvas };
+  };
+
+  const download = async () => {
+    if (!canvas) { setStatus("Please upload a photo first."); setIsSuccess(false); return; }
+    const s = getCurrent();
+    if (s.w < MIN_DIMENSION || s.w > MAX_DIMENSION || s.h < MIN_DIMENSION || s.h > MAX_DIMENSION) {
+      setStatus(`Width and height must be between ${MIN_DIMENSION} and ${MAX_DIMENSION} pixels.`); setIsSuccess(false); return;
+    }
+    if (s.kb > 0 && (s.kb < MIN_TARGET_KB || s.kb > MAX_TARGET_KB)) {
+      setStatus(`KB target must be between ${MIN_TARGET_KB} and ${MAX_TARGET_KB} KB.`); setIsSuccess(false); return;
+    }
+    setProcessing(true);
+    setStatus(s.kb > 0 ? `Optimizing image to stay within ${s.kb} KB...` : "Preparing your HD photo..."); setIsSuccess(false);
+    try {
+      let finalCanvas = canvas;
+      let blob: Blob | null = null;
+      if (s.kb > 0) {
+        const result = await compressToTarget(canvas, s.kb);
+        blob = result.blob; finalCanvas = result.canvas;
+      } else { blob = await canvasToBlob(canvas, 0.94); }
+      if (!blob) throw new Error("Image encoding failed.");
+      const actualKB = blob.size / 1024;
+      setNewKB(Math.max(1, Math.round(actualKB)));
+      const targetWasMet = s.kb === 0 || actualKB <= s.kb;
+      const url = URL.createObjectURL(blob);
+      const safeLabel = hasCustom ? `Custom-${s.w}x${s.h}` : s.label.replace(/[^a-zA-Z0-9]+/g, "-");
+      const fileName = `NEXORA-${safeLabel}-${finalCanvas.width}x${finalCanvas.height}${s.kb ? `-${s.kb}KB` : "-HD"}.jpg`;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isIOS) {
+        const win = window.open("", "_blank");
+        if (win) {
+          win.location.href = url;
+          setStatus(targetWasMet ? `Photo ready (${actualKB.toFixed(1)} KB). Use Share → Save to Photos.` : `Photo created at ${actualKB.toFixed(1)} KB. Use Share → Save to Photos.`);
+          setIsSuccess(true);
+        } else {
+          window.location.href = url;
+          setStatus("Photo opened. Use Share → Save to Photos."); setIsSuccess(true);
+        }
+      } else {
+        const a = document.createElement("a");
+        a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click(); a.remove();
+        setStatus(targetWasMet ? `Download complete • ${actualKB.toFixed(1)} KB` : `Download complete • ${actualKB.toFixed(1)} KB. The requested target could not be reached at the selected dimensions.`);
+        setIsSuccess(targetWasMet);
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // ✅ FIXED - gtag type error fixed
+      if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
+        (window as any).gtag("event", "passport_photo_download", {
+          event_category: "Image Tools",
+          event_label: s.label,
+          target_kb: s.kb || undefined,
+          output_width: finalCanvas.width,
+          output_height: finalCanvas.height,
+          output_kb: Number(actualKB.toFixed(1)),
+        });
+      }
+    } catch {
+      setStatus("Unable to create the photo. Please try again with another image."); setIsSuccess(false);
+    } finally { setProcessing(false); }
+  };
+
+  const clearAll = () => {
+    setImg(null); setPreview(""); setStatus(""); setIsSuccess(false);
+    setCustomW(""); setCustomH(""); setCustomKB(""); setSel(0);
+    setCanvas(null); setOrigW(0); setOrigH(0); setOrigKB(0); setNewKB(0);
+    setCropPosition({ x: 0.5, y: 0.5 });
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const cur = getCurrent();
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <a
-            href="/"
-            className="text-xl font-black tracking-tight"
-          >
-            NEXORA
-          </a>
-
-          <nav className="flex items-center gap-5 text-sm font-semibold text-slate-600">
-            <a
-              href="/"
-              className="transition hover:text-slate-950"
-            >
-              Home
-            </a>
-
-            <a
-              href="/#tools"
-              className="transition hover:text-slate-950"
-            >
-              All Tools
-            </a>
+    <div style={{ fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif", background: "#ffffff", color: "#0f172a", minHeight: "100vh", colorScheme: "light" }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #eef2f7", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <a href="/" style={{ fontSize: 24, fontWeight: 900, color: "#2563eb", textDecoration: "none" }}>NEXORA</a>
+          <nav style={{ display: "flex", gap: 20, fontSize: 14, fontWeight: 600 }}>
+            <a href="/" style={{ color: "#0f172a", textDecoration: "none" }}>Home</a>
+            <a href="/" style={{ color: "#0f172a", textDecoration: "none" }}>All Tools</a>
           </nav>
         </div>
       </header>
-
-      {/* HERO */}
-      <section className="px-4 pb-8 pt-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-4 inline-flex rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700">
-            FREE • PRIVATE • BROWSER-BASED
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "7px 12px", borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: "0.3px", whiteSpace: "nowrap" }}>✦ FREE • HD • NO WATERMARK • PRIVATE</span>
           </div>
-
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
-            Passport Photo Maker
-          </h1>
-
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            Create passport, visa and document photos
-            in the correct size. Keep your original
-            background or replace it with a color.
-          </p>
+          <h1 style={{ fontSize: 36, margin: "12px 0 6px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>Passport Photo<br />Maker</h1>
+          <p style={{ color: "#64748b", fontSize: 14, margin: 0, lineHeight: 1.5 }}>Create passport, visa, ID and application photos with custom dimensions and KB targets.</p>
         </div>
-      </section>
-
-      {/* MAIN */}
-      <section className="px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          {/* UPLOAD */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            <label
-              htmlFor="passport-file"
-              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-12 text-center transition hover:border-blue-400 hover:bg-blue-50/30"
-            >
-              <div className="mb-4 text-5xl">
-                📷
-              </div>
-
-              <h2 className="text-xl font-extrabold">
-                Upload Your Photo
-              </h2>
-
-              <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                JPG, JPEG, PNG or WebP. Maximum file size:
-                25MB.
-              </p>
-
-              <span className="mt-5 rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white">
-                Choose Photo
-              </span>
-            </label>
-
-            <input
-              id="passport-file"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/jpg"
-              className="hidden"
-              onChange={(e) => {
-                const file =
-                  e.target.files?.[0];
-
-                if (file) {
-                  void handleFile(
-                    file
-                  );
-                }
-              }}
-            />
-
-            {img && (
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
-                  <span>
-                    Original:{" "}
-                    {origW} × {origH}px
-                  </span>
-
-                  <span>
-                    File size:{" "}
-                    {origKB}KB
-                  </span>
-
-                  {preview && (
-                    <span>
-                      Output preview:{" "}
-                      {newKB}KB
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 8px", textAlign: "center" }}>Upload Your Photo</p>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
+          <div role="button" tabIndex={0} aria-label="Upload photo" onClick={() => fileRef.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }} style={{ border: "1.5px dashed #cbd5e1", borderRadius: 12, padding: 14, textAlign: "center", cursor: "pointer", background: "#fff" }}>
+            <div style={{ fontSize: 24 }}>📸</div>
+            <p style={{ fontWeight: 700, margin: "4px 0 2px", fontSize: 14 }}>{preview ? "Tap to Replace Your Photo" : "Tap to Upload a Photo"}</p>
+            <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>JPG, PNG or WebP • Processed in your browser</p>
           </div>
-
-          {img && (
+          <p style={{ fontWeight: 800, fontSize: 12, margin: "14px 0 6px" }}>Choose a Document Size</p>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
+            {DOCS.map((s, i) => {
+              const isActive = sel === i && !hasCustom;
+              return (
+                <button key={`${s.label}-${i}`} onClick={() => selectDoc(i)} type="button" style={{ padding: "7px 9px", borderRadius: 9, border: isActive ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: isActive ? "#fff7ed" : "#fff", color: isActive ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 11, lineHeight: 1.3, textAlign: "left", whiteSpace: "nowrap", flexShrink: 0 }}>{s.label}<br /><span style={{ fontSize: 9, fontWeight: 600, color: "#64748b" }}>{s.sub}</span></button>
+              );
+            })}
+          </div>
+          <p style={{ fontWeight: 800, fontSize: 12, margin: "10px 0 6px" }}>Custom Width / Height / KB</p>
+          <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 10, padding: 9 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" inputMode="numeric" min={MIN_DIMENSION} max={MAX_DIMENSION} value={customW} onChange={(e) => setCustomW(e.target.value)} placeholder={`W • ${DOCS[sel].w}`} aria-label="Custom width" style={{ flex: 1, padding: "9px 8px", borderRadius: 8, border: "1.5px solid #2563eb", fontSize: 13, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", minWidth: 0 }} />
+              <div style={{ display: "flex", alignItems: "center", fontWeight: 800, color: "#94a3b8", fontSize: 13 }}>×</div>
+              <input type="number" inputMode="numeric" min={MIN_DIMENSION} max={MAX_DIMENSION} value={customH} onChange={(e) => setCustomH(e.target.value)} placeholder={`H • ${DOCS[sel].h}`} aria-label="Custom height" style={{ flex: 1, padding: "9px 8px", borderRadius: 8, border: "1.5px solid #2563eb", fontSize: 13, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", minWidth: 0 }} />
+              <input type="number" inputMode="numeric" min={MIN_TARGET_KB} max={MAX_TARGET_KB} value={customKB} onChange={(e) => setCustomKB(e.target.value)} placeholder={DOCS[sel].kb ? `${DOCS[sel].kb} KB` : "KB target"} aria-label="Target file size in KB" style={{ flex: 1, padding: "9px 8px", borderRadius: 8, border: "1.5px solid #f97316", fontSize: 13, fontWeight: 700, outline: "none", background: "#fff", color: "#0f172a", minWidth: 0 }} />
+            </div>
+            <p style={{ fontSize: 10, color: "#64748b", margin: "7px 2px 0", lineHeight: 1.4 }}>Width/height: {MIN_DIMENSION}–{MAX_DIMENSION}px • KB target: {MIN_TARGET_KB}–{MAX_TARGET_KB} KB</p>
+            {img && <button onClick={applyCustom} type="button" disabled={processing} style={{ width: "100%", padding: 9, marginTop: 8, background: "#0f172a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 800, cursor: processing ? "not-allowed" : "pointer", fontSize: 12, opacity: processing ? 0.6 : 1 }}>Apply Custom Settings →</button>}
+          </div>
+          {preview && (
             <>
-              {/* DOCUMENT PRESETS */}
-              <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <div className="mb-4">
-                  <h2 className="text-lg font-extrabold">
-                    Choose Document Size
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Select the required passport, visa or
-                    document format.
-                  </p>
-                </div>
-
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {DOCS.map(
-                    (doc) => (
-                      <button
-                        key={
-                          doc.id
-                        }
-                        type="button"
-                        onClick={() =>
-                          selectDoc(
-                            doc.id
-                          )
-                        }
-                        disabled={
-                          processing
-                        }
-                        className={`min-w-[190px] rounded-2xl border p-4 text-left transition ${
-                          sel ===
-                          doc.id
-                            ? "border-blue-500 bg-blue-50 shadow-sm"
-                            : "border-slate-200 bg-white hover:border-slate-300"
-                        } disabled:cursor-not-allowed disabled:opacity-60`}
-                      >
-                        <div className="text-sm font-extrabold">
-                          {
-                            doc.name
-                          }
-                        </div>
-
-                        <div className="mt-1 text-xs text-slate-500">
-                          {
-                            doc.size
-                          }
-                        </div>
-                      </button>
-                    )
-                  )}
+              <div style={{ marginTop: 16, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 12, textAlign: "center" }}>
+                <p style={{ fontWeight: 800, fontSize: 13, margin: "0 0 8px" }}>Photo Preview</p>
+                <img src={preview} alt={`Passport photo preview for ${cur.label}`} style={{ width: "100%", maxWidth: 280, maxHeight: 320, borderRadius: 10, objectFit: "contain", background: "#fff", border: "1px solid #e2e8f0" }} />
+                <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: 10, textAlign: "center" }}>
+                  <div style={{ fontSize: 12, color: "#475569" }}>Original: <b style={{ color: "#0f172a" }}>{origW} × {origH} • {origKB} KB</b></div>
+                  <div style={{ fontSize: 18, color: "#16a34a", lineHeight: 1.2 }}>↓</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#15803d" }}>Output: {cur.w} × {cur.h} • {cur.kb ? `Target ≤ ${cur.kb} KB` : `${newKB || "—"} KB`}</div>
                 </div>
               </div>
-
-              {/* CUSTOM SIZE */}
-              <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <h2 className="text-lg font-extrabold">
-                  Custom Size
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Enter your own output dimensions and
-                  optional maximum file size.
-                </p>
-
-                <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-2 block text-xs font-bold text-slate-600">
-                      Width (px)
-                    </label>
-
-                    <input
-                      type="number"
-                      min={
-                        MIN_DIMENSION
-                      }
-                      max={
-                        MAX_DIMENSION
-                      }
-                      value={
-                        customW
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        setCustomW(
-                          e.target
-                            .value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-                      placeholder="e.g. 413"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-bold text-slate-600">
-                      Height (px)
-                    </label>
-
-                    <input
-                      type="number"
-                      min={
-                        MIN_DIMENSION
-                      }
-                      max={
-                        MAX_DIMENSION
-                      }
-                      value={
-                        customH
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        setCustomH(
-                          e.target
-                            .value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-                      placeholder="e.g. 531"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-bold text-slate-600">
-                      Maximum Size (KB)
-                    </label>
-
-                    <input
-                      type="number"
-                      min={
-                        MIN_TARGET_KB
-                      }
-                      max={
-                        MAX_TARGET_KB
-                      }
-                      value={
-                        customKB
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        setCustomKB(
-                          e.target
-                            .value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-                      placeholder="Optional"
-                    />
-                  </div>
+              <div style={{ marginTop: 12, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 12 }}>
+                <p style={{ fontWeight: 800, fontSize: 12, margin: "0 0 8px" }}>Adjust Crop Position</p>
+                <p style={{ fontSize: 10, color: "#64748b", margin: "0 0 10px" }}>Move the image if the face or shoulders are not centered.</p>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Horizontal</label>
+                <input type="range" min="0" max="1" step="0.01" value={cropPosition.x} onChange={(e) => updateCrop("x", Number(e.target.value))} style={{ width: "100%" }} />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, margin: "10px 0 4px" }}>Vertical</label>
+                <input type="range" min="0" max="1" step="0.01" value={cropPosition.y} onChange={(e) => updateCrop("y", Number(e.target.value))} style={{ width: "100%" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 9, color: "#94a3b8" }}>
+                  <span>Left / Top</span>
+                  <button type="button" onClick={() => { setCropPosition({ x: 0.5, y: 0.5 }); if (img) processImage(img, getCurrent(), { x: 0.5, y: 0.5 }); }} style={{ border: "none", background: "transparent", color: "#2563eb", fontWeight: 800, cursor: "pointer", fontSize: 10 }}>Reset Crop</button>
+                  <span>Right / Bottom</span>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={
-                    applyCustom
-                  }
-                  disabled={
-                    processing
-                  }
-                  className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
-                >
-                  Apply Custom Size
-                </button>
-              </div>
-
-              {/* BACKGROUND */}
-              <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <div className="mb-5">
-                  <h2 className="text-lg font-extrabold">
-                    Background
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Keep the real background or replace it
-                    with a color.
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void updateBackgroundMode(
-                        "original"
-                      )
-                    }
-                    disabled={
-                      processing
-                    }
-                    className={`rounded-2xl border p-5 text-left transition ${
-                      backgroundMode ===
-                      "original"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-slate-200 hover:border-slate-300"
-                    } disabled:opacity-60`}
-                  >
-                    <div className="text-base font-extrabold">
-                      Original Background
-                    </div>
-
-                    <div className="mt-1 text-sm text-slate-500">
-                      Keep the actual background from your
-                      uploaded photo.
-                    </div>
-
-                    <div className="mt-3 text-xs font-bold text-blue-600">
-                      Size and crop will still be changed.
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void updateBackgroundMode(
-                        "color"
-                      )
-                    }
-                    disabled={
-                      processing
-                    }
-                    className={`rounded-2xl border p-5 text-left transition ${
-                      backgroundMode ===
-                      "color"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-slate-200 hover:border-slate-300"
-                    } disabled:opacity-60`}
-                  >
-                    <div className="text-base font-extrabold">
-                      Color Background
-                    </div>
-
-                    <div className="mt-1 text-sm text-slate-500">
-                      Remove the original background and
-                      apply a selected color.
-                    </div>
-
-                    <div className="mt-3 text-xs font-bold text-blue-600">
-                      Automatic background separation.
-                    </div>
-                  </button>
-                </div>
-
-                {backgroundMode ===
-                  "color" && (
-                  <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-3 text-sm font-extrabold">
-                      Choose Background Color
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      {COLORS.map(
-                        (color) => (
-                          <button
-                            key={
-                              color.value
-                            }
-                            type="button"
-                            onClick={() =>
-                              void updateBackgroundColor(
-                                color.value
-                              )
-                            }
-                            disabled={
-                              processing
-                            }
-                            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition ${
-                              backgroundColor ===
-                              color.value
-                                ? "border-blue-500 ring-2 ring-blue-100"
-                                : "border-slate-300"
-                            } disabled:opacity-50`}
-                          >
-                            <span
-                              className="h-5 w-5 rounded-full border border-slate-300"
-                              style={{
-                                backgroundColor:
-                                  color.value,
-                              }}
-                            />
-
-                            {
-                              color.name
-                            }
-                          </button>
-                        )
-                      )}
-
-                      <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold">
-                        <span>
-                          Custom
-                        </span>
-
-                        <input
-                          type="color"
-                          value={
-                            backgroundColor
-                          }
-                          onChange={(
-                            e
-                          ) =>
-                            void updateBackgroundColor(
-                              e.target
-                                .value
-                            )
-                          }
-                          className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* PREVIEW + CROP */}
-              <div className="mt-6 grid gap-6 lg:grid-cols-2">
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                  <div className="mb-4">
-                    <h2 className="text-lg font-extrabold">
-                      Preview
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Your final document photo preview.
-                    </p>
-                  </div>
-
-                  <div className="flex min-h-[420px] items-center justify-center rounded-2xl bg-slate-100 p-6">
-                    {preview ? (
-                      <img
-                        src={
-                          preview
-                        }
-                        alt="Passport photo preview"
-                        className="max-h-[520px] max-w-full rounded-lg object-contain shadow-xl"
-                      />
-                    ) : (
-                      <div className="text-center text-sm text-slate-400">
-                        Preview will appear here.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                  <h2 className="text-lg font-extrabold">
-                    Crop Position
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Adjust the position of the photo inside
-                    the selected document size.
-                  </p>
-
-                  <div className="mt-8">
-                    <label className="mb-2 flex justify-between text-xs font-bold text-slate-600">
-                      <span>
-                        Horizontal Position
-                      </span>
-
-                      <span>
-                        {Math.round(
-                          cropPosition.x *
-                            100
-                        )}
-                        %
-                      </span>
-                    </label>
-
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={
-                        cropPosition.x
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        updateCrop(
-                          "x",
-                          Number(
-                            e.target
-                              .value
-                          )
-                        )
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="mt-8">
-                    <label className="mb-2 flex justify-between text-xs font-bold text-slate-600">
-                      <span>
-                        Vertical Position
-                      </span>
-
-                      <span>
-                        {Math.round(
-                          cropPosition.y *
-                            100
-                        )}
-                        %
-                      </span>
-                    </label>
-
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={
-                        cropPosition.y
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        updateCrop(
-                          "y",
-                          Number(
-                            e.target
-                              .value
-                          )
-                        )
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="mt-8 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <div className="font-bold text-slate-900">
-                      Output
-                    </div>
-
-                    <div className="mt-2">
-                      {
-                        getCurrent()
-                          .width
-                      }{" "}
-                      ×{" "}
-                      {
-                        getCurrent()
-                          .height
-                      }
-                      px
-                    </div>
-
-                    {getCurrent()
-                      .kb && (
-                      <div className="mt-1">
-                        Maximum file size:{" "}
-                        {
-                          getCurrent()
-                            .kb
-                        }
-                        KB
-                      </div>
-                    )}
-
-                    <div className="mt-1">
-                      Background:{" "}
-                      {backgroundMode ===
-                      "original"
-                        ? "Original"
-                        : "Color"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* STATUS */}
-              {(status ||
-                processing) && (
-                <div
-                  className={`mt-6 rounded-2xl border p-4 text-sm font-semibold ${
-                    isSuccess
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-blue-200 bg-blue-50 text-blue-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {processing && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-                    )}
-
-                    <span>
-                      {status ||
-                        "Processing…"}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* ACTIONS */}
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={
-                    download
-                  }
-                  disabled={
-                    processing ||
-                    !preview
-                  }
-                  className="flex-1 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-sm font-extrabold text-white shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {processing
-                    ? "Processing…"
-                    : "Download Passport Photo"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={
-                    clearAll
-                  }
-                  disabled={
-                    processing
-                  }
-                  className="rounded-2xl border border-slate-300 bg-white px-6 py-4 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Clear
-                </button>
-              </div>
-
-              {/* PRIVACY */}
-              <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-4 text-center text-xs font-semibold leading-6 text-green-700">
-                🔒 Your photo is processed in your browser.
-                No NEXORA account is required.
               </div>
             </>
           )}
-        </div>
-      </section>
-
-      {/* INFORMATION */}
-      <section className="border-t border-slate-200 bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-black">
-            Free Passport Photo Maker
-          </h2>
-
-          <div className="mt-6 space-y-5 text-sm leading-7 text-slate-600">
-            <p>
-              NEXORA Passport Photo Maker helps you create
-              passport, visa, ID and document photos in
-              commonly required dimensions. Select a
-              predefined format or enter your own width,
-              height and maximum file size.
-            </p>
-
-            <p>
-              Use Original Background when you want to keep
-              the actual background from your uploaded photo.
-              Use Color Background when you want to remove
-              the original background and apply a new color.
-            </p>
-
-            <p>
-              The tool processes photos directly in your
-              browser and does not require an account.
-            </p>
+          {status && <p role="status" style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "9px 10px", borderRadius: 9, fontSize: 13, margin: "12px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <button onClick={download} disabled={!preview || processing} type="button" style={{ flex: 1, padding: 14, background: "#f97316", color: "#fff", border: "none", borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: !preview || processing ? "not-allowed" : "pointer", opacity: !preview || processing ? 0.5 : 1 }}>{processing ? "Processing..." : `Download ${cur.label} →`}</button>
+            <button onClick={clearAll} type="button" style={{ padding: "13px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 11, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Clear</button>
           </div>
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <div className="text-2xl">
-                📐
-              </div>
-
-              <h3 className="mt-3 font-extrabold">
-                Correct Dimensions
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Create photos using predefined document
-                dimensions or your own custom size.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <div className="text-2xl">
-                🎨
-              </div>
-
-              <h3 className="mt-3 font-extrabold">
-                Background Options
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Keep the original background or replace it
-                with a selected color.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <div className="text-2xl">
-                🔒
-              </div>
-
-              <h3 className="mt-3 font-extrabold">
-                Browser-Based
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Process your photo directly in your browser
-                without creating an account.
-              </p>
-            </div>
+          <p style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", margin: "8px 0 0", fontWeight: 700 }}>🔒 Your photo is processed in your browser and is not uploaded by this tool.</p>
+        </div>
+        <div style={{ height: 18 }} />
+        <a href="/image-dpi-changer" style={{ display: "block", background: "#ecfdf5", border: "1px solid #86efac", borderRadius: 10, padding: "10px 12px", textDecoration: "none", fontSize: 13, color: "#15803d", fontWeight: 700, textAlign: "center" }}>Need to change photo DPI? <span style={{ color: "#16a34a", textDecoration: "underline" }}>Open DPI Changer</span> →</a>
+        <div style={{ height: 30 }} />
+        <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
+          <b>💡 Quick Tip</b>
+          <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.7 }}>This free tool can create passport, visa, ID and application photos with custom pixel dimensions and file-size targets.</p>
+        </div>
+        <div style={{ height: 30 }} />
+        <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
+          <h2 style={{ fontSize: 21 }}>Common Passport & Application Photo Sizes</h2>
+          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Passport & Visa:</b> India 413 × 531 pixels, USA 600 × 600 pixels, and several 35 × 45 mm formats are included.<br /><b>SSC / Railway / IBPS:</b> 200 × 230 pixels with a 20 KB target preset.<br /><b>UPSC / Bank:</b> 300 × 350 pixels with a 50 KB target preset.<br /><b>PAN:</b> 400 × 300 pixels • <b>Aadhaar / Voter ID:</b> 300 × 400 pixels • <b>Driving License:</b> 300 × 350 pixels.<br /><br /><strong>Always verify the latest photo dimensions and file-size requirements on the official application or authority website before submitting.</strong></p>
+          <h2 style={{ fontSize: 21, marginTop: 26 }}>How to Use the Passport Photo Maker</h2>
+          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Step 1:</b> Upload your photo.<br /><b>Step 2:</b> Select Passport, Visa, SSC 20 KB, UPSC 50 KB, or another available preset.<br /><b>Step 3:</b> If required, enter your own width, height and KB target.<br /><b>Step 4:</b> Adjust the crop position if necessary.<br /><b>Step 5:</b> Download your JPEG photo.</p>
+          <h2 style={{ fontSize: 21, marginTop: 26 }}>Why Use NEXORA?</h2>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 10 }}><tbody>
+            <tr><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc", textAlign: "left" }}>Feature</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>NEXORA</th><th style={{ border: "1px solid #eef2f7", padding: 8, background: "#f8fafc" }}>Benefit</th></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Document presets</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>25 presets</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Faster setup</td></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Custom dimensions</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Yes</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Flexible output</td></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>KB target</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>≤ target</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Better control</td></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Watermark</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>None</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Clean output</td></tr>
+            <tr><td style={{ border: "1px solid #eef2f7", padding: 8 }}>Browser processing</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Yes</td><td style={{ border: "1px solid #eef2f7", padding: 8, textAlign: "center" }}>Photo stays on device</td></tr>
+          </tbody></table>
+          <h2 style={{ fontSize: 21, marginTop: 26 }}>Frequently Asked Questions</h2>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>How can I make a 20 KB photo?</summary><p style={{ color: "#475569", lineHeight: 1.7 }}>Select the SSC, IBPS or Railway 20 KB preset, or enter 20 in the KB field. The tool compresses the JPEG to stay at or below the target whenever the selected dimensions allow it.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>How can I make a 50 KB photo?</summary><p style={{ color: "#475569", lineHeight: 1.7 }}>Select the UPSC or Bank Form preset, or enter 50 in the KB field. The compressor automatically optimizes the JPEG.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Can I enter my own photo size?</summary><p style={{ color: "#475569", lineHeight: 1.7 }}>Yes. Enter your required width and height in pixels. You can also enter a maximum KB target.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Can I move the crop?</summary><p style={{ color: "#475569", lineHeight: 1.7 }}>Yes. Use the horizontal and vertical crop controls below the preview to reposition the image before downloading.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Is my photo uploaded to a server?</summary><p style={{ color: "#475569", lineHeight: 1.7 }}>No. The image processing in this tool happens in your browser. The photo itself is not uploaded by the tool.</p></details>
+          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Does this tool automatically remove the background?</summary><p style={{ color: "#475569", lineHeight: 1.7 }}>No. This tool creates the requested photo dimensions and preserves the uploaded image. It does not automatically remove or replace the original background.</p></details>
+          <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+            <a href="/image-dpi-changer" style={{ flex: 1, textAlign: "center", padding: 14, background: "#0f172a", color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 700 }}>Open DPI Changer →</a>
           </div>
         </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-black">
-            Frequently Asked Questions
-          </h2>
-
-          <div className="mt-8 space-y-4">
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
-              <summary className="cursor-pointer font-extrabold">
-                Can I keep my original background?
-              </summary>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Yes. Select Original Background. The actual
-                background of your uploaded photo remains
-                unchanged while the image is resized and
-                cropped.
-              </p>
-            </details>
-
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
-              <summary className="cursor-pointer font-extrabold">
-                Can I change the background color?
-              </summary>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Yes. Select Color Background and choose
-                white, blue, red, green, black or a custom
-                color. The original background is removed
-                before the new color is applied.
-              </p>
-            </details>
-
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
-              <summary className="cursor-pointer font-extrabold">
-                Does it work on iPhone and iPad?
-              </summary>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Yes. On supported iPhone and iPad browsers,
-                the tool uses the native Share Sheet so you
-                can save the generated photo to Photos.
-              </p>
-            </details>
-
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
-              <summary className="cursor-pointer font-extrabold">
-                Can I set a maximum file size?
-              </summary>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Yes. You can enter a maximum file size in KB.
-                The tool compresses the generated JPEG to try
-                to stay below the selected limit.
-              </p>
-            </details>
-
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
-              <summary className="cursor-pointer font-extrabold">
-                Are my photos uploaded to NEXORA?
-              </summary>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                The photo processing is performed in your
-                browser. No NEXORA account is required.
-              </p>
-            </details>
-          </div>
+        <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", margin: "30px 0 10px", lineHeight: 1.6 }}>By <b style={{ color: "#0f172a" }}>Ayush Chauhan</b> • Tool: NEXORA<br />Last Updated: 15 Nov 2026 • Free & Private</p>
+      </main>
+      <div style={{ background: "#f8fafc", borderTop: "1px solid #eef2f7", padding: "16px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
+        <div style={{ display: "inline-block", animation: "nexoraLoop 18s linear infinite", fontSize: 14, fontWeight: 700, color: "#2563eb" }}>
+          <span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ DPI Changer 10–1200</span><span style={{ padding: "0 18px" }}>✦ Image Compressor</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ DPI Changer 10–1200</span><span style={{ padding: "0 18px" }}>✦ Image Compressor</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-white px-4 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 text-center text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <div>
-            ©{" "}
-            {new Date().getFullYear()}{" "}
-            NEXORA. Free online tools for everyone.
-          </div>
-
-          <a
-            href="/dpi-changer"
-            className="font-bold text-blue-600 hover:text-blue-700"
-          >
-            Image DPI Changer
-          </a>
-        </div>
+        <style>{`@keyframes nexoraLoop { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+      </div>
+      <footer style={{ background: "#0f172a", color: "#cbd5e1", padding: "20px 16px", textAlign: "center", fontSize: 13 }}>
+        <b style={{ color: "#fff", fontSize: 16 }}>NEXORA</b>
+        <p style={{ margin: "6px 0 0" }}>Free Tools. Simple Solutions. • <a href="/about" style={{ color: "#cbd5e1" }}>About</a> • <a href="/privacy-policy" style={{ color: "#cbd5e1" }}>Privacy</a> • <a href="/contact" style={{ color: "#cbd5e1" }}>Contact</a></p>
       </footer>
-    </main>
+    </div>
   );
 }
