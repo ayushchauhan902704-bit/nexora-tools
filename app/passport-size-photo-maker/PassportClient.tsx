@@ -1,8 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
 
-export const dynamic = "force-dynamic";
-
 type Doc = { label: string; sub: string; w: number; h: number; kb: number };
 
 const DOCS: Doc[] = [
@@ -51,7 +49,6 @@ export default function PassportClient() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const hasCustom = customW !== "" || customH !== "" || customKB !== "";
-
   const getCurrent = (): Doc => {
     const d = DOCS[sel];
     const w = customW ? parseInt(customW) : d.w;
@@ -65,11 +62,12 @@ export default function PassportClient() {
     c.width = doc.w; c.height = doc.h;
     const ctx = c.getContext("2d")!;
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
-    const imgRatio = image.width / image.height;
-    const canvasRatio = c.width / c.height;
-    let sx = 0, sy = 0, sW = image.width, sH = image.height;
-    if (imgRatio > canvasRatio) { sH = image.height; sW = sH * canvasRatio; sx = (image.width - sW) / 2; }
-    else { sW = image.width; sH = sW / canvasRatio; sy = (image.height - sH) / 2; }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    const iw = image.naturalWidth || image.width, ih = image.naturalHeight || image.height;
+    const imgRatio = iw / ih, canvasRatio = c.width / c.height;
+    let sx = 0, sy = 0, sW = iw, sH = ih;
+    if (imgRatio > canvasRatio) { sH = ih; sW = sH * canvasRatio; sx = (iw - sW) / 2; }
+    else { sW = iw; sH = sW / canvasRatio; sy = (ih - sH) / 2; }
     ctx.drawImage(image, sx, sy, sW, sH, 0, 0, c.width, c.height);
     setCanvas(c);
     setPreview(c.toDataURL("image/jpeg", 0.9));
@@ -78,6 +76,7 @@ export default function PassportClient() {
 
   const handleFile = (file: File | undefined) => {
     if (!file) return;
+    if (!file.type.startsWith("image/")) { setStatus("JPG / PNG photo lo."); setIsSuccess(false); return; }
     setStatus("Photo load ho rahi hai..."); setIsSuccess(false); setProcessing(true);
     const reader = new FileReader();
     reader.onload = () => {
@@ -94,11 +93,7 @@ export default function PassportClient() {
     reader.readAsDataURL(file);
   };
 
-  const selectDoc = (idx: number) => {
-    setSel(idx); setCustomW(""); setCustomH(""); setCustomKB("");
-    if (img) processImage(img, DOCS[idx]);
-  };
-
+  const selectDoc = (idx: number) => { setSel(idx); setCustomW(""); setCustomH(""); setCustomKB(""); if (img) processImage(img, DOCS[idx]); };
   const applyCustom = () => {
     if (!img) { setStatus("Pehle photo upload karo."); setIsSuccess(false); return; }
     const cur = getCurrent();
@@ -107,46 +102,75 @@ export default function PassportClient() {
     setStatus(`Size badal gaya - ${cur.w}x${cur.h} ${cur.kb ? `• ${cur.kb}KB target` : "• HD"}`); setIsSuccess(true);
   };
 
+  const toBlob = (c: HTMLCanvasElement, q: number) => new Promise<Blob | null>(res => c.toBlob(res, "image/jpeg", q));
+
+  // ✅ KB FIX - ab exact KB ke andar aayega
+  const compressExact = async (src: HTMLCanvasElement, targetKB: number) => {
+    const target = targetKB * 1024;
+    let best: Blob | null = null, lo = 0.05, hi = 0.98;
+    for (let i = 0; i < 10; i++) {
+      const q = (lo + hi) / 2;
+      const b = await toBlob(src, q);
+      if (!b) continue;
+      if (b.size <= target) { best = b; lo = q; } else hi = q;
+    }
+    if (best) return { blob: best, canvas: src };
+    let w = src;
+    for (let s = 0; s < 6; s++) {
+      const n = document.createElement("canvas");
+      n.width = Math.max(50, Math.floor(w.width * 0.9)); n.height = Math.max(50, Math.floor(w.height * 0.9));
+      const ctx = n.getContext("2d")!; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, n.width, n.height);
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(w, 0, 0, w.width, w.height, 0, 0, n.width, n.height);
+      let lq = 0.05, hq = 0.95, under: Blob | null = null;
+      for (let i = 0; i < 8; i++) {
+        const q = (lq + hq) / 2; const b = await toBlob(n, q);
+        if (!b) continue;
+        if (b.size <= target) { under = b; lq = q; } else hq = q;
+      }
+      if (under) return { blob: under, canvas: n };
+      w = n;
+    }
+    return { blob: await toBlob(w, 0.05), canvas: w };
+  };
+
   const download = async () => {
     if (!canvas) { setStatus("Pehle photo upload karo."); setIsSuccess(false); return; }
     const s = getCurrent();
-    setStatus("Bana raha hu..."); setIsSuccess(false);
-    let finalCanvas = canvas;
-    let blob: Blob | null = null;
-    const toBlob = (c: HTMLCanvasElement, q: number) => new Promise<Blob | null>(res => c.toBlob(res, "image/jpeg", q));
-    if (s.kb > 0) {
-      for (let q = 0.9; q >= 0.1; q -= 0.1) {
-        blob = await toBlob(finalCanvas, q);
-        if (blob && blob.size / 1024 <= s.kb * 1.2) break;
+    setStatus("Bana raha hu..."); setIsSuccess(false); setProcessing(true);
+    try {
+      let finalCanvas = canvas, blob: Blob | null = null;
+      if (s.kb > 0) { const r = await compressExact(canvas, s.kb); blob = r.blob; finalCanvas = r.canvas; }
+      else blob = await toBlob(finalCanvas, 0.92);
+      if (!blob) return;
+      setNewKB(Math.round(blob.size / 1024));
+      const url = URL.createObjectURL(blob);
+      const safeLabel = hasCustom ? `Custom-${s.w}x${s.h}` : s.label.replace(/[^a-zA-Z0-9]+/g, "-");
+      const fileName = `NEXORA-${safeLabel}-${finalCanvas.width}x${finalCanvas.height}${s.kb ? "-" + s.kb + "KB" : "-HD"}.jpg`;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isIOS && typeof (navigator as any).share === "function") {
+        try {
+          const f = new File([blob], fileName, { type: "image/jpeg" });
+          if ((navigator as any).canShare({ files: [f] })) { await (navigator as any).share({ files: [f], title: "NEXORA Passport Photo" }); setStatus(`Ho gaya • ${(blob.size / 1024).toFixed(1)}KB`); setIsSuccess(true); }
+          else throw new Error("no-share");
+        } catch (e: any) {
+          if (e?.name !== "AbortError") { const win = window.open("", "_blank"); if (win) { win.location.href = url; setStatus("New Tab khula hai - Share dabake Save to Photos karo."); setIsSuccess(true); } }
+        }
+      } else {
+        const a = document.createElement("a"); a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click(); a.remove();
+        setStatus(`Download ho gaya - ${(blob.size / 1024).toFixed(1)}KB`); setIsSuccess(true);
       }
-      if (blob && blob.size / 1024 > s.kb * 1.5) {
-        const smaller = document.createElement("canvas");
-        smaller.width = Math.floor(finalCanvas.width * 0.8); smaller.height = Math.floor(finalCanvas.height * 0.8);
-        const sctx = smaller.getContext("2d")!;
-        sctx.fillStyle = "#fff"; sctx.fillRect(0, 0, smaller.width, smaller.height);
-        sctx.drawImage(finalCanvas, 0, 0, smaller.width, smaller.height);
-        finalCanvas = smaller;
-        blob = await toBlob(finalCanvas, 0.7);
-      }
-    } else { blob = await toBlob(finalCanvas, 0.9); }
-    if (!blob) return;
-    setNewKB(Math.round(blob.size / 1024));
-    const url = URL.createObjectURL(blob);
-    const safeLabel = hasCustom ? `Custom-${s.w}x${s.h}` : s.label.replace(/[^a-zA-Z0-9]+/g, "-");
-    const fileName = `NEXORA-${safeLabel}-${s.w}x${s.h}${s.kb ? "-" + s.kb + "KB" : "-HD"}.jpg`;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOS) {
-      const win = window.open("about:blank", "_blank");
-      if (win) { win.location.href = url; setStatus("New Tab khula hai - Share dabake Save to Photos karo."); setIsSuccess(true); }
-      else window.location.href = url;
-    } else {
-      const a = document.createElement("a");
-      a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); a.remove();
-      setStatus(`Download ho gaya - ${fileName} (${(blob.size / 1024).toFixed(1)}KB)`); setIsSuccess(true);
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    if ((window as any).gtag) (window as any).gtag("event", "passport_photo_download", { event_category: "Image Tools", event_label: s.label });
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      if ((window as any).gtag) (window as any).gtag("event", "passport_photo_download", { event_category: "Image Tools", event_label: s.label });
+    } catch { setStatus("Download fail. Dobara try karo."); setIsSuccess(false); }
+    finally { setProcessing(false); }
+  };
+
+  const clearAll = () => {
+    setImg(null); setPreview(""); setStatus(""); setIsSuccess(false); setCustomW(""); setCustomH(""); setCustomKB("");
+    setSel(0); setCanvas(null); setOrigW(0); setOrigH(0); setOrigKB(0); setNewKB(0); setProcessing(false);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const cur = getCurrent();
@@ -162,7 +186,6 @@ export default function PassportClient() {
           </nav>
         </div>
       </header>
-
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div style={{ display: "flex", justifyContent: "center" }}>
@@ -171,7 +194,6 @@ export default function PassportClient() {
           <h1 style={{ fontSize: 36, margin: "12px 0 6px", lineHeight: 1.05, letterSpacing: "-0.5px", fontWeight: 900, background: "linear-gradient(90deg, #1d4ed8, #6d28d9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textAlign: "center" }}>Passport Photo<br />Maker</h1>
           <p style={{ color: "#64748b", fontSize: 14, margin: 0, lineHeight: 1.5 }}>Document chuno, Size likho, KB likho - Photo ready!</p>
         </div>
-
         <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
           <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 8px", textAlign: "center" }}>Apni Photo Yaha Upload Karo</p>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
@@ -180,17 +202,13 @@ export default function PassportClient() {
             <p style={{ fontWeight: 700, margin: "4px 0 2px", fontSize: 14 }}>{preview ? "Photo Badalni Hai? Dobara Tap Karo" : "Tap Karke Photo Upload Karo"}</p>
             <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>JPG, PNG • White Background Auto • 100% Private</p>
           </div>
-
           <p style={{ fontWeight: 800, fontSize: 12, margin: "14px 0 6px" }}>Kis Document Ke Liye Chahiye? 👇 Ungli se scroll karo</p>
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
             {DOCS.map((s, i) => {
               const isActive = sel === i && !hasCustom;
-              return (
-                <button key={s.label + i} onClick={() => selectDoc(i)} style={{ padding: "7px 9px", borderRadius: 9, border: isActive ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: isActive ? "#fff7ed" : "#fff", color: isActive ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 11, lineHeight: 1.3, textAlign: "left", whiteSpace: "nowrap", flexShrink: 0 }}>{s.label}<br /><span style={{ fontSize: 9, fontWeight: 600, color: "#64748b" }}>{s.sub}</span></button>
-              );
+              return <button key={s.label + i} onClick={() => selectDoc(i)} style={{ padding: "7px 9px", borderRadius: 9, border: isActive ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: isActive ? "#fff7ed" : "#fff", color: isActive ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 11, lineHeight: 1.3, textAlign: "left", whiteSpace: "nowrap", flexShrink: 0 }}>{s.label}<br /><span style={{ fontSize: 9, fontWeight: 600, color: "#64748b" }}>{s.sub}</span></button>
             })}
           </div>
-
           <p style={{ fontWeight: 800, fontSize: 12, margin: "10px 0 6px" }}>Apna Size / KB Likho (Chaaho To)</p>
           <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 10, padding: "9px" }}>
             <div style={{ display: "flex", gap: 6 }}>
@@ -201,7 +219,6 @@ export default function PassportClient() {
             </div>
             {img && <button onClick={applyCustom} style={{ width: "100%", padding: 9, marginTop: 8, background: "#0f172a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 800, cursor: "pointer", fontSize: 12 }}>Size Lagao →</button>}
           </div>
-
           {preview && (
             <div style={{ marginTop: 16, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 12, textAlign: "center" }}>
               <p style={{ fontWeight: 800, fontSize: 13, margin: "0 0 8px" }}>👇 Teri Photo Ka Preview</p>
@@ -215,29 +232,21 @@ export default function PassportClient() {
               )}
             </div>
           )}
-
           {status && <p style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "9px 10px", borderRadius: 9, fontSize: 13, margin: "12px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
-
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button onClick={download} disabled={!preview || processing} style={{ flex: 1, padding: 14, background: "#f97316", color: "#fff", border: "none", borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: (!preview || processing) ? "not-allowed" : "pointer", opacity: (!preview || processing) ? 0.5 : 1 }}>{processing ? "Bana Raha Hu..." : `Download Karo - ${cur.label} →`}</button>
-            <button onClick={() => { setImg(null); setPreview(""); setStatus(""); setCustomW(""); setCustomH(""); setCustomKB(""); setSel(0); setCanvas(null); setOrigW(0); }} style={{ padding: "13px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 11, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Clear</button>
+            <button onClick={clearAll} style={{ padding: "13px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 11, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Clear</button>
           </div>
           <p style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", margin: "8px 0 0", fontWeight: 700 }}>🔒 100% Private - Photo browser me hi banti hai</p>
         </div>
-
         <div style={{ height: 18 }}></div>
-
         <a href="/image-dpi-changer" style={{ display: "block", background: "#ecfdf5", border: "1px solid #86efac", borderRadius: 10, padding: "10px 12px", textDecoration: "none", fontSize: 13, color: "#15803d", fontWeight: 700, textAlign: "center" }}>Agar photo ki DPI kam ya jyada karni hai to <span style={{ color: "#16a34a", textDecoration: "underline" }}>DPI Changer</span> pe jao →</a>
-
         <div style={{ height: 30 }}></div>
-
         <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
           <b>💡 Earning Tip - Is Tool Se Paisa Kamao!</b>
           <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.7 }}>Studio wale passport photo ke ₹50-100 lete hai. Tu WhatsApp pe ₹20 me kisi ki bhi 20KB / 50KB / Passport photo bana de. Roz 20 photo = ₹400. Koi paisa nahi lagna, sirf ye free tool.</p>
         </div>
-
         <div style={{ height: 30 }}></div>
-
         <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
           <h2 style={{ fontSize: 21 }}>Kaun Se Document Me Kaun Sa Size Chahiye?</h2>
           <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Passport / Visa:</b> India 413x531, USA / Visa 600x600.<br /><b>SSC / Railway / IBPS:</b> 20KB photo - 200x230.<br /><b>UPSC / Bank:</b> 50KB photo - 300x350.<br /><b>PAN:</b> 400x300 • <b>Aadhar / Voter:</b> 300x400 • <b>License:</b> 300x350.<br />Form me jo size manga hai wo upar likh do, photo wahi ban jayegi.</p>
@@ -273,45 +282,5 @@ export default function PassportClient() {
         <p style={{ margin: "6px 0 0" }}>Free Tools. Simple Solutions. • <a href="/about" style={{ color: "#cbd5e1" }}>About</a> • <a href="/privacy-policy" style={{ color: "#cbd5e1" }}>Privacy</a> • <a href="/contact" style={{ color: "#cbd5e1" }}>Contact</a></p>
       </footer>
     </div>
-  );
-2nd
-import type { Metadata } from "next";
-import PassportClient from "./PassportClient";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-export const metadata: Metadata = {
-  title: "Passport Photo Maker - 20KB, 50KB, 3.5x4.5cm, Visa 2x2 Free | NEXORA",
-  description: "Passport photo maker - 20KB, 50KB, 3.5x4.5cm, Visa 2x2, PAN, Aadhar photo banao 1 sec me. Apna size aur KB bhi likh sakte ho. Free, HD, No Watermark, 100% Private.",
-  keywords: ["passport photo maker", "passport size photo kaise banaye", "20kb photo kaise banaye", "50kb photo kaise banaye", "passport photo 20kb", "visa photo maker", "ssc photo 20kb", "upsc photo 50kb", "pan card photo size", "aadhar photo size"],
-  authors: [{ name: "Ayush Chauhan" }],
-  robots: "index, follow, max-image-preview:large",
-  alternates: { canonical: "https://nexora-tools.com/passport-photo-maker" },
-  openGraph: {
-    title: "Passport Photo Maker - 20KB, 50KB, Visa, PAN Free | NEXORA",
-    description: "Document chuno, size likho, KB likho - Photo ready! Free, HD, No Watermark.",
-    url: "https://nexora-tools.com/passport-photo-maker",
-    type: "website",
-  },
-};
-
-const faqSchema = {
-  "@context": "https://schema.org", "@type": "FAQPage",
-  mainEntity: [
-    { "@type": "Question", name: "Passport size photo kaise banaye?", acceptedAnswer: { "@type": "Answer", text: "Photo upload karo, Passport chuno, Download dabao. 3.5x4.5cm photo ready ho jayegi." } },
-    { "@type": "Question", name: "20KB photo kaise banaye?", acceptedAnswer: { "@type": "Answer", text: "SSC 20KB chuno ya KB wale box me 20 likho. Photo apne aap 20KB ki ban jayegi." } },
-    { "@type": "Question", name: "50KB photo kaise banaye?", acceptedAnswer: { "@type": "Answer", text: "UPSC 50KB chuno ya KB wale box me 50 likho." } },
-    { "@type": "Question", name: "Apna size kaise likhe?", acceptedAnswer: { "@type": "Answer", text: "Neeche Width aur Height wale box me apna size likh sakte ho, jaise 400x400." } },
-    { "@type": "Question", name: "Kya photo safe hai?", acceptedAnswer: { "@type": "Answer", text: "Haan, 100% private. Photo browser me hi banti hai, server pe nahi jati." } },
-  ],
-};
-
-export default function Page() {
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <PassportClient />
-    </>
   );
 }
