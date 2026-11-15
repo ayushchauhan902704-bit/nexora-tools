@@ -103,8 +103,6 @@ export default function PassportClient() {
   };
 
   const toBlob = (c: HTMLCanvasElement, q: number) => new Promise<Blob | null>(res => c.toBlob(res, "image/jpeg", q));
-
-  // ✅ KB FIX - ab exact KB ke andar aayega
   const compressExact = async (src: HTMLCanvasElement, targetKB: number) => {
     const target = targetKB * 1024;
     let best: Blob | null = null, lo = 0.05, hi = 0.98;
@@ -232,6 +230,16 @@ export default function PassportClient() {
               )}
             </div>
           )}
+
+          {/* ✅ NEW - BACKGROUND CHANGE WALI HIGHLIGHT LINE */}
+          {preview && (
+            <a href="/background-remover" style={{ display: "block", marginTop: 12, padding: "14px 12px", borderRadius: 14, textDecoration: "none", background: "linear-gradient(90deg, #2563eb, #7c3aed, #db2777)", boxShadow: "0 10px 25px rgba(124,58,237,0.35)", border: "2px solid #fff", animation: "nexoraBlink 1.2s ease-in-out infinite", textAlign: "center" }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", lineHeight: 1.4 }}>🎨 Photo ke Piche ka Background White / Blue / Red karna hai?</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#fefce8", marginTop: 5, background: "rgba(0,0,0,0.22)", display: "inline-block", padding: "6px 14px", borderRadius: 999 }}>👉 Yahan Tap Karo - Background Remover Khulega</div>
+              <style>{`@keyframes nexoraBlink { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }`}</style>
+            </a>
+          )}
+
           {status && <p style={{ background: isSuccess ? "#ecfdf5" : "#fef2f2", color: isSuccess ? "#047857" : "#dc2626", padding: "9px 10px", borderRadius: 9, fontSize: 13, margin: "12px 0 0", textAlign: "center", fontWeight: 600 }}>{status}</p>}
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button onClick={download} disabled={!preview || processing} style={{ flex: 1, padding: 14, background: "#f97316", color: "#fff", border: "none", borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: (!preview || processing) ? "not-allowed" : "pointer", opacity: (!preview || processing) ? 0.5 : 1 }}>{processing ? "Bana Raha Hu..." : `Download Karo - ${cur.label} →`}</button>
