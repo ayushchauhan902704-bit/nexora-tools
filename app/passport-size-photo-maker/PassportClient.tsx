@@ -3,6 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import * as BackgroundRemoval from "@imgly/background-removal";
 
+declare global {
+  interface Window {
+    gtag?: (
+      command: string,
+      eventName: string,
+      params?: Record<string, unknown>
+    ) => void;
+  }
+}
+
 type BackgroundMode = "original" | "color";
 
 type CropPosition = {
@@ -205,7 +215,8 @@ export default function PassportClient() {
   const [backgroundMode, setBackgroundMode] =
     useState<BackgroundMode>("original");
 
-  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [backgroundColor, setBackgroundColor] =
+    useState("#ffffff");
 
   const [status, setStatus] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -216,20 +227,26 @@ export default function PassportClient() {
   const [origKB, setOrigKB] = useState(0);
   const [newKB, setNewKB] = useState(0);
 
-  const [cropPosition, setCropPosition] = useState<CropPosition>({
-    x: 0.5,
-    y: 0.5,
-  });
+  const [cropPosition, setCropPosition] =
+    useState<CropPosition>({
+      x: 0.5,
+      y: 0.5,
+    });
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef =
+    useRef<HTMLCanvasElement | null>(null);
 
-  const currentFileRef = useRef<File | null>(null);
+  const currentFileRef =
+    useRef<File | null>(null);
 
-  const sourceImageRef = useRef<HTMLImageElement | null>(null);
+  const sourceImageRef =
+    useRef<HTMLImageElement | null>(null);
 
-  const processedForegroundRef = useRef<HTMLImageElement | null>(null);
+  const processedForegroundRef =
+    useRef<HTMLImageElement | null>(null);
 
-  const previewUrlRef = useRef<string | null>(null);
+  const previewUrlRef =
+    useRef<string | null>(null);
 
   function getCurrent(): DocPreset {
     const customWidth = Number(customW);
@@ -251,202 +268,342 @@ export default function PassportClient() {
         width: Math.round(customWidth),
         height: Math.round(customHeight),
         kb:
-          customKb >= MIN_TARGET_KB && customKb <= MAX_TARGET_KB
+          customKb >= MIN_TARGET_KB &&
+          customKb <= MAX_TARGET_KB
             ? Math.round(customKb)
             : undefined,
       };
     }
 
     return (
-      DOCS.find((d) => d.id === sel) || DOCS[0]
+      DOCS.find((d) => d.id === sel) ||
+      DOCS[0]
     );
   }
 
   function revokePreviewUrl() {
     if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
+      URL.revokeObjectURL(
+        previewUrlRef.current
+      );
       previewUrlRef.current = null;
     }
   }
 
-  function loadImage(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
+  function loadImage(
+    src: string
+  ): Promise<HTMLImageElement> {
+    return new Promise(
+      (resolve, reject) => {
+        const image =
+          new Image();
 
-      image.onload = () => resolve(image);
+        image.onload = () =>
+          resolve(image);
 
-      image.onerror = () =>
-        reject(new Error("Unable to load the image."));
+        image.onerror = () =>
+          reject(
+            new Error(
+              "Unable to load the image."
+            )
+          );
 
-      image.src = src;
-    });
+        image.src = src;
+      }
+    );
   }
 
-  function fileToDataURL(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+  function fileToDataURL(
+    file: File
+  ): Promise<string> {
+    return new Promise(
+      (resolve, reject) => {
+        const reader =
+          new FileReader();
 
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result);
-        } else {
-          reject(new Error("Unable to read image."));
-        }
-      };
+        reader.onload = () => {
+          if (
+            typeof reader.result ===
+            "string"
+          ) {
+            resolve(
+              reader.result
+            );
+          } else {
+            reject(
+              new Error(
+                "Unable to read image."
+              )
+            );
+          }
+        };
 
-      reader.onerror = () =>
-        reject(new Error("Unable to read the selected file."));
+        reader.onerror = () =>
+          reject(
+            new Error(
+              "Unable to read the selected file."
+            )
+          );
 
-      reader.readAsDataURL(file);
-    });
+        reader.readAsDataURL(
+          file
+        );
+      }
+    );
   }
 
-  async function getSourceImage(file: File): Promise<HTMLImageElement> {
-    const dataUrl = await fileToDataURL(file);
-    const original = await loadImage(dataUrl);
+  async function getSourceImage(
+    file: File
+  ): Promise<HTMLImageElement> {
+    const dataUrl =
+      await fileToDataURL(
+        file
+      );
+
+    const original =
+      await loadImage(dataUrl);
 
     if (
-      original.naturalWidth <= MAX_SOURCE_DIMENSION &&
-      original.naturalHeight <= MAX_SOURCE_DIMENSION
+      original.naturalWidth <=
+        MAX_SOURCE_DIMENSION &&
+      original.naturalHeight <=
+        MAX_SOURCE_DIMENSION
     ) {
       return original;
     }
 
-    const scale = Math.min(
-      MAX_SOURCE_DIMENSION / original.naturalWidth,
-      MAX_SOURCE_DIMENSION / original.naturalHeight
-    );
+    const scale =
+      Math.min(
+        MAX_SOURCE_DIMENSION /
+          original.naturalWidth,
+        MAX_SOURCE_DIMENSION /
+          original.naturalHeight
+      );
 
-    const width = Math.max(
-      1,
-      Math.round(original.naturalWidth * scale)
-    );
+    const width =
+      Math.max(
+        1,
+        Math.round(
+          original.naturalWidth *
+            scale
+        )
+      );
 
-    const height = Math.max(
-      1,
-      Math.round(original.naturalHeight * scale)
-    );
+    const height =
+      Math.max(
+        1,
+        Math.round(
+          original.naturalHeight *
+            scale
+        )
+      );
 
-    const canvas = document.createElement("canvas");
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext("2d");
+    const ctx =
+      canvas.getContext("2d");
 
     if (!ctx) {
-      throw new Error("Canvas is not supported by this browser.");
+      throw new Error(
+        "Canvas is not supported by this browser."
+      );
     }
 
-    ctx.drawImage(original, 0, 0, width, height);
+    ctx.drawImage(
+      original,
+      0,
+      0,
+      width,
+      height
+    );
 
-    const resized = await loadImage(canvas.toDataURL("image/jpeg", 0.95));
-
-    return resized;
+    return loadImage(
+      canvas.toDataURL(
+        "image/jpeg",
+        0.95
+      )
+    );
   }
 
   async function createForegroundFromBackgroundRemoval(
     file: File
   ): Promise<HTMLImageElement> {
-    setStatus("Removing the original background…");
+    setStatus(
+      "Removing the original background…"
+    );
+
     setIsSuccess(false);
 
     const removeBackground =
-      (BackgroundRemoval as any).default ||
-      (BackgroundRemoval as any).removeBackground;
+      (
+        BackgroundRemoval as any
+      ).default ||
+      (
+        BackgroundRemoval as any
+      ).removeBackground;
 
-    if (typeof removeBackground !== "function") {
+    if (
+      typeof removeBackground !==
+      "function"
+    ) {
       throw new Error(
-        "Background removal module is not available. Please reinstall @imgly/background-removal."
+        "Background removal module is not available. Please install @imgly/background-removal."
       );
     }
 
-    const resultBlob = await removeBackground(file, {
-      model: "medium",
-      proxyToWorker: true,
-      output: {
-        format: "image/png",
-        quality: 1,
-        type: "foreground",
-      },
-      progress: (
-        key: string,
-        current: number,
-        total: number
-      ) => {
-        if (total > 0) {
-          const percent = Math.round((current / total) * 100);
+    const resultBlob =
+      await removeBackground(
+        file,
+        {
+          model: "medium",
 
-          setStatus(
-            `Removing background… ${Math.min(100, percent)}%`
-          );
+          proxyToWorker: true,
+
+          output: {
+            format: "image/png",
+            quality: 1,
+            type: "foreground",
+          },
+
+          progress: (
+            key: string,
+            current: number,
+            total: number
+          ) => {
+            if (total > 0) {
+              const percent =
+                Math.round(
+                  (current /
+                    total) *
+                    100
+                );
+
+              setStatus(
+                `Removing background… ${Math.min(
+                  100,
+                  percent
+                )}%`
+              );
+            }
+          },
         }
-      },
-    });
+      );
 
-    const resultUrl = URL.createObjectURL(resultBlob);
+    const resultUrl =
+      URL.createObjectURL(
+        resultBlob
+      );
 
     try {
-      const foreground = await loadImage(resultUrl);
-
-      return foreground;
+      return await loadImage(
+        resultUrl
+      );
     } finally {
-      URL.revokeObjectURL(resultUrl);
+      URL.revokeObjectURL(
+        resultUrl
+      );
     }
   }
 
   function createCanvas(
     source: HTMLImageElement,
     width: number,
-    height: number,
-    mode: BackgroundMode,
-    color: string
+    height: number
   ): HTMLCanvasElement {
-    const canvas = document.createElement("canvas");
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
 
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext("2d", {
-      alpha: true,
-    });
+    const ctx =
+      canvas.getContext(
+        "2d",
+        { alpha: false }
+      );
 
     if (!ctx) {
-      throw new Error("Canvas is not supported by this browser.");
+      throw new Error(
+        "Canvas is not supported by this browser."
+      );
     }
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
+    ctx.imageSmoothingEnabled =
+      true;
 
-    if (mode === "color") {
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, width, height);
-    }
+    ctx.imageSmoothingQuality =
+      "high";
 
-    const sourceWidth = source.naturalWidth || source.width;
-    const sourceHeight = source.naturalHeight || source.height;
+    ctx.fillStyle =
+      "#ffffff";
 
-    const targetRatio = width / height;
-    const sourceRatio = sourceWidth / sourceHeight;
+    ctx.fillRect(
+      0,
+      0,
+      width,
+      height
+    );
+
+    const sourceWidth =
+      source.naturalWidth ||
+      source.width;
+
+    const sourceHeight =
+      source.naturalHeight ||
+      source.height;
+
+    const targetRatio =
+      width / height;
+
+    const sourceRatio =
+      sourceWidth /
+      sourceHeight;
 
     let drawWidth: number;
     let drawHeight: number;
 
-    if (sourceRatio > targetRatio) {
-      drawHeight = height;
-      drawWidth = height * sourceRatio;
+    if (
+      sourceRatio >
+      targetRatio
+    ) {
+      drawHeight =
+        height;
+
+      drawWidth =
+        height *
+        sourceRatio;
     } else {
-      drawWidth = width;
-      drawHeight = width / sourceRatio;
+      drawWidth =
+        width;
+
+      drawHeight =
+        width /
+        sourceRatio;
     }
 
-    const extraX = drawWidth - width;
-    const extraY = drawHeight - height;
+    const extraX =
+      drawWidth -
+      width;
 
-    const dx = -(extraX * cropPosition.x);
-    const dy = -(extraY * cropPosition.y);
+    const extraY =
+      drawHeight -
+      height;
+
+    const dx =
+      -(extraX *
+        cropPosition.x);
+
+    const dy =
+      -(extraY *
+        cropPosition.y);
 
     ctx.drawImage(
       source,
@@ -465,50 +622,97 @@ export default function PassportClient() {
     height: number,
     color: string
   ): HTMLCanvasElement {
-    const canvas = document.createElement("canvas");
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
 
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width =
+      width;
 
-    const ctx = canvas.getContext("2d", {
-      alpha: false,
-    });
+    canvas.height =
+      height;
+
+    const ctx =
+      canvas.getContext(
+        "2d",
+        { alpha: false }
+      );
 
     if (!ctx) {
-      throw new Error("Canvas is not supported by this browser.");
+      throw new Error(
+        "Canvas is not supported by this browser."
+      );
     }
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
+    ctx.imageSmoothingEnabled =
+      true;
 
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, width, height);
+    ctx.imageSmoothingQuality =
+      "high";
+
+    ctx.fillStyle =
+      color;
+
+    ctx.fillRect(
+      0,
+      0,
+      width,
+      height
+    );
 
     const sourceWidth =
-      foreground.naturalWidth || foreground.width;
+      foreground.naturalWidth ||
+      foreground.width;
 
     const sourceHeight =
-      foreground.naturalHeight || foreground.height;
+      foreground.naturalHeight ||
+      foreground.height;
 
-    const targetRatio = width / height;
-    const sourceRatio = sourceWidth / sourceHeight;
+    const targetRatio =
+      width / height;
+
+    const sourceRatio =
+      sourceWidth /
+      sourceHeight;
 
     let drawWidth: number;
     let drawHeight: number;
 
-    if (sourceRatio > targetRatio) {
-      drawHeight = height;
-      drawWidth = height * sourceRatio;
+    if (
+      sourceRatio >
+      targetRatio
+    ) {
+      drawHeight =
+        height;
+
+      drawWidth =
+        height *
+        sourceRatio;
     } else {
-      drawWidth = width;
-      drawHeight = width / sourceRatio;
+      drawWidth =
+        width;
+
+      drawHeight =
+        width /
+        sourceRatio;
     }
 
-    const extraX = drawWidth - width;
-    const extraY = drawHeight - height;
+    const extraX =
+      drawWidth -
+      width;
 
-    const dx = -(extraX * cropPosition.x);
-    const dy = -(extraY * cropPosition.y);
+    const extraY =
+      drawHeight -
+      height;
+
+    const dx =
+      -(extraX *
+        cropPosition.x);
+
+    const dy =
+      -(extraY *
+        cropPosition.y);
 
     ctx.drawImage(
       foreground,
@@ -525,27 +729,36 @@ export default function PassportClient() {
     file?: File,
     forceBackgroundRemoval = false
   ) {
-    const currentFile = file || currentFileRef.current;
+    const currentFile =
+      file ||
+      currentFileRef.current;
 
-    if (!currentFile) return;
+    if (!currentFile) {
+      return;
+    }
 
     setProcessing(true);
     setIsSuccess(false);
-    setStatus("Preparing your photo…");
 
     try {
-      const current = getCurrent();
+      const current =
+        getCurrent();
 
-      let finalCanvas: HTMLCanvasElement;
+      let finalCanvas:
+        HTMLCanvasElement;
 
       if (
-        backgroundMode === "color" ||
+        backgroundMode ===
+          "color" ||
         forceBackgroundRemoval
       ) {
         let foreground =
           processedForegroundRef.current;
 
-        if (!foreground || forceBackgroundRemoval) {
+        if (
+          !foreground ||
+          forceBackgroundRemoval
+        ) {
           foreground =
             await createForegroundFromBackgroundRemoval(
               currentFile
@@ -555,47 +768,57 @@ export default function PassportClient() {
             foreground;
         }
 
-        setStatus("Applying the selected background…");
-
-        finalCanvas = createColorBackgroundCanvas(
-          foreground,
-          current.width,
-          current.height,
-          backgroundColor
+        setStatus(
+          "Applying the selected background…"
         );
+
+        finalCanvas =
+          createColorBackgroundCanvas(
+            foreground,
+            current.width,
+            current.height,
+            backgroundColor
+          );
       } else {
-        setStatus("Creating your photo…");
+        setStatus(
+          "Creating your photo…"
+        );
 
         let source =
           sourceImageRef.current;
 
         if (!source) {
           source =
-            await getSourceImage(currentFile);
+            await getSourceImage(
+              currentFile
+            );
 
-          sourceImageRef.current = source;
+          sourceImageRef.current =
+            source;
         }
 
-        finalCanvas = createCanvas(
-          source,
-          current.width,
-          current.height,
-          "original",
-          "#ffffff"
-        );
+        finalCanvas =
+          createCanvas(
+            source,
+            current.width,
+            current.height
+          );
       }
 
-      canvasRef.current = finalCanvas;
+      canvasRef.current =
+        finalCanvas;
 
       revokePreviewUrl();
 
       const previewBlob =
-        await new Promise<Blob | null>((resolve) =>
-          finalCanvas.toBlob(
-            resolve,
-            "image/jpeg",
-            0.92
-          )
+        await new Promise<Blob | null>(
+          (resolve) => {
+            finalCanvas.toBlob(
+              resolve,
+              "image/jpeg",
+              0.92
+            );
+          }
         );
 
       if (!previewBlob) {
@@ -605,27 +828,40 @@ export default function PassportClient() {
       }
 
       const previewUrl =
-        URL.createObjectURL(previewBlob);
+        URL.createObjectURL(
+          previewBlob
+        );
 
-      previewUrlRef.current = previewUrl;
+      previewUrlRef.current =
+        previewUrl;
 
-      setPreview(previewUrl);
+      setPreview(
+        previewUrl
+      );
 
       setNewKB(
         Math.max(
           1,
-          Math.round(previewBlob.size / 1024)
+          Math.round(
+            previewBlob.size /
+              1024
+          )
         )
       );
 
       setIsSuccess(true);
+
       setStatus(
-        backgroundMode === "original"
+        backgroundMode ===
+          "original"
           ? "Photo ready with original background."
           : "Photo ready with the selected color background."
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Photo processing error:",
+        error
+      );
 
       setPreview(null);
       setIsSuccess(false);
@@ -643,36 +879,58 @@ export default function PassportClient() {
   async function handleFile(
     file: File
   ) {
-    if (!file.type.startsWith("image/")) {
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
       setStatus(
         "Please select a valid image file."
       );
+
       return;
     }
 
-    if (file.size > 25 * 1024 * 1024) {
+    if (
+      file.size >
+      25 *
+        1024 *
+        1024
+    ) {
       setStatus(
         "Maximum upload size is 25MB."
       );
+
       return;
     }
 
-    setProcessing(true);
-    setIsSuccess(false);
-    setStatus("Loading your photo…");
+    currentFileRef.current =
+      file;
 
-    currentFileRef.current = file;
+    sourceImageRef.current =
+      null;
 
-    sourceImageRef.current = null;
-    processedForegroundRef.current = null;
+    processedForegroundRef.current =
+      null;
 
     revokePreviewUrl();
 
-    try {
-      const source =
-        await getSourceImage(file);
+    setPreview(null);
+    setIsSuccess(false);
+    setProcessing(true);
 
-      sourceImageRef.current = source;
+    try {
+      setStatus(
+        "Loading your photo…"
+      );
+
+      const source =
+        await getSourceImage(
+          file
+        );
+
+      sourceImageRef.current =
+        source;
 
       setOrigW(
         source.naturalWidth ||
@@ -687,18 +945,27 @@ export default function PassportClient() {
       setOrigKB(
         Math.max(
           1,
-          Math.round(file.size / 1024)
+          Math.round(
+            file.size /
+              1024
+          )
         )
       );
 
       const dataUrl =
-        await fileToDataURL(file);
+        await fileToDataURL(
+          file
+        );
 
       setImg(dataUrl);
 
-      await processImage(file);
+      await processImage(
+        file
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       setStatus(
         "Unable to load this image. Please try another photo."
@@ -708,71 +975,103 @@ export default function PassportClient() {
     }
   }
 
-  function selectDoc(id: string) {
+  function selectDoc(
+    id: string
+  ) {
     setSel(id);
-
-    const doc =
-      DOCS.find((d) => d.id === id);
-
-    if (!doc) return;
 
     setCustomW("");
     setCustomH("");
     setCustomKB("");
 
-    if (currentFileRef.current) {
-      setTimeout(() => {
-        processImage();
-      }, 0);
+    if (
+      currentFileRef.current
+    ) {
+      setTimeout(
+        () => {
+          void processImage();
+        },
+        0
+      );
     }
   }
 
   function applyCustom() {
-    const width = Number(customW);
-    const height = Number(customH);
-    const kb = Number(customKB);
+    const width =
+      Number(customW);
+
+    const height =
+      Number(customH);
+
+    const kb =
+      Number(customKB);
 
     if (
-      !Number.isFinite(width) ||
-      !Number.isFinite(height) ||
-      width < MIN_DIMENSION ||
-      height < MIN_DIMENSION ||
-      width > MAX_DIMENSION ||
-      height > MAX_DIMENSION
+      !Number.isFinite(
+        width
+      ) ||
+      !Number.isFinite(
+        height
+      ) ||
+      width <
+        MIN_DIMENSION ||
+      height <
+        MIN_DIMENSION ||
+      width >
+        MAX_DIMENSION ||
+      height >
+        MAX_DIMENSION
     ) {
       setStatus(
         `Enter a valid width and height between ${MIN_DIMENSION} and ${MAX_DIMENSION}px.`
       );
+
       return;
     }
 
     if (
       customKB &&
-      (!Number.isFinite(kb) ||
-        kb < MIN_TARGET_KB ||
-        kb > MAX_TARGET_KB)
+      (
+        !Number.isFinite(
+          kb
+        ) ||
+        kb <
+          MIN_TARGET_KB ||
+        kb >
+          MAX_TARGET_KB
+      )
     ) {
       setStatus(
         `Target file size must be between ${MIN_TARGET_KB}KB and ${MAX_TARGET_KB}KB.`
       );
+
       return;
     }
 
     setSel("custom");
 
-    if (currentFileRef.current) {
-      setTimeout(() => {
-        processImage();
-      }, 0);
+    if (
+      currentFileRef.current
+    ) {
+      setTimeout(
+        () => {
+          void processImage();
+        },
+        0
+      );
     }
   }
 
   async function updateBackgroundMode(
     mode: BackgroundMode
   ) {
-    setBackgroundMode(mode);
+    setBackgroundMode(
+      mode
+    );
 
-    if (!currentFileRef.current) {
+    if (
+      !currentFileRef.current
+    ) {
       return;
     }
 
@@ -780,8 +1079,12 @@ export default function PassportClient() {
     setIsSuccess(false);
 
     try {
-      if (mode === "original") {
-        processedForegroundRef.current = null;
+      if (
+        mode ===
+        "original"
+      ) {
+        processedForegroundRef.current =
+          null;
 
         await processImage(
           currentFileRef.current
@@ -800,10 +1103,13 @@ export default function PassportClient() {
   async function updateBackgroundColor(
     color: string
   ) {
-    setBackgroundColor(color);
+    setBackgroundColor(
+      color
+    );
 
     if (
-      backgroundMode !== "color" ||
+      backgroundMode !==
+        "color" ||
       !currentFileRef.current
     ) {
       return;
@@ -825,42 +1131,58 @@ export default function PassportClient() {
     axis: "x" | "y",
     value: number
   ) {
-    setCropPosition((prev) => ({
-      ...prev,
-      [axis]: value,
-    }));
+    setCropPosition(
+      (prev) => ({
+        ...prev,
+        [axis]:
+          value,
+      })
+    );
 
-    if (!currentFileRef.current) {
+    if (
+      !currentFileRef.current
+    ) {
       return;
     }
 
-    setTimeout(() => {
-      processImage();
-    }, 0);
+    setTimeout(
+      () => {
+        void processImage();
+      },
+      0
+    );
   }
 
-  async function canvasToBlob(
+  function canvasToBlob(
     canvas: HTMLCanvasElement,
     quality: number
   ): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(
-              new Error(
-                "Unable to create the final image."
-              )
-            );
-            return;
-          }
+    return new Promise(
+      (
+        resolve,
+        reject
+      ) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(
+                new Error(
+                  "Unable to create the final image."
+                )
+              );
 
-          resolve(blob);
-        },
-        "image/jpeg",
-        quality
-      );
-    });
+              return;
+            }
+
+            resolve(
+              blob
+            );
+          },
+          "image/jpeg",
+          quality
+        );
+      }
+    );
   }
 
   async function compressToTarget(
@@ -868,25 +1190,41 @@ export default function PassportClient() {
     targetKB?: number
   ): Promise<Blob> {
     if (!targetKB) {
-      return canvasToBlob(canvas, 0.95);
+      return canvasToBlob(
+        canvas,
+        0.95
+      );
     }
 
     const targetBytes =
-      targetKB * 1024;
+      targetKB *
+      1024;
 
     let bestBlob =
-      await canvasToBlob(canvas, 0.95);
+      await canvasToBlob(
+        canvas,
+        0.95
+      );
 
-    if (bestBlob.size <= targetBytes) {
+    if (
+      bestBlob.size <=
+      targetBytes
+    ) {
       return bestBlob;
     }
 
     let low = 0.05;
     let high = 0.95;
 
-    for (let i = 0; i < 10; i++) {
+    for (
+      let i = 0;
+      i < 10;
+      i++
+    ) {
       const quality =
-        (low + high) / 2;
+        (low +
+          high) /
+        2;
 
       const blob =
         await canvasToBlob(
@@ -894,46 +1232,70 @@ export default function PassportClient() {
           quality
         );
 
-      if (blob.size <= targetBytes) {
-        bestBlob = blob;
-        low = quality;
+      if (
+        blob.size <=
+        targetBytes
+      ) {
+        bestBlob =
+          blob;
+
+        low =
+          quality;
       } else {
-        high = quality;
+        high =
+          quality;
       }
     }
 
-    if (bestBlob.size <= targetBytes) {
+    if (
+      bestBlob.size <=
+      targetBytes
+    ) {
       return bestBlob;
     }
 
     let scale = 0.95;
 
-    for (let i = 0; i < 8; i++) {
+    for (
+      let i = 0;
+      i < 8;
+      i++
+    ) {
       const scaled =
         document.createElement(
           "canvas"
         );
 
-      scaled.width = Math.max(
-        50,
-        Math.round(
-          canvas.width * scale
-        )
-      );
+      scaled.width =
+        Math.max(
+          50,
+          Math.round(
+            canvas.width *
+              scale
+          )
+        );
 
-      scaled.height = Math.max(
-        50,
-        Math.round(
-          canvas.height * scale
-        )
-      );
+      scaled.height =
+        Math.max(
+          50,
+          Math.round(
+            canvas.height *
+              scale
+          )
+        );
 
       const ctx =
-        scaled.getContext("2d");
+        scaled.getContext(
+          "2d"
+        );
 
-      if (!ctx) break;
+      if (!ctx) {
+        break;
+      }
 
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled =
+        true;
+
       ctx.imageSmoothingQuality =
         "high";
 
@@ -945,12 +1307,21 @@ export default function PassportClient() {
         scaled.height
       );
 
-      let qLow = 0.05;
-      let qHigh = 0.9;
+      let qLow =
+        0.05;
 
-      for (let j = 0; j < 8; j++) {
+      let qHigh =
+        0.9;
+
+      for (
+        let j = 0;
+        j < 8;
+        j++
+      ) {
         const q =
-          (qLow + qHigh) / 2;
+          (qLow +
+            qHigh) /
+          2;
 
         const blob =
           await canvasToBlob(
@@ -959,41 +1330,56 @@ export default function PassportClient() {
           );
 
         if (
-          blob.size <= targetBytes
+          blob.size <=
+          targetBytes
         ) {
-          bestBlob = blob;
-          qLow = q;
+          bestBlob =
+            blob;
+
+          qLow =
+            q;
         } else {
-          qHigh = q;
+          qHigh =
+            q;
         }
       }
 
       if (
-        bestBlob.size <= targetBytes
+        bestBlob.size <=
+        targetBytes
       ) {
         return bestBlob;
       }
 
-      scale *= 0.9;
+      scale *=
+        0.9;
     }
 
     return bestBlob;
   }
 
   async function download() {
-    if (!canvasRef.current) {
+    if (
+      !canvasRef.current ||
+      !preview
+    ) {
       setStatus(
         "Please upload and process a photo first."
       );
+
       return;
     }
 
-    if (processing) return;
+    if (processing) {
+      return;
+    }
 
     setProcessing(true);
     setIsSuccess(false);
 
-    let popup: Window | null = null;
+    let popup:
+      Window | null =
+      null;
 
     const userAgent =
       navigator.userAgent ||
@@ -1007,15 +1393,14 @@ export default function PassportClient() {
       (
         navigator.platform ===
           "MacIntel" &&
-        navigator.maxTouchPoints > 1
+        navigator.maxTouchPoints >
+          1
       );
 
     /*
-      iOS Safari may block a popup if it is opened
-      after an asynchronous operation.
-
-      We open it immediately from the button click,
-      then point it to the generated file later.
+      Open immediately for iOS.
+      This avoids Safari popup blocking
+      after asynchronous image processing.
     */
     if (isIOS) {
       popup =
@@ -1029,26 +1414,24 @@ export default function PassportClient() {
       const current =
         getCurrent();
 
-      const targetKB =
-        current.kb;
-
       setStatus(
-        targetKB
-          ? `Preparing your download under ${targetKB}KB…`
+        current.kb
+          ? `Preparing your download under ${current.kb}KB…`
           : "Preparing your download…"
       );
 
       const blob =
         await compressToTarget(
           canvasRef.current,
-          targetKB
+          current.kb
         );
 
       setNewKB(
         Math.max(
           1,
           Math.round(
-            blob.size / 1024
+            blob.size /
+              1024
           )
         )
       );
@@ -1066,22 +1449,27 @@ export default function PassportClient() {
         );
 
       /*
-        Best experience on iPhone/iPad:
-        use native Share sheet when supported.
+        Native Share Sheet on iPhone/iPad.
       */
       if (
         isIOS &&
-        navigator.share &&
-        navigator.canShare &&
+        typeof navigator.share ===
+          "function" &&
+        typeof navigator.canShare ===
+          "function" &&
         navigator.canShare({
           files: [file],
         })
       ) {
         try {
-          if (popup) {
+          if (
+            popup &&
+            !popup.closed
+          ) {
             popup.close();
-            popup = null;
           }
+
+          popup = null;
 
           await navigator.share({
             files: [file],
@@ -1090,15 +1478,16 @@ export default function PassportClient() {
           });
 
           setStatus(
-            "Photo ready. Use Save to Photos in the Share menu."
+            "Photo ready. Choose Save to Photos from the Share menu."
           );
 
-          setIsSuccess(true);
+          setIsSuccess(
+            true
+          );
 
           if (
-            typeof window !== "undefined" &&
             typeof window.gtag ===
-              "function"
+            "function"
           ) {
             window.gtag(
               "event",
@@ -1115,39 +1504,43 @@ export default function PassportClient() {
           }
 
           return;
-        } catch (shareError) {
-          /*
-            User may cancel the Share sheet.
-            Continue to browser fallback only
-            when necessary.
-          */
-
+        } catch (
+          shareError
+        ) {
           if (
             shareError &&
             typeof shareError ===
               "object" &&
-            "name" in shareError &&
-            (shareError as any)
-              .name ===
+            "name" in
+              shareError &&
+            (
+              shareError as {
+                name?: string;
+              }
+            ).name ===
               "AbortError"
           ) {
             setStatus(
               "Share cancelled."
             );
+
             return;
           }
         }
       }
 
       const url =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+          blob
+        );
 
-      /*
-        iPhone/iPad fallback.
-      */
       if (isIOS) {
-        if (popup && !popup.closed) {
-          popup.location.href = url;
+        if (
+          popup &&
+          !popup.closed
+        ) {
+          popup.location.href =
+            url;
 
           setStatus(
             "Your photo is ready. Tap Share, then choose Save to Photos."
@@ -1161,19 +1554,22 @@ export default function PassportClient() {
           );
         }
 
-        setIsSuccess(true);
+        setIsSuccess(
+          true
+        );
 
-        setTimeout(() => {
-          URL.revokeObjectURL(
-            url
-          );
-        }, 60000);
+        setTimeout(
+          () => {
+            URL.revokeObjectURL(
+              url
+            );
+          },
+          60000
+        );
 
         if (
-          typeof window !==
-            "undefined" &&
           typeof window.gtag ===
-            "function"
+          "function"
         ) {
           window.gtag(
             "event",
@@ -1193,16 +1589,21 @@ export default function PassportClient() {
       }
 
       /*
-        Normal desktop / Android browser download.
+        Normal browser download.
       */
       const link =
         document.createElement(
           "a"
         );
 
-      link.href = url;
+      link.href =
+        url;
+
       link.download =
         filename;
+
+      link.style.display =
+        "none";
 
       document.body.appendChild(
         link
@@ -1210,25 +1611,30 @@ export default function PassportClient() {
 
       link.click();
 
-      link.remove();
+      document.body.removeChild(
+        link
+      );
 
-      setTimeout(() => {
-        URL.revokeObjectURL(
-          url
-        );
-      }, 60000);
+      setTimeout(
+        () => {
+          URL.revokeObjectURL(
+            url
+          );
+        },
+        60000
+      );
 
       setStatus(
         "Photo downloaded successfully."
       );
 
-      setIsSuccess(true);
+      setIsSuccess(
+        true
+      );
 
       if (
-        typeof window !==
-          "undefined" &&
         typeof window.gtag ===
-          "function"
+        "function"
       ) {
         window.gtag(
           "event",
@@ -1244,7 +1650,10 @@ export default function PassportClient() {
         );
       }
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Download error:",
+        error
+      );
 
       if (
         popup &&
@@ -1262,9 +1671,11 @@ export default function PassportClient() {
   }
 
   function clearAll() {
-    currentFileRef.current = null;
+    currentFileRef.current =
+      null;
 
-    sourceImageRef.current = null;
+    sourceImageRef.current =
+      null;
 
     processedForegroundRef.current =
       null;
@@ -1401,7 +1812,9 @@ export default function PassportClient() {
                   e.target.files?.[0];
 
                 if (file) {
-                  handleFile(file);
+                  void handleFile(
+                    file
+                  );
                 }
               }}
             />
@@ -1446,28 +1859,42 @@ export default function PassportClient() {
                 </div>
 
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {DOCS.map((doc) => (
-                    <button
-                      key={doc.id}
-                      type="button"
-                      onClick={() =>
-                        selectDoc(doc.id)
-                      }
-                      className={`min-w-[190px] rounded-2xl border p-4 text-left transition ${
-                        sel === doc.id
-                          ? "border-blue-500 bg-blue-50 shadow-sm"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="text-sm font-extrabold">
-                        {doc.name}
-                      </div>
+                  {DOCS.map(
+                    (doc) => (
+                      <button
+                        key={
+                          doc.id
+                        }
+                        type="button"
+                        onClick={() =>
+                          selectDoc(
+                            doc.id
+                          )
+                        }
+                        disabled={
+                          processing
+                        }
+                        className={`min-w-[190px] rounded-2xl border p-4 text-left transition ${
+                          sel ===
+                          doc.id
+                            ? "border-blue-500 bg-blue-50 shadow-sm"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        <div className="text-sm font-extrabold">
+                          {
+                            doc.name
+                          }
+                        </div>
 
-                      <div className="mt-1 text-xs text-slate-500">
-                        {doc.size}
-                      </div>
-                    </button>
-                  ))}
+                        <div className="mt-1 text-xs text-slate-500">
+                          {
+                            doc.size
+                          }
+                        </div>
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -1490,12 +1917,21 @@ export default function PassportClient() {
 
                     <input
                       type="number"
-                      min={MIN_DIMENSION}
-                      max={MAX_DIMENSION}
-                      value={customW}
-                      onChange={(e) =>
+                      min={
+                        MIN_DIMENSION
+                      }
+                      max={
+                        MAX_DIMENSION
+                      }
+                      value={
+                        customW
+                      }
+                      onChange={(
+                        e
+                      ) =>
                         setCustomW(
-                          e.target.value
+                          e.target
+                            .value
                         )
                       }
                       className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
@@ -1510,12 +1946,21 @@ export default function PassportClient() {
 
                     <input
                       type="number"
-                      min={MIN_DIMENSION}
-                      max={MAX_DIMENSION}
-                      value={customH}
-                      onChange={(e) =>
+                      min={
+                        MIN_DIMENSION
+                      }
+                      max={
+                        MAX_DIMENSION
+                      }
+                      value={
+                        customH
+                      }
+                      onChange={(
+                        e
+                      ) =>
                         setCustomH(
-                          e.target.value
+                          e.target
+                            .value
                         )
                       }
                       className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
@@ -1530,12 +1975,21 @@ export default function PassportClient() {
 
                     <input
                       type="number"
-                      min={MIN_TARGET_KB}
-                      max={MAX_TARGET_KB}
-                      value={customKB}
-                      onChange={(e) =>
+                      min={
+                        MIN_TARGET_KB
+                      }
+                      max={
+                        MAX_TARGET_KB
+                      }
+                      value={
+                        customKB
+                      }
+                      onChange={(
+                        e
+                      ) =>
                         setCustomKB(
-                          e.target.value
+                          e.target
+                            .value
                         )
                       }
                       className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
@@ -1546,8 +2000,13 @@ export default function PassportClient() {
 
                 <button
                   type="button"
-                  onClick={applyCustom}
-                  className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                  onClick={
+                    applyCustom
+                  }
+                  disabled={
+                    processing
+                  }
+                  className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   Apply Custom Size
                 </button>
@@ -1570,25 +2029,27 @@ export default function PassportClient() {
                   <button
                     type="button"
                     onClick={() =>
-                      updateBackgroundMode(
+                      void updateBackgroundMode(
                         "original"
                       )
                     }
-                    disabled={processing}
+                    disabled={
+                      processing
+                    }
                     className={`rounded-2xl border p-5 text-left transition ${
                       backgroundMode ===
                       "original"
                         ? "border-blue-500 bg-blue-50"
                         : "border-slate-200 hover:border-slate-300"
-                    }`}
+                    } disabled:opacity-60`}
                   >
                     <div className="text-base font-extrabold">
                       Original Background
                     </div>
 
                     <div className="mt-1 text-sm text-slate-500">
-                      Keep the actual background from
-                      your uploaded photo.
+                      Keep the actual background from your
+                      uploaded photo.
                     </div>
 
                     <div className="mt-3 text-xs font-bold text-blue-600">
@@ -1599,17 +2060,19 @@ export default function PassportClient() {
                   <button
                     type="button"
                     onClick={() =>
-                      updateBackgroundMode(
+                      void updateBackgroundMode(
                         "color"
                       )
                     }
-                    disabled={processing}
+                    disabled={
+                      processing
+                    }
                     className={`rounded-2xl border p-5 text-left transition ${
                       backgroundMode ===
                       "color"
                         ? "border-blue-500 bg-blue-50"
                         : "border-slate-200 hover:border-slate-300"
-                    }`}
+                    } disabled:opacity-60`}
                   >
                     <div className="text-base font-extrabold">
                       Color Background
@@ -1621,7 +2084,7 @@ export default function PassportClient() {
                     </div>
 
                     <div className="mt-3 text-xs font-bold text-blue-600">
-                      AI background separation is used.
+                      Automatic background separation.
                     </div>
                   </button>
                 </div>
@@ -1642,7 +2105,7 @@ export default function PassportClient() {
                             }
                             type="button"
                             onClick={() =>
-                              updateBackgroundColor(
+                              void updateBackgroundColor(
                                 color.value
                               )
                             }
@@ -1654,7 +2117,7 @@ export default function PassportClient() {
                               color.value
                                 ? "border-blue-500 ring-2 ring-blue-100"
                                 : "border-slate-300"
-                            }`}
+                            } disabled:opacity-50`}
                           >
                             <span
                               className="h-5 w-5 rounded-full border border-slate-300"
@@ -1664,7 +2127,9 @@ export default function PassportClient() {
                               }}
                             />
 
-                            {color.name}
+                            {
+                              color.name
+                            }
                           </button>
                         )
                       )}
@@ -1679,9 +2144,12 @@ export default function PassportClient() {
                           value={
                             backgroundColor
                           }
-                          onChange={(e) =>
-                            updateBackgroundColor(
-                              e.target.value
+                          onChange={(
+                            e
+                          ) =>
+                            void updateBackgroundColor(
+                              e.target
+                                .value
                             )
                           }
                           className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
@@ -1692,7 +2160,7 @@ export default function PassportClient() {
                 )}
               </div>
 
-              {/* PREVIEW */}
+              {/* PREVIEW + CROP */}
               <div className="mt-6 grid gap-6 lg:grid-cols-2">
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                   <div className="mb-4">
@@ -1708,7 +2176,9 @@ export default function PassportClient() {
                   <div className="flex min-h-[420px] items-center justify-center rounded-2xl bg-slate-100 p-6">
                     {preview ? (
                       <img
-                        src={preview}
+                        src={
+                          preview
+                        }
                         alt="Passport photo preview"
                         className="max-h-[520px] max-w-full rounded-lg object-contain shadow-xl"
                       />
@@ -1720,7 +2190,6 @@ export default function PassportClient() {
                   </div>
                 </div>
 
-                {/* CROP */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                   <h2 className="text-lg font-extrabold">
                     Crop Position
@@ -1754,11 +2223,14 @@ export default function PassportClient() {
                       value={
                         cropPosition.x
                       }
-                      onChange={(e) =>
+                      onChange={(
+                        e
+                      ) =>
                         updateCrop(
                           "x",
                           Number(
-                            e.target.value
+                            e.target
+                              .value
                           )
                         )
                       }
@@ -1789,11 +2261,14 @@ export default function PassportClient() {
                       value={
                         cropPosition.y
                       }
-                      onChange={(e) =>
+                      onChange={(
+                        e
+                      ) =>
                         updateCrop(
                           "y",
                           Number(
-                            e.target.value
+                            e.target
+                              .value
                           )
                         )
                       }
@@ -1807,16 +2282,26 @@ export default function PassportClient() {
                     </div>
 
                     <div className="mt-2">
-                      {getCurrent().width} ×{" "}
-                      {getCurrent().height}px
+                      {
+                        getCurrent()
+                          .width
+                      }{" "}
+                      ×{" "}
+                      {
+                        getCurrent()
+                          .height
+                      }
+                      px
                     </div>
 
                     {getCurrent()
                       .kb && (
                       <div className="mt-1">
                         Maximum file size:{" "}
-                        {getCurrent()
-                          .kb}
+                        {
+                          getCurrent()
+                            .kb
+                        }
                         KB
                       </div>
                     )}
@@ -1859,7 +2344,9 @@ export default function PassportClient() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={download}
+                  onClick={
+                    download
+                  }
                   disabled={
                     processing ||
                     !preview
@@ -1873,8 +2360,12 @@ export default function PassportClient() {
 
                 <button
                   type="button"
-                  onClick={clearAll}
-                  disabled={processing}
+                  onClick={
+                    clearAll
+                  }
+                  disabled={
+                    processing
+                  }
                   className="rounded-2xl border border-slate-300 bg-white px-6 py-4 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   Clear
@@ -1884,14 +2375,14 @@ export default function PassportClient() {
               {/* PRIVACY */}
               <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-4 text-center text-xs font-semibold leading-6 text-green-700">
                 🔒 Your photo is processed in your browser.
-                It is not uploaded to a server by NEXORA.
+                No NEXORA account is required.
               </div>
             </>
           )}
         </div>
       </section>
 
-      {/* EXTRA INFO */}
+      {/* INFORMATION */}
       <section className="border-t border-slate-200 bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-3xl font-black">
@@ -1908,17 +2399,15 @@ export default function PassportClient() {
             </p>
 
             <p>
-              You can keep the original photo background
-              when you only need to change the size and
-              crop. If you need a different background,
-              choose Color Background to remove the original
-              background and apply a new color.
+              Use Original Background when you want to keep
+              the actual background from your uploaded photo.
+              Use Color Background when you want to remove
+              the original background and apply a new color.
             </p>
 
             <p>
-              The tool works directly in your browser and
-              does not require an account or a paid
-              subscription.
+              The tool processes photos directly in your
+              browser and does not require an account.
             </p>
           </div>
 
@@ -1985,9 +2474,10 @@ export default function PassportClient() {
               </summary>
 
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Yes. Select Original Background. Your
-                uploaded background will remain unchanged
-                while the photo is resized and cropped.
+                Yes. Select Original Background. The actual
+                background of your uploaded photo remains
+                unchanged while the image is resized and
+                cropped.
               </p>
             </details>
 
@@ -2000,43 +2490,41 @@ export default function PassportClient() {
                 Yes. Select Color Background and choose
                 white, blue, red, green, black or a custom
                 color. The original background is removed
-                before the selected color is applied.
+                before the new color is applied.
               </p>
             </details>
 
             <details className="rounded-2xl border border-slate-200 bg-white p-5">
               <summary className="cursor-pointer font-extrabold">
-                Does the tool work on iPhone?
+                Does it work on iPhone and iPad?
               </summary>
 
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Yes. On iPhone and iPad, the download uses
-                the browser's native Share flow when
-                supported. You can choose Save to Photos
-                from the Share menu.
+                Yes. On supported iPhone and iPad browsers,
+                the tool uses the native Share Sheet so you
+                can save the generated photo to Photos.
               </p>
             </details>
 
             <details className="rounded-2xl border border-slate-200 bg-white p-5">
               <summary className="cursor-pointer font-extrabold">
-                Can I create a specific KB file?
+                Can I set a maximum file size?
               </summary>
 
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                You can enter a maximum file size in KB.
-                NEXORA compresses the final image to try to
-                stay below that limit while preserving the
-                requested dimensions as much as possible.
+                Yes. You can enter a maximum file size in KB.
+                The tool compresses the generated JPEG to try
+                to stay below the selected limit.
               </p>
             </details>
 
             <details className="rounded-2xl border border-slate-200 bg-white p-5">
               <summary className="cursor-pointer font-extrabold">
-                Are my photos uploaded to a server?
+                Are my photos uploaded to NEXORA?
               </summary>
 
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                The photo processing is performed in the
+                The photo processing is performed in your
                 browser. No NEXORA account is required.
               </p>
             </details>
@@ -2048,8 +2536,9 @@ export default function PassportClient() {
       <footer className="border-t border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 text-center text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <div>
-            © {new Date().getFullYear()} NEXORA. Free online
-            tools for everyone.
+            ©{" "}
+            {new Date().getFullYear()}{" "}
+            NEXORA. Free online tools for everyone.
           </div>
 
           <a
