@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     canonical: PAGE_URL,
     languages: {
       en: `${SITE_URL}/passport-size-photo-maker`,
-      hi: `${SITE_URL}/passport-size-photo-maker/hi`,
+      "hi-Latn": `${SITE_URL}/passport-size-photo-maker/hi`,
       es: `${SITE_URL}/passport-size-photo-maker/es`,
       pt: `${SITE_URL}/passport-size-photo-maker/pt`,
       fr: `${SITE_URL}/passport-size-photo-maker/fr`,
