@@ -1,42 +1,25 @@
-import "./globals.css";
 import type { Metadata } from "next";
-import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "NEXORA Tools - 29+ Free Tools - Compress Image, Video Compressor, Image to Text",
-  description: "29+ Free Tools by NEXORA - Compress Image to Exact KB, Video Compressor to Exact MB, Image to Text OCR, Text to Speech 40+ Languages, PDF Tools HD No Watermark, Private.",
-  metadataBase: new URL("https://thenexoratools.com"),
+  title: "THE NEXORA TOOLS - Free Online Tools by Ayush Chauhan",
+  description: "30 Free Online Tools by Ayush Chauhan - Compress Image to 20KB, Background Remover, Passport Photo, Video Compressor. No Watermark, 100% Free, Private.",
+  authors: [{ name: "Ayush Chauhan", url: "https://thenexoratools.com/about" }],
   robots: { index: true, follow: true },
-  verification: { google: "zqASoTyCvuvQ5i316eF2-OKYLmt7vsrr7zVDET5CslY" },
-  icons: { icon: "/favicon.jpg" },
+  alternates: { canonical: "https://thenexoratools.com" },
+  openGraph: {
+    title: "THE NEXORA TOOLS - Free Online Tools by Ayush Chauhan",
+    description: "30 Free Tools - No Watermark, 100% Free, Private.",
+    url: "https://thenexoratools.com",
+    siteName: "THE NEXORA TOOLS",
+    type: "website",
+    images: [{ url: "https://thenexoratools.com/backgroundremover.jpg", width: 1200, height: 630, alt: "THE NEXORA TOOLS by Ayush Chauhan" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        {/* GA - Ab har tool pe auto chalega */}
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-61NV39S2VE" />
-        <Script id="gtag">
-          {`window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-61NV39S2VE');`}
-        </Script>
-
-        {/* AdSense - Verification Code */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3441427422658895"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-      </head>
-      <body>
-        {children}
-        <Analytics />
-      </body>
+      <body style={{ margin: 0, background: "#ffffff" }}>{children}</body>
     </html>
   );
 }
