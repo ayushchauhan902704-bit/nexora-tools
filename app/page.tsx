@@ -3,14 +3,14 @@ import { useState } from "react";
 
 const TOOLS = [
   { t:"Background Remover", d:"Remove background from any photo in 5 seconds. Transparent PNG, White / Blue / Red. No Watermark, 100% Free.", h:"/background-remover", c:"IMAGE", img:"/backgroundremover.jpg", tags:["AI","HD"] },
-  { t:"Compress Image to Any KB", d:"JPG / PNG / WEBP to 20KB, 50KB, 100KB, 200KB - Exact Size for UPSC, SSC, Bank Form.", h:"/compress-image", c:"IMAGE", img:"/compressimage.jpg", tags:["Exact KB","Private"] },
+  { t:"Compress Image to Any KB", d:"JPG / PNG / WEBP to 20KB, 50KB, 100KB, 200KB - Exact Size for UPSC, SSC, Bank Form.", h:"/compress-image", c:"IMAGE", img:"/compressimage.png", tags:["Exact KB","Private"] },
   { t:"Passport Photo Maker", d:"Make passport photo in 10 sizes - 20KB, 50KB, Visa, Stamp, 35x45mm. White background.", h:"/passport-size-photo-maker", c:"IMAGE", img:"/passportphotomaker.png", tags:["10 Sizes","Exact KB"] },
   { t:"Video Compressor to Any MB", d:"Compress video to exact 5MB, 10MB, 20MB, 100MB - HD quality, no watermark.", h:"/video-compressor", c:"VIDEO", img:"/videocompressor.jpg", tags:["Exact Size","HD"] },
-  { t:"Internet Speed Test - Pro", d:"Check Download, Upload, Ping in 3 Sec - Private & Accurate, no sign-up.", h:"/internet-speed-test", c:"TEXT", img:"/internetspeedtest.jpg", tags:["PRO Meter","Private"] },
+  { t:"Internet Speed Test - Pro", d:"Check Download, Upload, Ping in 3 Sec - Private & Accurate, no sign-up.", h:"/internet-speed-test", c:"TEXT", img:"/internetspeedtest.png", tags:["PRO Meter","Private"] },
   { t:"Image DPI Changer - 72 to 300 DPI", d:"Change JPG, PNG, HEIC DPI to 72, 150, 300, 600 - For Printing, Passport, Exam.", h:"/image-dpi-changer", c:"IMAGE", img:"/imagedpichanger.jpg", tags:["300 DPI","No Watermark"] },
   { t:"Image to Text - OCR Free", d:"Extract text from JPG, PNG in 3 Sec - Fast & Private, no upload to server.", h:"/image-to-text", c:"IMAGE", img:"/imagetotext.jpg", tags:["OCR","Private"] },
   { t:"Text to Speech - 40+ Languages", d:"Convert text to real human voice - 40+ Languages, free download.", h:"/text-to-speech", c:"TEXT", img:"/texttospeech.jpg", tags:["40+ Lang","Real Voice"] },
-  { t:"YT Thumbnail Downloader - HD", d:"Download YouTube thumbnail in HD 1280x720 - No watermark.", h:"/yt-thumbnail-downloader", c:"IMAGE", img:"/ytthumbnaildownloader.jpg", tags:["HD","No Watermark"] },
+  { t:"YT Thumbnail Downloader - HD", d:"Download YouTube thumbnail in HD 1280x720 - No watermark.", h:"/yt-thumbnail-downloader", c:"IMAGE", img:"/ytthumbnaildownloader.png", tags:["HD","No Watermark"] },
   { t:"Love Calculator - By Name", d:"Check love compatibility % by names - Fun test, share with friends.", h:"/love-calculator", c:"CALCULATOR", img:"/lovecalculator.jpg", tags:["Viral","Fun"] },
   { t:"JPG to PDF - Best", d:"50 images to single PDF - No watermark, HD quality.", h:"/jpg-to-pdf", c:"PDF", img:"/jpgtopdf.jpg", tags:["50 Photos","HD"] },
   { t:"PDF to JPG - HD", d:"Convert PDF pages to HD JPG images - No watermark, private.", h:"/pdf-to-jpg", c:"PDF", img:"/pdftojpg.jpg", tags:["HD","Private"] },
