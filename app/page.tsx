@@ -18,7 +18,7 @@ const TOOLS = [
   { t:"QR Code Generator - No.1", d:"Create QR for link, text, WiFi - Instant HD download.", h:"/qr-code-generator", c:"IMAGE", img:"/qrcodegenerator.jpg", tags:["Instant","HD"] },
   { t:"PDF to Word - HD", d:"Convert PDF to editable Word DOC - Keep formatting, no watermark.", h:"/pdf-to-word", c:"PDF", img:"/pdftoword.jpg", tags:["Editable","HD"] },
   { t:"Word to PDF - HD", d:"DOCX, DOC to PDF - A4, HD, no watermark.", h:"/word-to-pdf", c:"PDF", img:"/wordtopdf.jpg", tags:["A4 HD","HD"] },
-  { t:"PDF Merge & Split", d:"Merge multiple PDFs + Split PDF into pages - Unlimited, free.", h:"/pdf-merge-split", c:"PDF", img:"/pdfmergesplit.jpg", tags:["Unlimited","Free"] },
+  { t:"PDF Merge & Split", d:"Merge multiple PDFs + Split PDF into pages - Unlimited, free.", h:"/pdf-merge-split", c:"PDF", img:"/pdfmergesplit.PNG", tags:["Unlimited","Free"] },
   { t:"Image to Word - OCR", d:"Scanned PDF, JPG, PNG to editable Word via OCR.", h:"/image-to-word", c:"PDF", img:"/imagetoword.jpg", tags:["OCR","Scanned"] },
   { t:"BMI Calculator", d:"Check Body Mass Index - Healthy weight range, instant result.", h:"/bmi-calculator", c:"CALCULATOR", img:"/bmicalculator.jpg", tags:["Health","Instant"] },
   { t:"Age Calculator", d:"Calculate exact age in years, months, days from DOB.", h:"/age-calculator", c:"CALCULATOR", img:"/agecalculator.jpg", tags:["DOB","Exact"] },
