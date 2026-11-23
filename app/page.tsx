@@ -13,7 +13,7 @@ const TOOLS = [
   { t:"YT Thumbnail Downloader - HD", d:"Download YouTube thumbnail in HD 1280x720 - No watermark.", h:"/yt-thumbnail-downloader", c:"IMAGE", img:"/ytthumbnaildownloader.png", tags:["HD","No Watermark"] },
   { t:"Love Calculator - By Name", d:"Check love compatibility % by names - Fun test, share with friends.", h:"/love-calculator", c:"CALCULATOR", img:"/lovecalculator.jpg", tags:["Viral","Fun"] },
   { t:"JPG to PDF - Best", d:"50 images to single PDF - No watermark, HD quality.", h:"/jpg-to-pdf", c:"PDF", img:"/jpgtopdf.jpg", tags:["50 Photos","HD"] },
-  { t:"PDF to JPG - HD", d:"Convert PDF pages to HD JPG images - No watermark, private.", h:"/pdf-to-jpg", c:"PDF", img:"/pdftojpg.jpg", tags:["HD","Private"] },
+  { t:"PDF to JPG - HD", d:"Convert PDF pages to HD JPG images - No watermark, private.", h:"/pdf-to-jpg", c:"PDF", img:"/pdftojpg.png", tags:["HD","Private"] },
   { t:"Instagram Reels Downloader", d:"Download Reels in HD - No watermark, fast, free.", h:"/instagram-reel-downloader", c:"IMAGE", img:"/instagramreelsdownloader.png", tags:["HD","No Watermark"] },
   { t:"QR Code Generator - No.1", d:"Create QR for link, text, WiFi - Instant HD download.", h:"/qr-code-generator", c:"IMAGE", img:"/qrcodegenerator.png", tags:["Instant","HD"] },
   { t:"PDF to Word - HD", d:"Convert PDF to editable Word DOC - Keep formatting, no watermark.", h:"/pdf-to-word", c:"PDF", img:"/pdftoword.png", tags:["Editable","HD"] },
