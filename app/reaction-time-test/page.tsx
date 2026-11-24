@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
-import ReactionClient from "./ReactionClient";
+import ReactionClient from "./reactionClient";
 
 export const metadata: Metadata = {
-  title: "Reaction Time Test - How Fast Can You React? | NEXORA",
+  title: "Reaction Time Test - How Fast Are You? | NEXORA",
   description:
-    "Free Reaction Time Test - Test your reflexes in 5 rounds. Get accurate average, best time, graph, world rank & mobile support. Check if you react like a pro gamer.",
+    "Free online Reaction Time Test. Test your reaction speed across 5 rounds with accurate millisecond timing, personal best, consistency, median score and detailed results.",
   keywords: [
     "reaction time test",
-    "reflex test",
+    "reaction test",
     "reaction speed test",
-    "human reaction time test",
-    "average reaction time",
-    "gamer reaction test",
+    "human benchmark reaction time",
+    "reaction time checker",
+    "ms reaction test",
     "click reaction test",
   ],
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: "Reaction Time Test - How Fast Can You React?",
-    description: "My average reaction time is 240ms, can you beat me?",
-    type: "website",
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
-export default function ReactionTimePage() {
+export default function ReactionTimeTestPage() {
   return <ReactionClient />;
 }
