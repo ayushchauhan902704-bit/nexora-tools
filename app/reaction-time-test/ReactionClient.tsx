@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Status = "idle" | "waiting" | "ready" | "result" | "tooSoon" | "finished";
+type Status = "idle" | "waiting" | "ready" | "tooSoon" | "finished";
 
 const BEST_KEY = "nexora_reaction_best_v6";
 const HISTORY_KEY = "nexora_reaction_history_v6";
@@ -15,9 +15,10 @@ export default function ReactionClient() {
   const [best, setBest] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
   const [inputType, setInputType] = useState("Mouse / Touch");
-  const [attempts, setAttempts] = useState(0);
+  const [missed, setMissed] = useState(0);
 
   const timeoutRef = useRef<number | null>(null);
+  const readyTimeoutRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const statusRef = useRef<Status>("idle");
   const timesRef = useRef<number[]>([]);
@@ -32,26 +33,48 @@ export default function ReactionClient() {
         if (Array.isArray(p)) setHistory(p.filter((v): v is number => typeof v === "number").slice(0, 5));
       }
     } catch {}
-    return () => { if (timeoutRef.current) window.clearTimeout(timeoutRef.current); };
+    return () => { if (timeoutRef.current) window.clearTimeout(timeoutRef.current); if (readyTimeoutRef.current) window.clearTimeout(readyTimeoutRef.current); };
   }, []);
 
-  const clearTimer = () => {
+  const clearTimers = () => {
     if (timeoutRef.current) { window.clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (readyTimeoutRef.current) { window.clearTimeout(readyTimeoutRef.current); readyTimeoutRef.current = null; }
   };
 
-  const startGame = useCallback(() => {
-    clearTimer();
-    timesRef.current = [];
-    setTimes([]); setRound(1); setCurrentMs(0); setAttempts(0);
+  const startWaiting = useCallback((roundNum: number) => {
+    clearTimers();
+    setRound(roundNum);
     statusRef.current = "waiting"; setStatus("waiting");
     const delay = 1500 + Math.random() * 3000;
     timeoutRef.current = window.setTimeout(() => {
       startRef.current = performance.now();
       statusRef.current = "ready"; setStatus("ready");
+      // FIX: Agar 3 sec me click nahi kiya to round MISS
+      readyTimeoutRef.current = window.setTimeout(() => {
+        if (statusRef.current === "ready") {
+          setMissed((m) => m + 1);
+          setCurrentMs(0);
+          // Miss wala round dobara khelo, count nahi hoga
+          startWaiting(roundNum);
+        }
+      }, 3000);
     }, delay);
   }, []);
 
+  const startGame = useCallback(() => {
+    clearTimers();
+    timesRef.current = [];
+    setTimes([]); setCurrentMs(0); setMissed(0);
+    startWaiting(1);
+  }, [startWaiting]);
+
   const nextRound = useCallback((ms: number) => {
+    clearTimers();
+    // FIX: 1000ms se zyada = galat, count mat karo
+    if (ms > 1000 || ms < 50) {
+      startWaiting(round);
+      return;
+    }
     const newTimes = [...timesRef.current, ms];
     timesRef.current = newTimes;
     setTimes(newTimes); setCurrentMs(ms);
@@ -72,25 +95,18 @@ export default function ReactionClient() {
       });
       statusRef.current = "finished"; setStatus("finished");
     } else {
-      setRound(newTimes.length + 1);
-      statusRef.current = "waiting"; setStatus("waiting");
-      const delay = 1500 + Math.random() * 3000;
-      timeoutRef.current = window.setTimeout(() => {
-        startRef.current = performance.now();
-        statusRef.current = "ready"; setStatus("ready");
-      }, delay);
+      startWaiting(newTimes.length + 1);
     }
-  }, []);
+  }, [round, startWaiting]);
 
   const handleClick = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse") setInputType("🖱️ Mouse");
     else if (e.pointerType === "touch") setInputType("📱 Touch");
     else setInputType("✏️ Pen");
-    setAttempts((a) => a + 1);
 
     if (statusRef.current === "idle") { startGame(); return; }
     if (statusRef.current === "waiting") {
-      clearTimer();
+      clearTimers();
       statusRef.current = "tooSoon"; setStatus("tooSoon");
       return;
     }
@@ -101,7 +117,6 @@ export default function ReactionClient() {
     }
     if (statusRef.current === "tooSoon") { startGame(); return; }
     if (statusRef.current === "finished") { startGame(); return; }
-    if (statusRef.current === "result") { return; }
   };
 
   const getRank = (ms: number) => {
@@ -149,37 +164,29 @@ export default function ReactionClient() {
       <div className="wrap">
         <header className="top"><div className="logo">NEXORA <span>TOOLS</span></div><div className="topBest">🏆 Best <b>{best ? `${best}ms` : "—"}</b></div></header>
         <section className="hero"><div className="tag">⚡ FREE • 5 ROUNDS • NO SIGN UP</div><h1>Reaction Time Test — <span>How Fast Are You?</span></h1><p className="sub">Wait for green, then click as fast as you can. 5 rounds ka average hi tera asli reaction time hai.</p></section>
-
         <div className="rounds">{[1, 2, 3, 4, 5].map((r) => (<div key={r} className={`dot ${times.length >= r ? "done" : round === r && status !== "idle" && status !== "finished" ? "active" : ""}`}>{times.length >= r ? "✓" : r}</div>))}</div>
-
         <div className="box" style={{ background: getBoxColor() }} onPointerDown={handleClick}>
-          {status === "idle" && (<><div className="big">👆 CLICK TO START</div><div className="small">5 Rounds • Wait for GREEN</div></>)}
+          {status === "idle" && (<><div className="big">👆 CLICK TO START</div><div className="small">5 Rounds • Wait for GREEN • Green ke 3 sec me click karo</div></>)}
           {status === "waiting" && (<><div className="big">⏳ WAIT FOR GREEN...</div><div className="small">Round {round} / 5 • Jaldi click kiya to Too Soon!</div></>)}
-          {status === "ready" && (<><div className="big">🟢 CLICK NOW!</div><div className="small">As fast as you can!</div></>)}
+          {status === "ready" && (<><div className="big">🟢 CLICK NOW!</div><div className="small">As fast as you can! 3 sec me click karo</div></>)}
           {status === "tooSoon" && (<><div className="big">⚠️ TOO SOON!</div><div className="small">Tu green se pehle click kar diya. Fir se click karke restart kar.</div></>)}
           {status === "finished" && (<><div className="big">🎉 {Math.round(avg)}ms</div><div className="small">Average Reaction Time • Tap to Play Again</div></>)}
-          {status === "result" && (<><div className="big">{currentMs}ms</div></>)}
         </div>
-
         <div className="stats">
           <div className="stat"><span className="value">{times.length ? `${Math.round(avg)}ms` : "—"}</span><span className="label">AVERAGE</span></div>
           <div className="stat"><span className="value">{bestInGame ? `${bestInGame}ms` : "—"}</span><span className="label">BEST THIS GAME</span></div>
           <div className="stat"><span className="value">{best ? `${best}ms` : "—"}</span><span className="label">ALL TIME BEST</span></div>
           <div className="stat"><span className="value">{inputType}</span><span className="label">DEVICE</span></div>
         </div>
-
         {times.length > 0 && (
-          <section className="panel"><div className="panelTitle">📊 Round Results</div><div className="bars">{times.map((t, i) => (<div key={i} className="barRow"><span>Round {i + 1}</span><div className="barTrack"><div className="barFill" style={{ width: `${Math.min(100, (t / 500) * 100)}%`, background: t < 220 ? "#22c55e" : t < 300 ? "#f59e0b" : "#ef4444" }} /></div><span>{t}ms</span></div>))}</div></section>
+          <section className="panel"><div className="panelTitle">📊 Round Results {missed > 0 ? `• ${missed} Missed` : ""}</div><div className="bars">{times.map((t, i) => (<div key={i} className="barRow"><span>Round {i + 1}</span><div className="barTrack"><div className="barFill" style={{ width: `${Math.min(100, (t / 500) * 100)}%`, background: t < 220 ? "#22c55e" : t < 300 ? "#f59e0b" : "#ef4444" }} /></div><span>{t}ms</span></div>))}</div></section>
         )}
-
         {status === "finished" && rank && (
           <section className="result"><div className="resultScore">{Math.round(avg)}ms</div><div style={{ color: "#64748b", fontSize: 10, fontWeight: 900, marginTop: 4 }}>AVERAGE REACTION TIME • BEST {bestInGame}ms</div><div className="rank">{rank.icon} {rank.title}</div><p className="rankDesc">{rank.desc}</p><div className="buttons"><button className="action green" onClick={startGame}>↻ Play Again</button><button className="action gray" onClick={() => { navigator.clipboard.writeText(`My reaction time is ${Math.round(avg)}ms on NEXORA Reaction Test. Can you beat me? https://thenexoratools.com/reaction-time-test`); window.alert("Copied!"); }}>📤 Share</button></div></section>
         )}
-
         {history.length > 0 && (<section className="panel" style={{ textAlign: "center" }}><div className="panelTitle">LAST 5 AVERAGES</div><div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", marginTop: 8 }}>{history.map((h, i) => (<span key={i} style={{ background: "#0b1220", border: "1px solid #253247", borderRadius: 999, padding: "6px 10px", fontSize: 10, fontWeight: 900 }}>{h}ms</span>))}</div></section>)}
-
         <section className="content"><h2>What is Reaction Time?</h2><p>Reaction time is how long your brain takes to see something and react. Average human reaction time is around 250ms. Pro gamers are often below 180ms.</p><h3>How to improve?</h3><p>Sleep well, stay hydrated, practice daily, and keep your hand relaxed on mouse.</p></section>
-        <footer className="footer">© {new Date().getFullYear()} NEXORA Tools • Attempts: {attempts}</footer>
+        <footer className="footer">© {new Date().getFullYear()} NEXORA Tools</footer>
       </div>
     </main>
   );
