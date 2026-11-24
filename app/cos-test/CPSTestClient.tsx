@@ -16,65 +16,58 @@ type Ripple = {
   y: number;
 };
 
-const DURATIONS = [1, 5, 10, 30] as const;
+const DURATIONS = [1, 5, 10, 30];
 
-const STORAGE_BEST = "nexora_cps_best_v2";
-const STORAGE_HISTORY = "nexora_cps_history_v2";
+const BEST_KEY = "nexora_cps_best";
+const HISTORY_KEY = "nexora_cps_history";
 
 export default function CPSTestClient() {
-  const [duration, setDuration] = useState<number>(5);
+  const [duration, setDuration] = useState(5);
   const [status, setStatus] = useState<TestStatus>("idle");
-
   const [clicks, setClicks] = useState(0);
   const [cps, setCps] = useState(0);
   const [timeLeft, setTimeLeft] = useState(5);
-
   const [best, setBest] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
   const [graph, setGraph] = useState<number[]>([]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
 
-  const clicksRef = useRef(0);
+  const statusRef = useRef<TestStatus>("idle");
   const durationRef = useRef(5);
+  const clicksRef = useRef(0);
   const startTimeRef = useRef<number | null>(null);
 
-  const animationFrameRef = useRef<number | null>(null);
-  const graphTimerRef = useRef<number | null>(null);
-
-  const statusRef = useRef<TestStatus>("idle");
-  const lastPointerRef = useRef<number>(0);
+  const animationRef = useRef<number | null>(null);
+  const graphIntervalRef = useRef<number | null>(null);
 
   const finishRef = useRef<() => void>(() => {});
 
-  /*
-   * Load saved scores.
-   */
   useEffect(() => {
     try {
-      const savedBest = localStorage.getItem(STORAGE_BEST);
+      const savedBest = localStorage.getItem(BEST_KEY);
 
       if (savedBest) {
-        const parsedBest = Number(savedBest);
+        const value = Number(savedBest);
 
-        if (Number.isFinite(parsedBest)) {
-          setBest(parsedBest);
+        if (Number.isFinite(value)) {
+          setBest(value);
         }
       }
 
-      const savedHistory = localStorage.getItem(STORAGE_HISTORY);
+      const savedHistory = localStorage.getItem(HISTORY_KEY);
 
       if (savedHistory) {
-        const parsedHistory = JSON.parse(savedHistory);
+        const parsed = JSON.parse(savedHistory);
 
         if (
-          Array.isArray(parsedHistory) &&
-          parsedHistory.every((value) => typeof value === "number")
+          Array.isArray(parsed) &&
+          parsed.every((item) => typeof item === "number")
         ) {
-          setHistory(parsedHistory.slice(0, 5));
+          setHistory(parsed.slice(0, 5));
         }
       }
     } catch {
-      // Ignore localStorage errors.
+      // Ignore storage errors.
     }
 
     return () => {
@@ -82,82 +75,66 @@ export default function CPSTestClient() {
     };
   }, []);
 
-  /*
-   * Keep refs synchronized with state.
-   */
   useEffect(() => {
     durationRef.current = duration;
   }, [duration]);
 
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
-
-  /*
-   * Stop all timers.
-   */
   const stopTimers = useCallback(() => {
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
 
-    if (graphTimerRef.current !== null) {
-      window.clearInterval(graphTimerRef.current);
-      graphTimerRef.current = null;
+    if (graphIntervalRef.current !== null) {
+      window.clearInterval(graphIntervalRef.current);
+      graphIntervalRef.current = null;
     }
   }, []);
 
-  /*
-   * Save score history.
-   */
-  const saveResult = useCallback((finalCps: number) => {
-    const rounded = Number(finalCps.toFixed(2));
+  const saveResult = useCallback((score: number) => {
+    const roundedScore = Number(score.toFixed(2));
 
-    setBest((previousBest) => {
-      if (rounded > previousBest) {
+    setBest((oldBest) => {
+      if (roundedScore > oldBest) {
         try {
-          localStorage.setItem(STORAGE_BEST, String(rounded));
+          localStorage.setItem(
+            BEST_KEY,
+            roundedScore.toString(),
+          );
         } catch {}
 
-        return rounded;
+        return roundedScore;
       }
 
-      return previousBest;
+      return oldBest;
     });
 
-    setHistory((previousHistory) => {
-      const nextHistory = [rounded, ...previousHistory].slice(0, 5);
+    setHistory((oldHistory) => {
+      const newHistory = [
+        roundedScore,
+        ...oldHistory,
+      ].slice(0, 5);
 
       try {
         localStorage.setItem(
-          STORAGE_HISTORY,
-          JSON.stringify(nextHistory),
+          HISTORY_KEY,
+          JSON.stringify(newHistory),
         );
       } catch {}
 
-      return nextHistory;
+      return newHistory;
     });
   }, []);
 
-  /*
-   * Finish the test.
-   */
-  const finish = useCallback(() => {
+  const finishTest = useCallback(() => {
     if (statusRef.current !== "running") {
       return;
     }
 
     stopTimers();
 
-    const start = startTimeRef.current;
-
-    if (!start) {
-      return;
-    }
-
-    const elapsed = durationRef.current;
-    const finalCps = clicksRef.current / elapsed;
+    const finalCps =
+      clicksRef.current / durationRef.current;
 
     setCps(finalCps);
     setTimeLeft(0);
@@ -169,12 +146,9 @@ export default function CPSTestClient() {
   }, [saveResult, stopTimers]);
 
   useEffect(() => {
-    finishRef.current = finish;
-  }, [finish]);
+    finishRef.current = finishTest;
+  }, [finishTest]);
 
-  /*
-   * High precision timer.
-   */
   const updateTimer = useCallback(() => {
     if (
       statusRef.current !== "running" ||
@@ -202,13 +176,10 @@ export default function CPSTestClient() {
       return;
     }
 
-    animationFrameRef.current =
+    animationRef.current =
       requestAnimationFrame(updateTimer);
   }, []);
 
-  /*
-   * Start test.
-   */
   const startTest = useCallback(() => {
     stopTimers();
 
@@ -223,36 +194,32 @@ export default function CPSTestClient() {
     setGraph([]);
     setTimeLeft(durationRef.current);
 
-    /*
-     * Graph updates separately so the UI remains smooth.
-     */
-    graphTimerRef.current = window.setInterval(() => {
+    graphIntervalRef.current = window.setInterval(() => {
       if (
-        startTimeRef.current === null ||
-        statusRef.current !== "running"
+        statusRef.current !== "running" ||
+        startTimeRef.current === null
       ) {
         return;
       }
 
       const elapsed =
-        (performance.now() - startTimeRef.current) / 1000;
+        (performance.now() - startTimeRef.current) /
+        1000;
 
       const currentCps =
-        clicksRef.current / Math.max(elapsed, 0.001);
+        clicksRef.current /
+        Math.max(elapsed, 0.001);
 
-      setGraph((previous) => [
-        ...previous.slice(-49),
+      setGraph((oldGraph) => [
+        ...oldGraph.slice(-49),
         currentCps,
       ]);
     }, 150);
 
-    animationFrameRef.current =
+    animationRef.current =
       requestAnimationFrame(updateTimer);
   }, [stopTimers, updateTimer]);
 
-  /*
-   * Reset test.
-   */
   const resetTest = useCallback(() => {
     stopTimers();
 
@@ -265,13 +232,10 @@ export default function CPSTestClient() {
     setClicks(0);
     setCps(0);
     setGraph([]);
-    setTimeLeft(durationRef.current);
     setRipples([]);
+    setTimeLeft(durationRef.current);
   }, [stopTimers]);
 
-  /*
-   * Change duration.
-   */
   const changeDuration = useCallback(
     (seconds: number) => {
       if (statusRef.current === "running") {
@@ -281,41 +245,21 @@ export default function CPSTestClient() {
       stopTimers();
 
       durationRef.current = seconds;
+      statusRef.current = "idle";
 
       setDuration(seconds);
-      setTimeLeft(seconds);
+      setStatus("idle");
       setClicks(0);
       setCps(0);
       setGraph([]);
-      setStatus("idle");
-
-      statusRef.current = "idle";
+      setTimeLeft(seconds);
     },
     [stopTimers],
   );
 
-  /*
-   * Handle click/tap.
-   *
-   * Pointer events work for:
-   * - mouse
-   * - touch
-   * - pen
-   */
   const handlePointerDown = (
     event: ReactPointerEvent<HTMLDivElement>,
   ) => {
-    /*
-     * Prevent duplicate pointer events from being counted
-     * too aggressively on some touch devices.
-     */
-    if (
-      event.pointerType === "touch" &&
-      event.pointerId !== lastPointerRef.current
-    ) {
-      lastPointerRef.current = event.pointerId;
-    }
-
     if (statusRef.current === "done") {
       resetTest();
       return;
@@ -325,17 +269,11 @@ export default function CPSTestClient() {
       startTest();
     }
 
-    /*
-     * Count this pointer action.
-     */
     clicksRef.current += 1;
-
     setClicks(clicksRef.current);
 
-    /*
-     * Add ripple.
-     */
-    const rect = event.currentTarget.getBoundingClientRect();
+    const rect =
+      event.currentTarget.getBoundingClientRect();
 
     const ripple: Ripple = {
       id: Date.now() + Math.random(),
@@ -343,43 +281,38 @@ export default function CPSTestClient() {
       y: event.clientY - rect.top,
     };
 
-    setRipples((previous) => [
-      ...previous.slice(-7),
+    setRipples((oldRipples) => [
+      ...oldRipples.slice(-7),
       ripple,
     ]);
 
     window.setTimeout(() => {
-      setRipples((previous) =>
-        previous.filter((item) => item.id !== ripple.id),
+      setRipples((oldRipples) =>
+        oldRipples.filter(
+          (item) => item.id !== ripple.id,
+        ),
       );
     }, 550);
   };
 
-  /*
-   * Share result.
-   */
   const shareResult = async () => {
-    const shareText =
+    const text =
       `I scored ${cps.toFixed(2)} CPS on the NEXORA CPS Test. ` +
       `Can you beat my score?`;
 
-    const shareData = {
-      title: "My CPS Test Result",
-      text: shareText,
-      url: window.location.href,
-    };
-
     try {
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.share
-      ) {
-        await navigator.share(shareData);
+      if (navigator.share) {
+        await navigator.share({
+          title: "My CPS Test Result",
+          text,
+          url: window.location.href,
+        });
+
         return;
       }
 
       await navigator.clipboard.writeText(
-        `${shareText} ${window.location.href}`,
+        `${text} ${window.location.href}`,
       );
 
       window.alert("Result copied to clipboard!");
@@ -394,7 +327,7 @@ export default function CPSTestClient() {
         emoji: "🐢",
         title: "Average Clicker",
         message:
-          "Keep practicing. Consistency and relaxed clicking can improve your speed.",
+          "Keep practicing. A relaxed hand and consistent rhythm can improve your speed.",
       };
     }
 
@@ -403,7 +336,7 @@ export default function CPSTestClient() {
         emoji: "👍",
         title: "Good Clicker",
         message:
-          "Nice speed. You are building a solid clicking rhythm.",
+          "Nice work. You have a solid clicking speed.",
       };
     }
 
@@ -412,7 +345,7 @@ export default function CPSTestClient() {
         emoji: "🔥",
         title: "Pro Clicker",
         message:
-          "Excellent clicking speed. Your reaction and clicking rhythm are strong.",
+          "Excellent speed. Your clicking rhythm is getting seriously fast.",
       };
     }
 
@@ -429,7 +362,7 @@ export default function CPSTestClient() {
       emoji: "👑",
       title: "Insane Clicker",
       message:
-        "Outstanding CPS score. That is seriously fast clicking.",
+        "Outstanding result. That is extremely fast clicking.",
     };
   };
 
@@ -448,9 +381,9 @@ export default function CPSTestClient() {
         );
 
   return (
-    <main className="cps-page">
+    <main className="page">
       <style jsx>{`
-        .cps-page {
+        .page {
           min-height: 100vh;
           background:
             radial-gradient(
@@ -459,8 +392,8 @@ export default function CPSTestClient() {
               transparent 35%
             ),
             #070b14;
-          color: #ffffff;
-          padding: 24px 16px 60px;
+          color: #fff;
+          padding: 22px 15px 60px;
           font-family:
             Inter,
             -apple-system,
@@ -475,12 +408,12 @@ export default function CPSTestClient() {
           margin: 0 auto;
         }
 
-        .topbar {
+        .top {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin-bottom: 34px;
+          margin-bottom: 32px;
         }
 
         .logo {
@@ -493,10 +426,9 @@ export default function CPSTestClient() {
           color: #22c55e;
         }
 
-        .best-badge {
+        .best {
           background: #111827;
           border: 1px solid #263244;
-          color: #cbd5e1;
           border-radius: 999px;
           padding: 9px 14px;
           font-size: 13px;
@@ -504,7 +436,7 @@ export default function CPSTestClient() {
           white-space: nowrap;
         }
 
-        .best-badge strong {
+        .best strong {
           color: #22c55e;
         }
 
@@ -513,13 +445,11 @@ export default function CPSTestClient() {
           margin-bottom: 22px;
         }
 
-        .eyebrow {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          background: rgba(34, 197, 94, 0.1);
-          border: 1px solid rgba(34, 197, 94, 0.22);
+        .badge {
+          display: inline-block;
           color: #86efac;
+          background: rgba(34, 197, 94, 0.1);
+          border: 1px solid rgba(34, 197, 94, 0.25);
           border-radius: 999px;
           padding: 7px 12px;
           font-size: 12px;
@@ -546,7 +476,7 @@ export default function CPSTestClient() {
           line-height: 1.6;
         }
 
-        .duration-row {
+        .durations {
           display: flex;
           justify-content: center;
           flex-wrap: wrap;
@@ -554,38 +484,34 @@ export default function CPSTestClient() {
           margin: 22px 0 14px;
         }
 
-        .duration-button {
+        .duration {
           border: 1px solid #293548;
           background: #111827;
           color: #cbd5e1;
           padding: 10px 20px;
           border-radius: 999px;
           cursor: pointer;
-          font-weight: 800;
           font-size: 14px;
-          transition:
-            transform 0.15s,
-            background 0.15s,
-            border-color 0.15s;
+          font-weight: 800;
         }
 
-        .duration-button:hover {
-          transform: translateY(-1px);
-          border-color: #22c55e;
-        }
-
-        .duration-button.active {
+        .duration.active {
           background: #22c55e;
           border-color: #22c55e;
           color: #031108;
         }
 
-        .click-zone {
+        .duration:disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        .clickArea {
           position: relative;
           width: 100%;
           min-height: 330px;
-          border-radius: 24px;
           border: 2px solid #263244;
+          border-radius: 24px;
           background:
             linear-gradient(
               145deg,
@@ -593,9 +519,9 @@ export default function CPSTestClient() {
               #101827
             );
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          flex-direction: column;
           text-align: center;
           cursor: pointer;
           overflow: hidden;
@@ -603,10 +529,9 @@ export default function CPSTestClient() {
           -webkit-user-select: none;
           -webkit-tap-highlight-color: transparent;
           touch-action: manipulation;
-          outline: none;
         }
 
-        .click-zone.running {
+        .clickArea.running {
           border-color: #0ea5e9;
           background:
             linear-gradient(
@@ -616,7 +541,7 @@ export default function CPSTestClient() {
             );
         }
 
-        .click-zone.done {
+        .clickArea.done {
           border-color: #22c55e;
           background:
             linear-gradient(
@@ -626,45 +551,35 @@ export default function CPSTestClient() {
             );
         }
 
-        .click-zone:active {
-          transform: scale(0.997);
-        }
-
         .timer {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 76px;
-          background: rgba(0, 0, 0, 0.28);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 7px 13px;
+          background: rgba(0, 0, 0, 0.3);
+          padding: 7px 14px;
           border-radius: 999px;
           font-size: 13px;
           font-weight: 900;
         }
 
-        .click-number {
+        .number {
           margin-top: 10px;
           font-size: clamp(70px, 15vw, 112px);
           line-height: 0.95;
           font-weight: 950;
           letter-spacing: -4px;
-          text-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
         }
 
-        .click-instruction {
+        .instruction {
           margin-top: 13px;
           font-size: 18px;
           font-weight: 900;
         }
 
-        .click-subtext {
+        .hint {
           margin-top: 6px;
           color: rgba(255, 255, 255, 0.72);
           font-size: 13px;
         }
 
-        .progress-track {
+        .progress {
           width: 82%;
           height: 8px;
           margin-top: 22px;
@@ -673,11 +588,10 @@ export default function CPSTestClient() {
           overflow: hidden;
         }
 
-        .progress-fill {
+        .progressFill {
           height: 100%;
-          background: #ffffff;
+          background: #fff;
           border-radius: inherit;
-          transition: width 0.08s linear;
         }
 
         .ripple {
@@ -717,7 +631,7 @@ export default function CPSTestClient() {
           text-align: center;
         }
 
-        .stat-value {
+        .value {
           display: block;
           color: #22c55e;
           font-size: 24px;
@@ -725,10 +639,10 @@ export default function CPSTestClient() {
           font-weight: 950;
         }
 
-        .stat-label {
+        .label {
           display: block;
-          color: #64748b;
           margin-top: 7px;
+          color: #64748b;
           font-size: 11px;
           font-weight: 700;
         }
@@ -741,7 +655,7 @@ export default function CPSTestClient() {
           padding: 17px;
         }
 
-        .panel-title {
+        .panelTitle {
           font-size: 14px;
           font-weight: 900;
         }
@@ -755,13 +669,48 @@ export default function CPSTestClient() {
           overflow: hidden;
         }
 
-        .graph-bar {
+        .bar {
           flex: 1;
           min-width: 3px;
           max-width: 12px;
           border-radius: 5px 5px 0 0;
-          background: #22c55e;
-          opacity: 0.9;
+        }
+
+        .result {
+          margin-top: 16px;
+          background: #111827;
+          border: 2px solid #22c55e;
+          border-radius: 20px;
+          padding: 22px;
+          text-align: center;
+        }
+
+        .score {
+          color: #22c55e;
+          font-size: 48px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .scoreLabel {
+          margin-top: 6px;
+          color: #94a3b8;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .rank {
+          margin-top: 17px;
+          font-size: 24px;
+          font-weight: 950;
+        }
+
+        .message {
+          max-width: 600px;
+          margin: 7px auto 0;
+          color: #cbd5e1;
+          font-size: 14px;
+          line-height: 1.6;
         }
 
         .buttons {
@@ -772,7 +721,7 @@ export default function CPSTestClient() {
           margin-top: 17px;
         }
 
-        .action-button {
+        .button {
           border: 0;
           border-radius: 999px;
           padding: 13px 24px;
@@ -788,54 +737,17 @@ export default function CPSTestClient() {
 
         .secondary {
           background: #1e293b;
-          color: #ffffff;
+          color: #fff;
           border: 1px solid #334155;
         }
 
-        .result {
-          margin-top: 16px;
-          background: #111827;
-          border: 2px solid #22c55e;
-          border-radius: 20px;
-          padding: 22px;
-          text-align: center;
-        }
-
-        .result-score {
-          font-size: 46px;
-          line-height: 1;
-          font-weight: 950;
-          color: #22c55e;
-        }
-
-        .result-cps {
-          margin-top: 6px;
-          color: #94a3b8;
-          font-size: 13px;
-          font-weight: 700;
-        }
-
-        .rank {
-          margin-top: 17px;
-          font-size: 24px;
-          font-weight: 950;
-        }
-
-        .rank-message {
-          max-width: 600px;
-          margin: 7px auto 0;
-          color: #cbd5e1;
-          font-size: 14px;
-          line-height: 1.6;
-        }
-
-        .history-title {
+        .historyTitle {
           text-align: center;
           font-size: 13px;
           font-weight: 900;
         }
 
-        .history-list {
+        .history {
           display: flex;
           justify-content: center;
           flex-wrap: wrap;
@@ -843,14 +755,14 @@ export default function CPSTestClient() {
           margin-top: 10px;
         }
 
-        .history-chip {
+        .chip {
           background: #0b1220;
           border: 1px solid #253247;
           border-radius: 999px;
           padding: 8px 13px;
+          color: #cbd5e1;
           font-size: 12px;
           font-weight: 800;
-          color: #cbd5e1;
         }
 
         .content {
@@ -871,17 +783,18 @@ export default function CPSTestClient() {
           font-size: 16px;
         }
 
-        .content p {
-          margin: 0;
+        .content p,
+        .content li {
           color: #94a3b8;
           font-size: 14px;
           line-height: 1.75;
         }
 
+        .content p {
+          margin: 0;
+        }
+
         .content ul {
-          color: #94a3b8;
-          font-size: 14px;
-          line-height: 1.8;
           padding-left: 20px;
         }
 
@@ -893,11 +806,11 @@ export default function CPSTestClient() {
         }
 
         @media (max-width: 650px) {
-          .cps-page {
+          .page {
             padding: 18px 12px 45px;
           }
 
-          .topbar {
+          .top {
             margin-bottom: 25px;
           }
 
@@ -905,12 +818,12 @@ export default function CPSTestClient() {
             font-size: 18px;
           }
 
-          .best-badge {
+          .best {
             padding: 8px 10px;
             font-size: 11px;
           }
 
-          .click-zone {
+          .clickArea {
             min-height: 300px;
             border-radius: 20px;
           }
@@ -919,11 +832,11 @@ export default function CPSTestClient() {
             grid-template-columns: repeat(2, 1fr);
           }
 
-          .click-instruction {
+          .instruction {
             font-size: 16px;
           }
 
-          .progress-track {
+          .progress {
             width: 88%;
           }
 
@@ -934,19 +847,19 @@ export default function CPSTestClient() {
       `}</style>
 
       <div className="container">
-        <header className="topbar">
+        <header className="top">
           <div className="logo">
             NEXORA <span>TOOLS</span>
           </div>
 
-          <div className="best-badge">
+          <div className="best">
             🏆 Best:{" "}
             <strong>{best.toFixed(2)} CPS</strong>
           </div>
         </header>
 
         <section className="hero">
-          <div className="eyebrow">
+          <div className="badge">
             ⚡ FREE ONLINE CLICK SPEED TEST
           </div>
 
@@ -956,30 +869,31 @@ export default function CPSTestClient() {
           </h1>
 
           <p className="subtitle">
-            Test your clicking speed and see how many clicks
-            you can make per second. Fast, free, and works on
-            desktop and mobile.
+            Test your clicking speed and find out how many
+            clicks you can make per second. Free, fast, and
+            works on desktop and mobile.
           </p>
         </section>
 
-        <div className="duration-row">
+        <div className="durations">
           {DURATIONS.map((seconds) => (
             <button
               key={seconds}
               type="button"
-              className={`duration-button ${
+              className={`duration ${
                 duration === seconds ? "active" : ""
               }`}
               onClick={() => changeDuration(seconds)}
               disabled={status === "running"}
             >
-              {seconds} Second{seconds !== 1 ? "s" : ""}
+              {seconds} Second
+              {seconds !== 1 ? "s" : ""}
             </button>
           ))}
         </div>
 
         <div
-          className={`click-zone ${
+          className={`clickArea ${
             status === "running"
               ? "running"
               : status === "done"
@@ -989,7 +903,7 @@ export default function CPSTestClient() {
           onPointerDown={handlePointerDown}
           role="button"
           tabIndex={0}
-          aria-label="CPS Test click area"
+          aria-label="CPS test click area"
         >
           {ripples.map((ripple) => (
             <span
@@ -1010,11 +924,11 @@ export default function CPSTestClient() {
                 : `${duration}s`}
           </div>
 
-          <div className="click-number">
+          <div className="number">
             {clicks}
           </div>
 
-          <div className="click-instruction">
+          <div className="instruction">
             {status === "idle" &&
               "👆 CLICK HERE TO START"}
 
@@ -1025,9 +939,9 @@ export default function CPSTestClient() {
               `🎉 ${cps.toFixed(2)} CPS`}
           </div>
 
-          <div className="click-subtext">
+          <div className="hint">
             {status === "idle" &&
-              "Your timer starts with your first click"}
+              "The timer starts with your first click"}
 
             {status === "running" &&
               `Current speed: ${cps.toFixed(2)} clicks per second`}
@@ -1036,9 +950,9 @@ export default function CPSTestClient() {
               "Click the area to play again"}
           </div>
 
-          <div className="progress-track">
+          <div className="progress">
             <div
-              className="progress-fill"
+              className="progressFill"
               style={{
                 width: `${progress}%`,
               }}
@@ -1048,37 +962,41 @@ export default function CPSTestClient() {
 
         <div className="stats">
           <div className="stat">
-            <span className="stat-value">
+            <span className="value">
               {clicks}
             </span>
-            <span className="stat-label">
+
+            <span className="label">
               TOTAL CLICKS
             </span>
           </div>
 
           <div className="stat">
-            <span className="stat-value">
+            <span className="value">
               {cps.toFixed(2)}
             </span>
-            <span className="stat-label">
+
+            <span className="label">
               CURRENT CPS
             </span>
           </div>
 
           <div className="stat">
-            <span className="stat-value">
+            <span className="value">
               {best.toFixed(2)}
             </span>
-            <span className="stat-label">
+
+            <span className="label">
               PERSONAL BEST
             </span>
           </div>
 
           <div className="stat">
-            <span className="stat-value">
+            <span className="value">
               {timeLeft.toFixed(1)}s
             </span>
-            <span className="stat-label">
+
+            <span className="label">
               TIME LEFT
             </span>
           </div>
@@ -1086,7 +1004,7 @@ export default function CPSTestClient() {
 
         {graph.length > 2 && (
           <section className="panel">
-            <div className="panel-title">
+            <div className="panelTitle">
               📈 Live CPS Performance
             </div>
 
@@ -1097,20 +1015,22 @@ export default function CPSTestClient() {
                   Math.max(5, (value / 15) * 100),
                 );
 
+                const barColor =
+                  value >= 10
+                    ? "#ef4444"
+                    : value >= 7
+                      ? "#a855f7"
+                      : value >= 5
+                        ? "#22c55e"
+                        : "#0ea5e9";
+
                 return (
                   <div
                     key={`${index}-${value}`}
-                    className="graph-bar"
+                    className="bar"
                     style={{
                       height: `${height}%`,
-                      background:
-                        value >= 10
-                          ? "#ef4444"
-                          : value >= 7
-                            ? "#a855f7"
-                            : value >= 5
-                              ? "#22c55e"
-                              : "#0ea5e9",
+                      background: barColor,
                     }}
                   />
                 );
@@ -1121,11 +1041,11 @@ export default function CPSTestClient() {
 
         {status === "done" && rank && (
           <section className="result">
-            <div className="result-score">
+            <div className="score">
               {cps.toFixed(2)}
             </div>
 
-            <div className="result-cps">
+            <div className="scoreLabel">
               CLICKS PER SECOND
             </div>
 
@@ -1133,14 +1053,14 @@ export default function CPSTestClient() {
               {rank.emoji} {rank.title}
             </div>
 
-            <p className="rank-message">
+            <p className="message">
               {rank.message}
             </p>
 
             <div className="buttons">
               <button
                 type="button"
-                className="action-button primary"
+                className="button primary"
                 onClick={resetTest}
               >
                 ↻ Play Again
@@ -1148,7 +1068,7 @@ export default function CPSTestClient() {
 
               <button
                 type="button"
-                className="action-button secondary"
+                className="button secondary"
                 onClick={shareResult}
               >
                 📤 Share Result
@@ -1161,7 +1081,7 @@ export default function CPSTestClient() {
           <div className="buttons">
             <button
               type="button"
-              className="action-button primary"
+              className="button primary"
               onClick={resetTest}
             >
               ↻ Restart
@@ -1169,7 +1089,7 @@ export default function CPSTestClient() {
 
             <button
               type="button"
-              className="action-button secondary"
+              className="button secondary"
               onClick={shareResult}
             >
               📤 Share
@@ -1179,15 +1099,15 @@ export default function CPSTestClient() {
 
         {history.length > 0 && (
           <section className="panel">
-            <div className="history-title">
+            <div className="historyTitle">
               📊 Your Last 5 Scores
             </div>
 
-            <div className="history-list">
+            <div className="history">
               {history.map((score, index) => (
                 <span
                   key={`${score}-${index}`}
-                  className="history-chip"
+                  className="chip"
                 >
                   {score.toFixed(2)} CPS
                 </span>
@@ -1214,10 +1134,9 @@ export default function CPSTestClient() {
           </h3>
 
           <p>
-            A score around 5–7 CPS is generally a solid
-            clicking speed. Scores above 8 CPS are fast, while
-            10+ CPS is considered very high for ordinary
-            clicking.
+            Around 5–7 CPS is a solid clicking speed for many
+            users. Scores above 8 CPS are fast, while 10+ CPS
+            is considered very high for ordinary clicking.
           </p>
 
           <h3>
@@ -1229,18 +1148,16 @@ export default function CPSTestClient() {
               Keep your hand relaxed while clicking.
             </li>
             <li>
-              Practice short clicking sessions regularly.
+              Practice short sessions regularly.
             </li>
             <li>
-              Experiment with different mouse grips and
-              clicking techniques.
+              Experiment with different clicking techniques.
             </li>
             <li>
               Use a responsive mouse with a reliable switch.
             </li>
             <li>
-              Avoid excessive force because it can reduce
-              consistency.
+              Focus on consistency instead of excessive force.
             </li>
           </ul>
 
@@ -1249,9 +1166,8 @@ export default function CPSTestClient() {
           </h3>
 
           <p>
-            Yes. This test supports pointer input, so it can
-            be used with a mouse, touchscreen, or compatible
-            pointer device.
+            Yes. The test uses pointer events and supports
+            touchscreen devices as well as mouse input.
           </p>
 
           <h3>
