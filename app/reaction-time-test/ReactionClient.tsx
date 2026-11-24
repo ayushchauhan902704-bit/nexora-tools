@@ -1,1286 +1,186 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type TestState =
-  | "idle"
-  | "waiting"
-  | "ready"
-  | "result"
-  | "finished";
+type Status = "idle" | "waiting" | "ready" | "result" | "tooSoon" | "finished";
 
-const TOTAL_ROUNDS = 5;
-const MIN_DELAY = 1800;
-const MAX_DELAY = 4500;
+const BEST_KEY = "nexora_reaction_best_v6";
+const HISTORY_KEY = "nexora_reaction_history_v6";
 
 export default function ReactionClient() {
-  const [state, setState] = useState<TestState>("idle");
-  const [round, setRound] = useState(0);
-  const [results, setResults] = useState<number[]>([]);
-  const [currentResult, setCurrentResult] = useState<number | null>(null);
-  const [message, setMessage] = useState("Test your reaction speed.");
+  const [status, setStatus] = useState<Status>("idle");
+  const [round, setRound] = useState(1);
+  const [times, setTimes] = useState<number[]>([]);
+  const [currentMs, setCurrentMs] = useState(0);
+  const [best, setBest] = useState(0);
+  const [history, setHistory] = useState<number[]>([]);
+  const [inputType, setInputType] = useState("Mouse / Touch");
+  const [attempts, setAttempts] = useState(0);
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startTimeRef = useRef<number | null>(null);
-  const mountedRef = useRef(true);
-
-  /* -----------------------------
-     Cleanup
-  ----------------------------- */
+  const timeoutRef = useRef<number | null>(null);
+  const startRef = useRef<number>(0);
+  const statusRef = useRef<Status>("idle");
+  const timesRef = useRef<number[]>([]);
 
   useEffect(() => {
-    mountedRef.current = true;
-
-    return () => {
-      mountedRef.current = false;
-
-      if (timerRef.current !== null) {
-        clearTimeout(timerRef.current);
+    try {
+      const b = localStorage.getItem(BEST_KEY);
+      if (b) setBest(Number(b) || 0);
+      const h = localStorage.getItem(HISTORY_KEY);
+      if (h) {
+        const p = JSON.parse(h);
+        if (Array.isArray(p)) setHistory(p.filter((v): v is number => typeof v === "number").slice(0, 5));
       }
-    };
+    } catch {}
+    return () => { if (timeoutRef.current) window.clearTimeout(timeoutRef.current); };
   }, []);
 
-  const clearTimer = useCallback(() => {
-    if (timerRef.current !== null) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
-  /* -----------------------------
-     Random delay
-  ----------------------------- */
-
-  const getRandomDelay = () => {
-    return Math.floor(
-      Math.random() * (MAX_DELAY - MIN_DELAY + 1) + MIN_DELAY
-    );
+  const clearTimer = () => {
+    if (timeoutRef.current) { window.clearTimeout(timeoutRef.current); timeoutRef.current = null; }
   };
 
-  /* -----------------------------
-     Start waiting phase
-  ----------------------------- */
-
-  const beginWaiting = useCallback(() => {
+  const startGame = useCallback(() => {
     clearTimer();
-
-    startTimeRef.current = null;
-    setCurrentResult(null);
-    setState("waiting");
-    setMessage("Wait for green...");
-
-    const delay = getRandomDelay();
-
-    timerRef.current = setTimeout(() => {
-      if (!mountedRef.current) return;
-
-      startTimeRef.current = performance.now();
-
-      setState("ready");
-      setMessage("CLICK NOW!");
+    timesRef.current = [];
+    setTimes([]); setRound(1); setCurrentMs(0); setAttempts(0);
+    statusRef.current = "waiting"; setStatus("waiting");
+    const delay = 1500 + Math.random() * 3000;
+    timeoutRef.current = window.setTimeout(() => {
+      startRef.current = performance.now();
+      statusRef.current = "ready"; setStatus("ready");
     }, delay);
-  }, [clearTimer]);
+  }, []);
 
-  /* -----------------------------
-     Start complete test
-  ----------------------------- */
-
-  const startTest = useCallback(() => {
-    clearTimer();
-
-    setRound(1);
-    setResults([]);
-    setCurrentResult(null);
-    startTimeRef.current = null;
-
-    setState("waiting");
-    setMessage("Wait for green...");
-
-    const delay = getRandomDelay();
-
-    timerRef.current = setTimeout(() => {
-      if (!mountedRef.current) return;
-
-      startTimeRef.current = performance.now();
-
-      setState("ready");
-      setMessage("CLICK NOW!");
-    }, delay);
-  }, [clearTimer]);
-
-  /* -----------------------------
-     Handle test area click
-  ----------------------------- */
-
-  const handleTestClick = useCallback(() => {
-    /*
-      IDLE
-      Start the test.
-    */
-    if (state === "idle") {
-      startTest();
-      return;
+  const nextRound = useCallback((ms: number) => {
+    const newTimes = [...timesRef.current, ms];
+    timesRef.current = newTimes;
+    setTimes(newTimes); setCurrentMs(ms);
+    if (newTimes.length >= 5) {
+      const avg = newTimes.reduce((a, b) => a + b, 0) / newTimes.length;
+      const bestInGame = Math.min(...newTimes);
+      setBest((old) => {
+        if (bestInGame < old || old === 0) {
+          try { localStorage.setItem(BEST_KEY, String(Math.round(bestInGame))); } catch {}
+          return Math.round(bestInGame);
+        }
+        return old;
+      });
+      setHistory((old) => {
+        const next = [Math.round(avg), ...old].slice(0, 5);
+        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)); } catch {}
+        return next;
+      });
+      statusRef.current = "finished"; setStatus("finished");
+    } else {
+      setRound(newTimes.length + 1);
+      statusRef.current = "waiting"; setStatus("waiting");
+      const delay = 1500 + Math.random() * 3000;
+      timeoutRef.current = window.setTimeout(() => {
+        startRef.current = performance.now();
+        statusRef.current = "ready"; setStatus("ready");
+      }, delay);
     }
+  }, []);
 
-    /*
-      WAITING
-      User clicked too early.
-    */
-    if (state === "waiting") {
+  const handleClick = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse") setInputType("🖱️ Mouse");
+    else if (e.pointerType === "touch") setInputType("📱 Touch");
+    else setInputType("✏️ Pen");
+    setAttempts((a) => a + 1);
+
+    if (statusRef.current === "idle") { startGame(); return; }
+    if (statusRef.current === "waiting") {
       clearTimer();
-
-      setCurrentResult(-1);
-      setState("result");
-      setMessage("Too soon! Wait for green.");
-
+      statusRef.current = "tooSoon"; setStatus("tooSoon");
       return;
     }
-
-    /*
-      READY
-      Calculate reaction time.
-    */
-    if (
-      state === "ready" &&
-      startTimeRef.current !== null
-    ) {
-      const reactionTime = Math.round(
-        performance.now() - startTimeRef.current
-      );
-
-      startTimeRef.current = null;
-
-      const updatedResults = [
-        ...results,
-        reactionTime,
-      ];
-
-      setResults(updatedResults);
-      setCurrentResult(reactionTime);
-      setState("result");
-
-      if (updatedResults.length === TOTAL_ROUNDS) {
-        setMessage("Test complete!");
-      } else {
-        setMessage("Nice! Get ready for the next round.");
-      }
-
+    if (statusRef.current === "ready") {
+      const ms = performance.now() - startRef.current;
+      nextRound(Math.round(ms));
       return;
     }
-  }, [
-    state,
-    results,
-    startTest,
-    clearTimer,
-  ]);
-
-  /* -----------------------------
-     Next round
-  ----------------------------- */
-
-  const handleNextRound = useCallback(() => {
-    if (results.length >= TOTAL_ROUNDS) {
-      setState("finished");
-      return;
-    }
-
-    setRound(results.length + 1);
-
-    beginWaiting();
-  }, [results.length, beginWaiting]);
-
-  /* -----------------------------
-     Restart
-  ----------------------------- */
-
-  const restartTest = useCallback(() => {
-    clearTimer();
-
-    startTimeRef.current = null;
-
-    setState("idle");
-    setRound(0);
-    setResults([]);
-    setCurrentResult(null);
-    setMessage("Test your reaction speed.");
-  }, [clearTimer]);
-
-  /* -----------------------------
-     Keyboard support
-  ----------------------------- */
-
-  useEffect(() => {
-    const handleKeyboard = (event: KeyboardEvent) => {
-      if (
-        event.code !== "Space" &&
-        event.code !== "Enter"
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-
-      if (
-        state === "result" &&
-        currentResult !== -1 &&
-        results.length < TOTAL_ROUNDS
-      ) {
-        handleNextRound();
-        return;
-      }
-
-      handleTestClick();
-    };
-
-    window.addEventListener(
-      "keydown",
-      handleKeyboard
-    );
-
-    return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyboard
-      );
-    };
-  }, [
-    state,
-    currentResult,
-    results.length,
-    handleNextRound,
-    handleTestClick,
-  ]);
-
-  /* -----------------------------
-     Statistics
-  ----------------------------- */
-
-  const validResults = results.filter(
-    (time) => time >= 0
-  );
-
-  const average =
-    validResults.length > 0
-      ? Math.round(
-          validResults.reduce(
-            (sum, time) => sum + time,
-            0
-          ) / validResults.length
-        )
-      : null;
-
-  const best =
-    validResults.length > 0
-      ? Math.min(...validResults)
-      : null;
-
-  const worst =
-    validResults.length > 0
-      ? Math.max(...validResults)
-      : null;
-
-  /* -----------------------------
-     Rating
-  ----------------------------- */
-
-  const getRating = (
-    time: number | null
-  ) => {
-    if (time === null || time < 0) {
-      return "";
-    }
-
-    if (time < 150) {
-      return "Lightning Fast";
-    }
-
-    if (time < 200) {
-      return "Excellent";
-    }
-
-    if (time < 250) {
-      return "Very Fast";
-    }
-
-    if (time < 300) {
-      return "Fast";
-    }
-
-    if (time < 400) {
-      return "Average";
-    }
-
-    if (time < 500) {
-      return "Slow";
-    }
-
-    return "Keep Practicing";
+    if (statusRef.current === "tooSoon") { startGame(); return; }
+    if (statusRef.current === "finished") { startGame(); return; }
+    if (statusRef.current === "result") { return; }
   };
 
-  /* -----------------------------
-     Dynamic test area class
-  ----------------------------- */
+  const getRank = (ms: number) => {
+    if (ms < 180) return { icon: "⚡", title: "Pro Gamer Reflexes", desc: "Insane! Faster than 95% people. Pro esports level." };
+    if (ms < 220) return { icon: "🔥", title: "Excellent Reflexes", desc: "Very fast! Top 15% me ho tum." };
+    if (ms < 270) return { icon: "👍", title: "Good Reflexes", desc: "Average se better ho. World average 250ms hai." };
+    if (ms < 350) return { icon: "🙂", title: "Average Reflexes", desc: "Normal hai. Practice se 220ms tak ja sakta hai." };
+    return { icon: "🐢", title: "Slow Reflexes", desc: "Neend poori karo aur practice karo, improve ho jayega." };
+  };
 
-  const getTestAreaClass = () => {
-    if (state === "waiting") {
-      return "waiting";
-    }
+  const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+  const bestInGame = times.length ? Math.min(...times) : 0;
+  const rank = status === "finished" ? getRank(avg) : null;
 
-    if (state === "ready") {
-      return "ready";
-    }
-
-    if (
-      state === "result" &&
-      currentResult === -1
-    ) {
-      return "tooSoon";
-    }
-
-    if (state === "result") {
-      return "result";
-    }
-
-    if (state === "finished") {
-      return "finished";
-    }
-
-    return "idle";
+  const getBoxColor = () => {
+    if (status === "waiting") return "#dc2626";
+    if (status === "ready") return "#22c55e";
+    if (status === "tooSoon") return "#f59e0b";
+    if (status === "finished") return "#22c55e";
+    return "#172033";
   };
 
   return (
-    <main className="reactionPage">
-      <div className="reactionContainer">
-
-        {/* =========================
-            HEADER
-        ========================= */}
-
-        <header className="header">
-
-          <div className="badge">
-            REACTION TIME TEST
-          </div>
-
-          <h1>
-            Reaction Time Test
-          </h1>
-
-          <p>
-            Test how quickly you can react when
-            the screen changes.
-          </p>
-
-        </header>
-
-        {/* =========================
-            MAIN CARD
-        ========================= */}
-
-        <section className="testCard">
-
-          {/* TOP STATS */}
-
-          <div className="topStats">
-
-            <div className="topStat">
-
-              <span>ROUND</span>
-
-              <strong>
-                {round > 0
-                  ? `${round}/${TOTAL_ROUNDS}`
-                  : "—"}
-              </strong>
-
-            </div>
-
-            <div className="topStat right">
-
-              <span>AVERAGE</span>
-
-              <strong>
-                {average !== null
-                  ? `${average} ms`
-                  : "—"}
-              </strong>
-
-            </div>
-
-          </div>
-
-          {/* =========================
-              TEST AREA
-          ========================= */}
-
-          <button
-            type="button"
-            className={`testArea ${getTestAreaClass()}`}
-            onClick={handleTestClick}
-            aria-label="Reaction time test"
-          >
-
-            {/* IDLE */}
-
-            {state === "idle" && (
-              <>
-                <div className="bolt">
-                  ⚡
-                </div>
-
-                <div className="mainText">
-                  Click to Start
-                </div>
-
-                <div className="subText">
-                  Or press Space
-                </div>
-              </>
-            )}
-
-            {/* WAITING */}
-
-            {state === "waiting" && (
-              <>
-                <div className="mainText">
-                  Wait...
-                </div>
-
-                <div className="subText">
-                  Do not click yet
-                </div>
-              </>
-            )}
-
-            {/* READY */}
-
-            {state === "ready" && (
-              <>
-                <div className="mainText">
-                  CLICK!
-                </div>
-
-                <div className="subText">
-                  React as quickly as you can
-                </div>
-              </>
-            )}
-
-            {/* RESULT */}
-
-            {state === "result" && (
-              <>
-                {currentResult === -1 ? (
-                  <>
-                    <div className="mainText">
-                      Too Soon!
-                    </div>
-
-                    <div className="subText">
-                      You clicked before the screen
-                      changed.
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="reactionNumber">
-                      {currentResult}
-                      <span>ms</span>
-                    </div>
-
-                    <div className="rating">
-                      {getRating(currentResult)}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {/* FINISHED */}
-
-            {state === "finished" && (
-              <>
-                <div className="mainText">
-                  Test Complete
-                </div>
-
-                <div className="subText">
-                  Your average reaction time
-                </div>
-
-                <div className="finalAverage">
-                  {average} ms
-                </div>
-              </>
-            )}
-
-          </button>
-
-          {/* =========================
-              RESULT ACTION
-          ========================= */}
-
-          {state === "result" && (
-            <div className="actionArea">
-
-              {currentResult === -1 ? (
-                <button
-                  type="button"
-                  className="primaryButton"
-                  onClick={startTest}
-                >
-                  Try Again
-                </button>
-              ) : results.length <
-                TOTAL_ROUNDS ? (
-                <button
-                  type="button"
-                  className="primaryButton"
-                  onClick={handleNextRound}
-                >
-                  Next Round
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="primaryButton"
-                  onClick={() =>
-                    setState("finished")
-                  }
-                >
-                  View Results
-                </button>
-              )}
-
-            </div>
-          )}
-
-          {/* =========================
-              FINAL RESULTS
-          ========================= */}
-
-          {state === "finished" && (
-            <div className="finalResults">
-
-              <div className="resultBox">
-
-                <span>
-                  Average
-                </span>
-
-                <strong>
-                  {average} ms
-                </strong>
-
-              </div>
-
-              <div className="resultBox">
-
-                <span>
-                  Best
-                </span>
-
-                <strong>
-                  {best} ms
-                </strong>
-
-              </div>
-
-              <div className="resultBox">
-
-                <span>
-                  Worst
-                </span>
-
-                <strong>
-                  {worst} ms
-                </strong>
-
-              </div>
-
-              <button
-                type="button"
-                className="primaryButton full"
-                onClick={restartTest}
-              >
-                Test Again
-              </button>
-
-            </div>
-          )}
-
-          {/* =========================
-              ATTEMPT HISTORY
-          ========================= */}
-
-          {results.length > 0 &&
-            state !== "finished" && (
-              <div className="history">
-
-                <div className="historyTitle">
-                  Your Attempts
-                </div>
-
-                <div className="attemptGrid">
-
-                  {results.map(
-                    (time, index) => (
-                      <div
-                        className="attempt"
-                        key={`${index}-${time}`}
-                      >
-
-                        <span>
-                          Round {index + 1}
-                        </span>
-
-                        <strong>
-                          {time} ms
-                        </strong>
-
-                      </div>
-                    )
-                  )}
-
-                </div>
-
-              </div>
-            )}
-
-        </section>
-
-        {/* =========================
-            HOW TO PLAY
-        ========================= */}
-
-        <section className="infoSection">
-
-          <h2>
-            How to Play
-          </h2>
-
-          <div className="steps">
-
-            <div className="step">
-
-              <div className="stepNumber">
-                1
-              </div>
-
-              <p>
-                Click the test area to start.
-              </p>
-
-            </div>
-
-            <div className="step">
-
-              <div className="stepNumber">
-                2
-              </div>
-
-              <p>
-                Wait until the area turns green.
-              </p>
-
-            </div>
-
-            <div className="step">
-
-              <div className="stepNumber">
-                3
-              </div>
-
-              <p>
-                Click immediately when it turns
-                green.
-              </p>
-
-            </div>
-
-            <div className="step">
-
-              <div className="stepNumber">
-                4
-              </div>
-
-              <p>
-                Complete 5 rounds to get your
-                average.
-              </p>
-
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* =========================
-            INFORMATION
-        ========================= */}
-
-        <section className="infoSection">
-
-          <h2>
-            About Reaction Time
-          </h2>
-
-          <p className="infoText">
-            Reaction time measures how quickly you
-            respond to a visual signal. Your result
-            can vary depending on your device,
-            display, browser, input method, attention,
-            and fatigue.
-          </p>
-
-          <p className="infoText">
-            For a more useful result, complete all
-            five rounds and compare your average
-            reaction time instead of relying on a
-            single attempt.
-          </p>
-
-        </section>
-
-        {/* =========================
-            FOOTER
-        ========================= */}
-
-        <footer className="footer">
-          Free Reaction Time Test ·
-          Fast · Simple · No Signup
-        </footer>
-
-      </div>
-
-      {/* =========================
-          STYLES
-      ========================= */}
-
+    <main className="page">
       <style jsx>{`
-
-        * {
-          box-sizing: border-box;
-        }
-
-        .reactionPage {
-          min-height: 100vh;
-          padding: 48px 16px 70px;
-          background:
-            radial-gradient(
-              circle at 50% 0%,
-              rgba(99, 102, 241, 0.16),
-              transparent 40%
-            ),
-            #070b16;
-          color: #f8fafc;
-          font-family:
-            Inter,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
-        }
-
-        .reactionContainer {
-          width: 100%;
-          max-width: 900px;
-          margin: 0 auto;
-        }
-
-        /* HEADER */
-
-        .header {
-          text-align: center;
-          margin-bottom: 28px;
-        }
-
-        .badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 7px 13px;
-          border: 1px solid
-            rgba(129, 140, 248, 0.3);
-          border-radius: 999px;
-          background:
-            rgba(99, 102, 241, 0.1);
-          color: #a5b4fc;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-        }
-
-        h1 {
-          margin: 15px 0 10px;
-          font-size: clamp(
-            32px,
-            7vw,
-            54px
-          );
-          line-height: 1;
-          letter-spacing: -2px;
-        }
-
-        .header p {
-          max-width: 600px;
-          margin: 0 auto;
-          color: #94a3b8;
-          font-size: 15px;
-          line-height: 1.6;
-        }
-
-        /* CARD */
-
-        .testCard {
-          padding: 18px;
-          border: 1px solid
-            rgba(148, 163, 184, 0.13);
-          border-radius: 24px;
-          background:
-            rgba(15, 23, 42, 0.78);
-          box-shadow:
-            0 30px 80px
-              rgba(0, 0, 0, 0.28);
-          backdrop-filter: blur(16px);
-        }
-
-        /* TOP STATS */
-
-        .topStats {
-          display: flex;
-          justify-content: space-between;
-          padding: 5px 8px 16px;
-        }
-
-        .topStat {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .topStat.right {
-          text-align: right;
-        }
-
-        .topStat span {
-          color: #64748b;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-        }
-
-        .topStat strong {
-          color: #e2e8f0;
-          font-size: 15px;
-        }
-
-        /* TEST AREA */
-
-        .testArea {
-          width: 100%;
-          min-height: 420px;
-          border: 0;
-          border-radius: 18px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 9px;
-          padding: 30px;
-          text-align: center;
-          color: white;
-          font-family: inherit;
-          cursor: pointer;
-          user-select: none;
-          -webkit-tap-highlight-color: transparent;
-
-          transition:
-            background 0.12s ease,
-            transform 0.08s ease,
-            box-shadow 0.12s ease;
-        }
-
-        .testArea:active {
-          transform: scale(0.995);
-        }
-
-        .testArea.idle {
-          background:
-            linear-gradient(
-              135deg,
-              #111827,
-              #172033
-            );
-          border: 1px solid
-            rgba(148, 163, 184, 0.12);
-        }
-
-        .testArea.waiting {
-          background:
-            linear-gradient(
-              135deg,
-              #991b1b,
-              #7f1d1d
-            );
-        }
-
-        .testArea.ready {
-          background:
-            linear-gradient(
-              135deg,
-              #15803d,
-              #166534
-            );
-
-          box-shadow:
-            0 0 80px
-              rgba(34, 197, 94, 0.2);
-        }
-
-        .testArea.result {
-          background:
-            linear-gradient(
-              135deg,
-              #312e81,
-              #3730a3
-            );
-        }
-
-        .testArea.tooSoon {
-          background:
-            linear-gradient(
-              135deg,
-              #991b1b,
-              #7f1d1d
-            );
-        }
-
-        .testArea.finished {
-          background:
-            linear-gradient(
-              135deg,
-              #312e81,
-              #3730a3
-            );
-        }
-
-        .bolt {
-          font-size: 48px;
-          line-height: 1;
-          margin-bottom: 4px;
-        }
-
-        .mainText {
-          font-size: clamp(
-            30px,
-            7vw,
-            50px
-          );
-          font-weight: 900;
-          line-height: 1;
-          letter-spacing: -1.5px;
-        }
-
-        .subText {
-          color:
-            rgba(255, 255, 255, 0.67);
-          font-size: 14px;
-          line-height: 1.5;
-        }
-
-        /* REACTION RESULT */
-
-        .reactionNumber {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-          font-size: clamp(
-            68px,
-            16vw,
-            125px
-          );
-          line-height: 0.9;
-          font-weight: 900;
-          letter-spacing: -6px;
-        }
-
-        .reactionNumber span {
-          font-size: 24px;
-          letter-spacing: 0;
-        }
-
-        .rating {
-          margin-top: 9px;
-          color: #c7d2fe;
-          font-size: 16px;
-          font-weight: 800;
-        }
-
-        .finalAverage {
-          margin-top: 12px;
-          font-size: 44px;
-          font-weight: 900;
-        }
-
-        /* BUTTONS */
-
-        .actionArea {
-          display: flex;
-          justify-content: center;
-          padding-top: 16px;
-        }
-
-        .primaryButton {
-          border: 0;
-          border-radius: 12px;
-          padding: 13px 24px;
-          background: #6366f1;
-          color: #ffffff;
-          font-family: inherit;
-          font-size: 14px;
-          font-weight: 800;
-          cursor: pointer;
-
-          transition:
-            transform 0.15s ease,
-            opacity 0.15s ease;
-        }
-
-        .primaryButton:hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
-        }
-
-        .primaryButton:active {
-          transform: translateY(0);
-        }
-
-        .primaryButton.full {
-          width: 100%;
-          margin-top: 18px;
-        }
-
-        /* HISTORY */
-
-        .history {
-          margin-top: 18px;
-        }
-
-        .historyTitle {
-          margin-bottom: 10px;
-          color: #64748b;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1.3px;
-          text-transform: uppercase;
-        }
-
-        .attemptGrid {
-          display: grid;
-          grid-template-columns:
-            repeat(5, 1fr);
-          gap: 8px;
-        }
-
-        .attempt {
-          padding: 12px 7px;
-          border: 1px solid
-            rgba(148, 163, 184, 0.09);
-          border-radius: 12px;
-          background:
-            rgba(2, 6, 23, 0.45);
-          text-align: center;
-        }
-
-        .attempt span {
-          display: block;
-          margin-bottom: 5px;
-          color: #64748b;
-          font-size: 10px;
-        }
-
-        .attempt strong {
-          font-size: 14px;
-        }
-
-        /* FINAL RESULTS */
-
-        .finalResults {
-          margin-top: 18px;
-          display: grid;
-          grid-template-columns:
-            repeat(3, 1fr);
-          gap: 10px;
-        }
-
-        .resultBox {
-          padding: 18px;
-          border: 1px solid
-            rgba(148, 163, 184, 0.11);
-          border-radius: 14px;
-          background:
-            rgba(2, 6, 23, 0.45);
-        }
-
-        .resultBox span {
-          display: block;
-          margin-bottom: 7px;
-          color: #64748b;
-          font-size: 10px;
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-
-        .resultBox strong {
-          font-size: 22px;
-        }
-
-        /* INFORMATION */
-
-        .infoSection {
-          margin-top: 36px;
-          padding: 0 5px;
-        }
-
-        .infoSection h2 {
-          margin: 0 0 15px;
-          color: #f8fafc;
-          font-size: 22px;
-          letter-spacing: -0.4px;
-        }
-
-        .steps {
-          display: grid;
-          grid-template-columns:
-            repeat(4, 1fr);
-          gap: 12px;
-        }
-
-        .step {
-          min-height: 135px;
-          padding: 17px;
-          border: 1px solid
-            rgba(148, 163, 184, 0.1);
-          border-radius: 14px;
-          background:
-            rgba(15, 23, 42, 0.45);
-        }
-
-        .stepNumber {
-          display: flex;
-          width: 28px;
-          height: 28px;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          background:
-            rgba(99, 102, 241, 0.15);
-          color: #a5b4fc;
-          font-size: 12px;
-          font-weight: 900;
-        }
-
-        .step p {
-          margin: 12px 0 0;
-          color: #94a3b8;
-          font-size: 13px;
-          line-height: 1.5;
-        }
-
-        .infoText {
-          margin: 0 0 12px;
-          color: #94a3b8;
-          font-size: 14px;
-          line-height: 1.8;
-        }
-
-        /* FOOTER */
-
-        .footer {
-          margin-top: 42px;
-          text-align: center;
-          color: #475569;
-          font-size: 12px;
-        }
-
-        /* MOBILE */
-
-        @media (max-width: 700px) {
-
-          .reactionPage {
-            padding:
-              32px 12px 55px;
-          }
-
-          .testCard {
-            padding: 12px;
-            border-radius: 20px;
-          }
-
-          .testArea {
-            min-height: 360px;
-            border-radius: 15px;
-          }
-
-          .finalResults {
-            grid-template-columns: 1fr;
-          }
-
-          .steps {
-            grid-template-columns:
-              1fr 1fr;
-          }
-
-        }
-
-        @media (max-width: 480px) {
-
-          .header {
-            margin-bottom: 20px;
-          }
-
-          .header p {
-            font-size: 14px;
-          }
-
-          .testArea {
-            min-height: 330px;
-          }
-
-          .mainText {
-            font-size: 32px;
-          }
-
-          .reactionNumber {
-            font-size: 76px;
-          }
-
-          .steps {
-            grid-template-columns: 1fr;
-          }
-
-          .attempt {
-            padding:
-              10px 3px;
-          }
-
-          .attempt span {
-            font-size: 9px;
-          }
-
-          .attempt strong {
-            font-size: 12px;
-          }
-
-        }
-
+        .page{min-height:100vh;background:radial-gradient(circle at top,rgba(34,197,94,.07),transparent 34%),#070b14;color:#fff;padding:16px 12px 45px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+        .wrap{width:100%;max-width:850px;margin:auto}
+        .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:22px}.logo{font-size:18px;font-weight:900}.logo span{color:#22c55e}
+        .topBest{background:#111827;border:1px solid #263244;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:800}.topBest b{color:#22c55e}
+        .hero{text-align:center;margin-bottom:17px}.tag{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#86efac;font-size:10px;font-weight:900;margin-bottom:9px}
+        h1{margin:0;font-size:clamp(27px,6vw,40px);line-height:1;letter-spacing:-1px}h1 span{color:#22c55e}
+        .sub{color:#64748b;max-width:580px;margin:9px auto 0;font-size:12px;line-height:1.5}
+        .rounds{display:flex;justify-content:center;gap:8px;margin-bottom:10px}.dot{width:32px;height:32px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;border:1px solid #334155}.dot.done{background:#22c55e;color:#031108;border-color:#22c55e}.dot.active{background:#fff;color:#000}
+        .box{min-height:300px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;padding:20px}
+        .big{font-size:clamp(40px,10vw,68px);font-weight:950;line-height:1}.small{margin-top:10px;font-size:14px;font-weight:700;color:rgba(255,255,255,.8)}
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.stat{background:#111827;border:1px solid #202c3e;border-radius:14px;padding:12px 5px;text-align:center}.value{display:block;color:#22c55e;font-size:20px;font-weight:950}.label{display:block;margin-top:6px;color:#64748b;font-size:9px;font-weight:900}
+        .panel{margin-top:10px;background:#111827;border:1px solid #202c3e;border-radius:15px;padding:14px}.panelTitle{font-size:12px;font-weight:950}
+        .bars{margin-top:10px;display:flex;flex-direction:column;gap:8px}.barRow{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:800}.barRow span:first-child{width:50px}.barTrack{flex:1;height:12px;background:#0b1220;border-radius:999px;overflow:hidden}.barFill{height:100%;background:#22c55e}
+        .result{margin-top:10px;background:#111827;border:2px solid #22c55e;border-radius:16px;padding:18px;text-align:center}.resultScore{color:#22c55e;font-size:48px;font-weight:950;line-height:1}.rank{font-size:20px;font-weight:950;margin-top:12px}.rankDesc{color:#94a3b8;font-size:12px;margin-top:5px}
+        .buttons{display:flex;justify-content:center;gap:8px;margin-top:14px}button.action{border:0;border-radius:999px;padding:11px 22px;font-size:12px;font-weight:950;cursor:pointer}.green{background:#22c55e;color:#031108}.gray{background:#1e293b;color:#fff;border:1px solid #334155}
+        .content{margin-top:20px;background:#111827;border:1px solid #202c3e;border-radius:16px;padding:17px}.content h2{margin:0 0 8px;font-size:17px}.content h3{margin:15px 0 5px;font-size:13px}.content p,.content li{color:#64748b;font-size:11px;line-height:1.65}
+        .footer{text-align:center;margin-top:18px;color:#334155;font-size:9px}
+        @media(max-width:620px){.stats{grid-template-columns:repeat(2,1fr)}.box{min-height:270px}}
       `}</style>
+      <div className="wrap">
+        <header className="top"><div className="logo">NEXORA <span>TOOLS</span></div><div className="topBest">🏆 Best <b>{best ? `${best}ms` : "—"}</b></div></header>
+        <section className="hero"><div className="tag">⚡ FREE • 5 ROUNDS • NO SIGN UP</div><h1>Reaction Time Test — <span>How Fast Are You?</span></h1><p className="sub">Wait for green, then click as fast as you can. 5 rounds ka average hi tera asli reaction time hai.</p></section>
+
+        <div className="rounds">{[1, 2, 3, 4, 5].map((r) => (<div key={r} className={`dot ${times.length >= r ? "done" : round === r && status !== "idle" && status !== "finished" ? "active" : ""}`}>{times.length >= r ? "✓" : r}</div>))}</div>
+
+        <div className="box" style={{ background: getBoxColor() }} onPointerDown={handleClick}>
+          {status === "idle" && (<><div className="big">👆 CLICK TO START</div><div className="small">5 Rounds • Wait for GREEN</div></>)}
+          {status === "waiting" && (<><div className="big">⏳ WAIT FOR GREEN...</div><div className="small">Round {round} / 5 • Jaldi click kiya to Too Soon!</div></>)}
+          {status === "ready" && (<><div className="big">🟢 CLICK NOW!</div><div className="small">As fast as you can!</div></>)}
+          {status === "tooSoon" && (<><div className="big">⚠️ TOO SOON!</div><div className="small">Tu green se pehle click kar diya. Fir se click karke restart kar.</div></>)}
+          {status === "finished" && (<><div className="big">🎉 {Math.round(avg)}ms</div><div className="small">Average Reaction Time • Tap to Play Again</div></>)}
+          {status === "result" && (<><div className="big">{currentMs}ms</div></>)}
+        </div>
+
+        <div className="stats">
+          <div className="stat"><span className="value">{times.length ? `${Math.round(avg)}ms` : "—"}</span><span className="label">AVERAGE</span></div>
+          <div className="stat"><span className="value">{bestInGame ? `${bestInGame}ms` : "—"}</span><span className="label">BEST THIS GAME</span></div>
+          <div className="stat"><span className="value">{best ? `${best}ms` : "—"}</span><span className="label">ALL TIME BEST</span></div>
+          <div className="stat"><span className="value">{inputType}</span><span className="label">DEVICE</span></div>
+        </div>
+
+        {times.length > 0 && (
+          <section className="panel"><div className="panelTitle">📊 Round Results</div><div className="bars">{times.map((t, i) => (<div key={i} className="barRow"><span>Round {i + 1}</span><div className="barTrack"><div className="barFill" style={{ width: `${Math.min(100, (t / 500) * 100)}%`, background: t < 220 ? "#22c55e" : t < 300 ? "#f59e0b" : "#ef4444" }} /></div><span>{t}ms</span></div>))}</div></section>
+        )}
+
+        {status === "finished" && rank && (
+          <section className="result"><div className="resultScore">{Math.round(avg)}ms</div><div style={{ color: "#64748b", fontSize: 10, fontWeight: 900, marginTop: 4 }}>AVERAGE REACTION TIME • BEST {bestInGame}ms</div><div className="rank">{rank.icon} {rank.title}</div><p className="rankDesc">{rank.desc}</p><div className="buttons"><button className="action green" onClick={startGame}>↻ Play Again</button><button className="action gray" onClick={() => { navigator.clipboard.writeText(`My reaction time is ${Math.round(avg)}ms on NEXORA Reaction Test. Can you beat me? https://thenexoratools.com/reaction-time-test`); window.alert("Copied!"); }}>📤 Share</button></div></section>
+        )}
+
+        {history.length > 0 && (<section className="panel" style={{ textAlign: "center" }}><div className="panelTitle">LAST 5 AVERAGES</div><div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", marginTop: 8 }}>{history.map((h, i) => (<span key={i} style={{ background: "#0b1220", border: "1px solid #253247", borderRadius: 999, padding: "6px 10px", fontSize: 10, fontWeight: 900 }}>{h}ms</span>))}</div></section>)}
+
+        <section className="content"><h2>What is Reaction Time?</h2><p>Reaction time is how long your brain takes to see something and react. Average human reaction time is around 250ms. Pro gamers are often below 180ms.</p><h3>How to improve?</h3><p>Sleep well, stay hydrated, practice daily, and keep your hand relaxed on mouse.</p></section>
+        <footer className="footer">© {new Date().getFullYear()} NEXORA Tools • Attempts: {attempts}</footer>
+      </div>
     </main>
   );
 }
