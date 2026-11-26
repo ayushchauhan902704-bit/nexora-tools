@@ -4,13 +4,14 @@ import confetti from "canvas-confetti";
 
 const COLORS = ["#16a34a","#0ea5e9","#f59e0b","#ef4444","#8b5cf6","#ec4899","#14b8a6","#f97316","#22c55e","#3b82f6","#eab308","#a855f7"];
 
+// ✅ FIX 3 - Ab duplicate nahi, sirf 2-2 tukde = 100% Fair
 const PRESETS: Record<string, string[]> = {
   "🎁 Giveaway": ["Ayush","Rahul","Priya","Aman","Sneha","Vikash","Neha","Rohan"],
   "🏫 Classroom": ["Aarav","Diya","Kabir","Meera","Arjun","Anaya","Vihaan","Zara"],
-  "✅ Yes / No": ["YES","NO","YES","NO","YES","NO"],
+  "✅ Yes / No": ["YES","NO"],
   "🍔 Kya Khaye?": ["Pizza","Burger","Momos","Biryani","Chole Bhature","Pasta","Sandwich","Chai"],
-  "👥 Team Picker": ["Team A","Team B","Team A","Team B","Team A","Team B"],
-  "🎲 Truth / Dare": ["Truth","Dare","Truth","Dare","Truth","Dare","Truth","Dare"],
+  "👥 Team Picker": ["Team A","Team B"],
+  "🎲 Truth / Dare": ["Truth","Dare"],
 };
 
 export default function SpinWheelClient() {
@@ -51,7 +52,6 @@ export default function SpinWheelClient() {
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(`Winner is ${name}`);
-      u.rate = 1; u.pitch = 1;
       window.speechSynthesis.speak(u);
     } catch {}
   }, [voiceOn]);
@@ -61,13 +61,13 @@ export default function SpinWheelClient() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const size = 340;
+    const size = 300;
     const center = size / 2;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    if (canvas.width !== size * dpr) { canvas.width = size * dpr; canvas.height = size * dpr; canvas.style.width = `${size}px`; canvas.style.height = `${size}px`; }
+    if (canvas.width !== size * dpr) { canvas.width = size * dpr; canvas.height = size * dpr; }
+    // ✅ FIX 1 - Canvas ka style yaha change nahi karenge, warna hilta hai
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
-
     if (names.length === 0) {
       ctx.beginPath(); ctx.arc(center, center, center - 4, 0, Math.PI * 2);
       ctx.fillStyle = "#f1f5f9"; ctx.fill();
@@ -75,7 +75,6 @@ export default function SpinWheelClient() {
       ctx.fillText("Add names to start", center, center);
       return;
     }
-
     const anglePer = (Math.PI * 2) / names.length;
     names.forEach((name, i) => {
       const start = i * anglePer;
@@ -84,23 +83,23 @@ export default function SpinWheelClient() {
       ctx.arc(center, center, center - 4, start, end);
       ctx.closePath();
       ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2.5; ctx.stroke();
-
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
       ctx.save(); ctx.translate(center, center); ctx.rotate(start + anglePer / 2);
       ctx.textAlign = "right"; ctx.fillStyle = "#fff";
-      ctx.font = "800 14px 'Plus Jakarta Sans', sans-serif";
-      ctx.fillText(name.slice(0, 14), center - 22, 5);
-      ctx.beginPath(); ctx.arc(center - 12, 0, 4, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.fill();
+      // Lamba naam ho to chota font
+      const fontSize = name.length > 10 ? 11 : 13;
+      ctx.font = `800 ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+      ctx.fillText(name.slice(0, 14), center - 20, 5);
+      ctx.beginPath(); ctx.arc(center - 12, 0, 3.5, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.fill();
       ctx.restore();
     });
-
     ctx.beginPath(); ctx.arc(center, center, center - 2, 0, Math.PI * 2);
-    ctx.strokeStyle = "#eab308"; ctx.lineWidth = 5; ctx.stroke();
-    ctx.beginPath(); ctx.arc(center, center, 34, 0, Math.PI * 2);
+    ctx.strokeStyle = "#eab308"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.beginPath(); ctx.arc(center, center, 30, 0, Math.PI * 2);
     ctx.fillStyle = "#0f172a"; ctx.fill();
     ctx.strokeStyle = "#eab308"; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = "#fff"; ctx.font = "800 13px 'Plus Jakarta Sans', sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("SPIN", center, center + 5);
+    ctx.fillStyle = "#fff"; ctx.font = "800 12px 'Plus Jakarta Sans', sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("SPIN", center, center + 4);
   }, [names]);
 
   useEffect(() => { drawWheel(); }, [drawWheel]);
@@ -121,9 +120,7 @@ export default function SpinWheelClient() {
     setInput("");
   };
 
-  const addMany = (list: string[]) => {
-    setNames(list); setWinner(null); setHistory([]);
-  };
+  const addMany = (list: string[]) => { setNames(list); setWinner(null); setHistory([]); };
 
   const spin = () => {
     if (spinningRef.current || namesRef.current.length < 2) return;
@@ -154,21 +151,17 @@ export default function SpinWheelClient() {
     if (!winner) return;
     try { await navigator.clipboard.writeText(`🏆 Winner: ${winner} - via thenexoratools.com/spin-wheel`); alert("Winner copied!"); } catch {}
   };
-
   const shareWinner = async () => {
     if (!winner) return;
     const text = `🏆 Winner is ${winner}! Spin Wheel - thenexoratools.com`;
-    try {
-      if (navigator.share) await navigator.share({ title: "Spin Wheel Winner", text, url: window.location.href });
-      else await navigator.clipboard.writeText(text);
-    } catch {}
+    try { if (navigator.share) await navigator.share({ title: "Spin Wheel Winner", text, url: window.location.href }); else await navigator.clipboard.writeText(text); } catch {}
   };
 
   return (
     <main className="page">
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-        .page { min-height: 100vh; background: #ffffff; color: #0f172a; padding: 10px 12px 30px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; }
+        .page { min-height: 100vh; background: #ffffff; color: #0f172a; padding: 10px 12px 30px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; overflow-x: hidden; }
         .wrap { width: 100%; max-width: 900px; margin: auto; }
         .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
         .logo { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
@@ -182,27 +175,25 @@ export default function SpinWheelClient() {
         .presets { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
         .presets::-webkit-scrollbar { display: none; }
         .preset { flex-shrink: 0; border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 11px; font-weight: 700; cursor: pointer; color: #334155; }
-        .preset:active { transform: scale(0.97); }
         .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 12px; box-shadow: 0 6px 24px rgba(15,23,42,0.05); }
         .inputRow { display: flex; gap: 8px; }
         .inputRow input { flex: 1; min-width: 0; border: 1.5px solid #e2e8f0; background: #ffffff !important; color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; caret-color: #16a34a; border-radius: 999px; padding: 12px 14px; outline: none; font-size: 15px; font-weight: 700; font-family: inherit; }
         .inputRow input::placeholder { color: #94a3b8; font-weight: 600; }
-        .inputRow input:focus { border-color: #16a34a; background: #ffffff !important; }
+        .inputRow input:focus { border-color: #16a34a; }
         .addBtn { flex-shrink: 0; border: 0; background: #0f172a; color: #fff; border-radius: 999px; padding: 0 18px; font-weight: 800; cursor: pointer; font-size: 13px; }
         .quickRow { display: flex; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
         .quick { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 700; cursor: pointer; color: #475569; }
-        .wheelWrap { margin-top: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 14px 10px 14px; box-shadow: 0 10px 30px rgba(15,23,42,0.06); text-align: center; position: relative; overflow: hidden; }
-        .wheelCenter { display: flex; justify-content: center; position: relative; }
-        .wheelBox { width: 300px; max-width: 88vw; aspect-ratio: 1; position: relative; }
-        .pointer { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); z-index: 20; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid #eab308; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
-        .pointer:after { content: ''; position: absolute; top: -30px; left: -6px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 12px solid #0f172a; }
-        .spinBtn { width: 100%; max-width: 380px; margin-top: 14px; border: 0; border-radius: 999px; padding: 14px; font-size: 16px; font-weight: 800; cursor: pointer; background: #16a34a; color: #fff; box-shadow: 0 8px 24px rgba(22,163,74,0.3); }
+        .wheelWrap { margin-top: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px 10px 14px; box-shadow: 0 10px 30px rgba(15,23,42,0.06); text-align: center; overflow: hidden; }
+        .wheelCenter { display: flex; justify-content: center; }
+        /* ✅ FIX 2 - Wheel apni jagah fixed, bahar nahi jayega */
+        .wheelBox { width: 300px; height: 300px; max-width: 86vw; max-height: 86vw; position: relative; flex-shrink: 0; }
+        .pointer { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); z-index: 30; width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 28px solid #eab308; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25)); pointer-events: none; }
+        .wheelCanvas { width: 100% !important; height: 100% !important; display: block; transform-origin: 50% 50% !important; will-change: transform; }
+        .spinBtn { width: 100%; max-width: 380px; margin-top: 14px; border: 0; border-radius: 999px; padding: 14px; font-size: 16px; font-weight: 800; cursor: pointer; background: #16a34a; color: #fff; box-shadow: 0 8px 24px rgba(22,163,74,0.3); position: relative; z-index: 10; }
         .spinBtn:disabled { opacity: .6; }
-        .spinBtn:active { transform: scale(0.98); }
-        .winnerBox { margin: 14px auto 0; max-width: 380px; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 16px; padding: 14px; animation: pop .3s ease; }
-        @keyframes pop { from { transform: scale(.9); } to { transform: scale(1); } }
+        .winnerBox { margin: 14px auto 0; max-width: 380px; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 16px; padding: 14px; }
         .winnerLabel { font-size: 10px; font-weight: 800; color: #15803d; letter-spacing: 1px; }
-        .winnerName { font-size: 30px; font-weight: 800; line-height: 1.1; margin-top: 4px; }
+        .winnerName { font-size: 30px; font-weight: 800; line-height: 1.1; margin-top: 4px; word-break: break-word; }
         .winnerBtns { display: flex; justify-content: center; gap: 7px; margin-top: 9px; flex-wrap: wrap; }
         .wBtn { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 11px; font-weight: 700; cursor: pointer; }
         .history { margin-top: 12px; text-align: center; }
@@ -224,7 +215,7 @@ export default function SpinWheelClient() {
         .content { margin-top: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; }
         .content h2 { margin: 0 0 7px; font-size: 17px; font-weight: 800; }
         .content h3 { margin: 12px 0 4px; font-size: 13px; font-weight: 800; }
-        .content p, .content li { color: #64748b; font-size: 12px; line-height: 1.7; }
+        .content p { color: #64748b; font-size: 12px; line-height: 1.7; }
         .footer { text-align: center; margin-top: 14px; color: #94a3b8; font-size: 10px; }
         @media (max-width: 620px) { .namesList { grid-template-columns: 1fr; } }
       `}</style>
@@ -234,28 +225,19 @@ export default function SpinWheelClient() {
           <div className="logo">thenexoratools<span>.com</span></div>
           <div className="topBest">🎡 {names.length} Entries</div>
         </header>
-
         <section className="hero">
           <div className="tag">🎡 FREE • NO SIGN UP • VOICE + VIBRATION</div>
           <h1>Spin Wheel <span>- Random Picker</span></h1>
           <p className="sub">Naam likho, SPIN dabao, teer jaha rukega wahi winner hoga.</p>
         </section>
-
         <div className="presets">
           {Object.keys(PRESETS).map(k => (
             <button key={k} className="preset" onClick={() => addMany(PRESETS[k])}>{k}</button>
           ))}
         </div>
-
         <div className="card">
           <div className="inputRow">
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && addName()}
-              placeholder="Player ka naam likho..."
-              autoComplete="off" autoCorrect="off" autoCapitalize="sentences" spellCheck={false}
-            />
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addName()} placeholder="Player ka naam likho..." autoComplete="off" autoCorrect="off" spellCheck={false} />
             <button onClick={addName} className="addBtn">+ Add</button>
           </div>
           <div className="quickRow">
@@ -273,17 +255,20 @@ export default function SpinWheelClient() {
           <div className="wheelCenter">
             <div className="wheelBox">
               <div className="pointer" />
-              <div style={{ transform: `rotate(${rotation}deg)`, transition: spinning ? "transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)" : "none", lineHeight: 0, willChange: "transform" }}>
-                <canvas ref={canvasRef} width={340} height={340} style={{ width: "100%", height: "auto", display: "block" }} />
-              </div>
+              {/* ✅ Ab sirf canvas ghumega, box nahi */}
+              <canvas
+                ref={canvasRef}
+                width={300}
+                height={300}
+                className="wheelCanvas"
+                style={{ transform: `rotate(${rotation}deg)`, transition: spinning ? "transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)" : "none" }}
+              />
             </div>
           </div>
-
           <button onClick={spin} disabled={spinning || names.length < 2} className="spinBtn">
             {spinning ? "Spinning... 🎡" : "🎡 SPIN NOW"}
           </button>
           <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 7, fontWeight: 600 }}>{names.length < 2 ? "Kam se kam 2 naam chahiye" : "Teer jaha rukega, wahi Winner hoga"}</p>
-
           {winner && (
             <div className="winnerBox">
               <div className="winnerLabel">🏆 WINNER</div>
@@ -295,7 +280,6 @@ export default function SpinWheelClient() {
               </div>
             </div>
           )}
-
           {history.length > 0 && (
             <div className="history">
               <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8" }}>RECENT WINNERS</div>
@@ -325,11 +309,9 @@ export default function SpinWheelClient() {
 
         <section className="content">
           <h2>Spin Wheel - Random Name Picker</h2>
-          <p>Spin Wheel ek free random picker hai. Giveaway winner chunne, classroom me student pick karne, team banane ya khana decide karne ke liye iska use karo. Bas naam add karo aur SPIN dabao.</p>
+          <p>Spin Wheel ek free random picker hai. Giveaway winner chunne, classroom me student pick karne, team banane ya khana decide karne ke liye iska use karo.</p>
           <h3>Kaise use kare?</h3>
           <p>1. Upar wale box me naam likho aur Add dabao. 2. Preset se Giveaway, Classroom, Yes/No bhi 1 click me load kar sakte ho. 3. SPIN dabao. Teer jaha rukega, wahi winner hoga.</p>
-          <h3>Elimination Mode kya hai?</h3>
-          <p>Agar ye ON hai to winner list se auto hat jayega. Isse tum ek-ek karke sabko eliminate karke final winner nikal sakte ho - classroom aur giveaway ke liye best hai.</p>
         </section>
         <div className="footer">© {new Date().getFullYear()} thenexoratools.com</div>
       </div>
