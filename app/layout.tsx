@@ -35,6 +35,19 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
   },
+
+  // --- SIRF YE NAYA ADDA HAI, BAAKI SAB SAME HAI ---
+  manifest: "/manifest.webmanifest",
+  themeColor: "#0a0a0f",
+  icons: {
+    icon: "/icon-192.jpg",
+    apple: "/icon-512.jpg",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Countdown Timer",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({
@@ -117,4 +130,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
