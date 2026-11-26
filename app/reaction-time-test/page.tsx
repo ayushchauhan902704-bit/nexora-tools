@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ReactionClient from "./reactionClient";
+import ReactionClient from "./ReactionClient";
 
 export const metadata: Metadata = {
   title: "Reaction Time Test - How Fast Are You? | NEXORA",
