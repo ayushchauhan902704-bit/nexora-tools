@@ -96,8 +96,7 @@ export default function SpinWheelClient() {
 
     ctx.beginPath(); ctx.arc(center, center, center - 2, 0, Math.PI * 2);
     ctx.strokeStyle = "#eab308"; ctx.lineWidth = 5; ctx.stroke();
-    ctx.beginPath(); ctx.arc(center, center, 34, 0, 0, Math.PI * 2);
-    ctx.arc(center, center, 34, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(center, center, 34, 0, Math.PI * 2);
     ctx.fillStyle = "#0f172a"; ctx.fill();
     ctx.strokeStyle = "#eab308"; ctx.lineWidth = 3; ctx.stroke();
     ctx.fillStyle = "#fff"; ctx.font = "800 13px 'Plus Jakarta Sans', sans-serif"; ctx.textAlign = "center";
@@ -131,18 +130,14 @@ export default function SpinWheelClient() {
     spinningRef.current = true;
     setSpinning(true); setWinner(null);
     if (vibrateOn) { try { navigator.vibrate?.(40); } catch {} }
-
-    // ✅ FIX - Ref se rotation, stale nahi hoga
     const extra = 360 * 7 + Math.floor(Math.random() * 360);
     const newRot = rotationRef.current + extra;
     rotationRef.current = newRot;
     setRotation(newRot);
-
     const currentNames = namesRef.current;
     const normalized = (360 - (newRot % 360)) % 360;
     const pointerAngle = (normalized + 90) % 360;
     const idx = Math.floor(pointerAngle / (360 / currentNames.length)) % currentNames.length;
-
     setTimeout(() => {
       const win = currentNames[idx];
       setWinner(win);
@@ -190,7 +185,6 @@ export default function SpinWheelClient() {
         .preset:active { transform: scale(0.97); }
         .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 12px; box-shadow: 0 6px 24px rgba(15,23,42,0.05); }
         .inputRow { display: flex; gap: 8px; }
-        /* ✅ FIX 1 - Naam ab dikhega */
         .inputRow input { flex: 1; min-width: 0; border: 1.5px solid #e2e8f0; background: #ffffff !important; color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; caret-color: #16a34a; border-radius: 999px; padding: 12px 14px; outline: none; font-size: 15px; font-weight: 700; font-family: inherit; }
         .inputRow input::placeholder { color: #94a3b8; font-weight: 600; }
         .inputRow input:focus { border-color: #16a34a; background: #ffffff !important; }
