@@ -1,33 +1,125 @@
 import type { Metadata } from "next";
 import CPSTestClient from "./CPSTestClient";
 
+const SITE_URL = "https://thenexoratools.com";
+const PAGE_URL = `${SITE_URL}/cps-test`;
+
 export const metadata: Metadata = {
-  title: "CPS Test - Clicks Per Second Test | NEXORA - #1 Click Speed Test",
+  title:
+    "CPS Test – Clicks Per Second Test | Free Click Speed Test",
   description:
-    "Free CPS Test - Check your clicks per second in 1, 5, 10, 30, 60 seconds or 100 Clicks Challenge. Accurate timing, peak CPS, consistency, world rank, custom timer & mobile support.",
-  keywords: [
-    "cps test",
-    "clicks per second test",
-    "click speed test",
-    "cps checker",
-    "click test",
-    "mouse click test",
-    "clicking speed test",
-    "cps test 5 seconds",
-    "cps test 10 seconds",
-    "100 clicks test",
-    "cps test custom",
-    "how fast can i click",
-    "minecraft cps test",
-  ],
-  robots: { index: true, follow: true },
+    "Free CPS Test to measure clicks per second. Try 1, 5, 10, 30 or 60 second tests, a 100-click challenge, custom timer, peak CPS, consistency and personal best tracking.",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: PAGE_URL,
+  },
   openGraph: {
-    title: "CPS Test - How Fast Can You Click?",
-    description: "Test your clicks per second. I scored 6.60 CPS, can you beat me?",
+    title:
+      "CPS Test – Clicks Per Second Test",
+    description:
+      "Test your clicking speed with timed CPS tests, a 100-click challenge, peak CPS, consistency and personal best tracking.",
+    url: PAGE_URL,
+    siteName: "THE NEXORA TOOLS",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title:
+      "CPS Test – Clicks Per Second Test",
+    description:
+      "Free online CPS and click speed test with timed challenges and personal best tracking.",
   },
 };
 
+const schema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${PAGE_URL}#webpage`,
+      url: PAGE_URL,
+      name:
+        "CPS Test – Clicks Per Second Test",
+      description:
+        "Free online CPS test for measuring clicks per second.",
+      isPartOf: {
+        "@id": `${SITE_URL}/#website`,
+      },
+      inLanguage: "en",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "NEXORA CPS Test",
+      applicationCategory:
+        "GameApplication",
+      operatingSystem: "Web",
+      url: PAGE_URL,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      description:
+        "A free browser-based clicks per second test with timed modes and a 100-click challenge.",
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What does CPS mean?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "CPS means Clicks Per Second. It measures the average number of clicks made during one second of a test.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How is CPS calculated?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "CPS is calculated by dividing the number of clicks by the test duration in seconds.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can I use the CPS Test on a phone?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "Yes. The CPS Test supports touch input on compatible mobile browsers as well as mouse input on desktop devices.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What is the 100 Clicks Challenge?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "The 100 Clicks Challenge measures how quickly you can complete 100 clicks and reports your total time and CPS.",
+          },
+        },
+      ],
+    },
+  ],
+};
+
 export default function CPSTestPage() {
-  return <CPSTestClient />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(schema),
+        }}
+      />
+
+      <CPSTestClient />
+    </>
+  );
 }
