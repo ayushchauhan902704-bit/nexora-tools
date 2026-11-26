@@ -2,7 +2,8 @@ import CoinFlipClient from "./CoinFlipClient";
 
 export const metadata = {
   title: "Coin Flip & Dice Roller - Free Online | NEXORA",
-  description: "Free Coin Flip and Dice Roller online. Flip a coin for toss, roll 1-3 dice for Ludo & board games with history and stats.",
+  description:
+    "Free online Coin Flip and Dice Roller. Flip a coin for decisions, tosses and teams, or roll up to 6 colorful dice for games and random picks.",
 };
 
 export default function Page() {
