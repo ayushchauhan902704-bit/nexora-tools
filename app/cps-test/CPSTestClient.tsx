@@ -10,7 +10,6 @@ import {
 
 type Status = "idle" | "running" | "done";
 type Mode = "time" | "target";
-type Ripple = { id: number; x: number; y: number };
 
 const DURATIONS = [1, 5, 10, 30, 60];
 const PB_KEY = "nexora_cps_pb_v7";
@@ -34,7 +33,7 @@ export default function CPSTestClient() {
   const [intervalMs, setIntervalMs] = useState(0);
   const [sound, setSound] = useState(false);
   const [inputType, setInputType] = useState("Mouse / Touch");
-  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const [combo, setCombo] = useState(0);
 
   const statusRef = useRef<Status>("idle");
   const durationRef = useRef(5);
@@ -46,6 +45,9 @@ export default function CPSTestClient() {
   const graphRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
   const finishRef = useRef<() => void>(() => {});
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const lastClickRef = useRef(0);
+  const comboRef = useRef(0);
 
   const stopTimers = useCallback(() => {
     if (animationRef.current !== null) { cancelAnimationFrame(animationRef.current); animationRef.current = null; }
@@ -74,6 +76,32 @@ export default function CPSTestClient() {
     } catch {}
   }, [sound]);
 
+  // ✅ NO.1 FIX - Direct DOM Ripple, React se nahi
+  const spawnRipple = useCallback((clientX: number, clientY: number) => {
+    const box = boxRef.current;
+    if (!box) return;
+    const rect = box.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    // 1. Green Gol
+    const dot = document.createElement("div");
+    dot.className = "touch-dot";
+    dot.style.left = `${x - 30}px`;
+    dot.style.top = `${y - 30}px`;
+    box.appendChild(dot);
+
+    // 2. +1 Udata hua
+    const plus = document.createElement("div");
+    plus.className = "touch-plus";
+    plus.textContent = "+1";
+    plus.style.left = `${x - 10}px`;
+    plus.style.top = `${y - 35}px`;
+    box.appendChild(plus);
+
+    setTimeout(() => { dot.remove(); plus.remove(); }, 600);
+  }, []);
+
   const calcStats = useCallback((times: number[]) => {
     if (times.length < 2) return { peak: times.length, consistency: 100, interval: 0 };
     let peakValue = 0;
@@ -100,6 +128,7 @@ export default function CPSTestClient() {
     const stats = calcStats(clickTimesRef.current);
     setCps(finalCPS); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval); setElapsedFinal(elapsed); setTimeLeft(0);
     setStatus("done"); statusRef.current = "done"; saveResult(finalCPS);
+    try { navigator.vibrate?.(100); } catch {}
   }, [calcStats, saveResult, stopTimers]);
 
   useEffect(() => { finishRef.current = finishTest; }, [finishTest]);
@@ -116,7 +145,7 @@ export default function CPSTestClient() {
 
   const startTest = useCallback(() => {
     stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = window.performance.now(); statusRef.current = "running";
-    setStatus("running"); setClicks(0); setCps(0); setPeak(0); setConsistency(0); setIntervalMs(0); setGraph([]); setTimeLeft(durationRef.current);
+    setStatus("running"); setClicks(0); setCps(0); setPeak(0); setConsistency(0); setIntervalMs(0); setGraph([]); setTimeLeft(durationRef.current); setCombo(0); comboRef.current = 0;
     graphRef.current = window.setInterval(() => {
       if (statusRef.current !== "running" || startRef.current === null) return;
       const elapsed = (window.performance.now() - startRef.current) / 1000;
@@ -127,7 +156,8 @@ export default function CPSTestClient() {
 
   const resetTest = useCallback(() => {
     stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = null; statusRef.current = "idle";
-    setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setRipples([]); setPeak(0); setConsistency(0); setIntervalMs(0); setElapsedFinal(0); setTimeLeft(durationRef.current);
+    setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setPeak(0); setConsistency(0); setIntervalMs(0); setElapsedFinal(0); setTimeLeft(durationRef.current); setCombo(0); comboRef.current = 0;
+    if (boxRef.current) boxRef.current.querySelectorAll(".touch-dot, .touch-plus").forEach(n => n.remove());
   }, [stopTimers]);
 
   const changeDuration = useCallback((s: number) => {
@@ -138,16 +168,22 @@ export default function CPSTestClient() {
   const changeMode = useCallback((m: Mode) => { if (statusRef.current === "running") return; modeRef.current = m; setMode(m); resetTest(); }, [resetTest]);
 
   const handleClick = (e: ReactPointerEvent<HTMLDivElement>) => {
+    // ✅ Har click pe turant gol + vibration
+    spawnRipple(e.clientX, e.clientY);
+    try { navigator.vibrate?.(8); } catch {}
+
     if (e.pointerType === "mouse") setInputType("Mouse");
     else if (e.pointerType === "touch") setInputType("Touch");
     else setInputType("Pen");
     if (statusRef.current === "done") { resetTest(); return; }
     if (statusRef.current === "idle") startTest();
-    const now = window.performance.now(); clicksRef.current += 1; clickTimesRef.current.push(now); setClicks(clicksRef.current); clickSound();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ripple: Ripple = { id: Date.now() + Math.random(), x: e.clientX - rect.left, y: e.clientY - rect.top };
-    setRipples((old) => [...old.slice(-8), ripple]);
-    window.setTimeout(() => setRipples((old) => old.filter((i) => i.id !== ripple.id)), 500);
+
+    const now = window.performance.now();
+    // Combo - agar 400ms ke andar dobara click to combo badhega
+    if (now - lastClickRef.current < 400) { comboRef.current += 1; setCombo(comboRef.current); } else { comboRef.current = 1; setCombo(1); }
+    lastClickRef.current = now;
+
+    clicksRef.current += 1; clickTimesRef.current.push(now); setClicks(clicksRef.current); clickSound();
     const stats = calcStats(clickTimesRef.current); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval);
     if (modeRef.current === "target" && clicksRef.current >= 100) finishRef.current();
   };
@@ -203,14 +239,21 @@ export default function CPSTestClient() {
         .clickArea { position: relative; min-height: 460px; width: 100%; border: 2px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 10px 40px rgba(15,23,42,0.06); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .clickArea.running { border-color: #16a34a; background: #f0fdf4; }
         .clickArea.done { border-color: #16a34a; background: #f0fdf4; }
-        .timer { background: #0f172a; color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 800; }
-        .number { font-size: clamp(80px, 18vw, 130px); line-height: .9; font-weight: 800; letter-spacing: -5px; margin-top: 10px; color: #0f172a; }
-        .instruction { margin-top: 12px; font-size: 18px; font-weight: 800; color: #0f172a; }
-        .hint { margin-top: 6px; color: #64748b; font-size: 12px; font-weight: 500; }
-        .progress { width: 82%; height: 8px; margin-top: 20px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+        .timer { background: #0f172a; color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 800; position: relative; z-index: 2; }
+        .number { font-size: clamp(80px, 18vw, 130px); line-height: .9; font-weight: 800; letter-spacing: -5px; margin-top: 10px; color: #0f172a; position: relative; z-index: 2; }
+        .instruction { margin-top: 12px; font-size: 18px; font-weight: 800; color: #0f172a; position: relative; z-index: 2; }
+        .hint { margin-top: 6px; color: #64748b; font-size: 12px; font-weight: 500; position: relative; z-index: 2; }
+        .comboBadge { margin-top: 10px; background: #f97316; color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; position: relative; z-index: 2; animation: pop .2s ease; }
+        @keyframes pop { from { transform: scale(.7); } to { transform: scale(1); } }
+        .progress { width: 82%; height: 8px; margin-top: 20px; background: #e2e8f0; border-radius: 999px; overflow: hidden; position: relative; z-index: 2; }
         .progressFill { height: 100%; background: #16a34a; border-radius: inherit; transition: width .08s linear; }
-        .ripple { position: absolute; width: 28px; height: 28px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 6px rgba(34,197,94,0.20); pointer-events: none; animation: ripple .45s ease-out forwards; }
-        @keyframes ripple { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+
+        /* ✅ FIXED GREEN DOT - BADA AUR CLEAR */
+        .touch-dot { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(34,197,94,0.35); border: 3px solid #16a34a; pointer-events: none; z-index: 10; animation: dotPop .6s ease-out forwards; }
+        @keyframes dotPop { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+        .touch-plus { position: absolute; color: #16a34a; font-size: 22px; font-weight: 800; pointer-events: none; z-index: 11; animation: plusUp .6s ease-out forwards; }
+        @keyframes plusUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-45px); opacity: 0; } }
+
         .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
         .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 5px; text-align: center; }
         .value { display: block; color: #16a34a; font-size: 22px; line-height: 1; font-weight: 800; }
@@ -287,12 +330,12 @@ export default function CPSTestClient() {
           </div>
         )}
 
-        <div className={`clickArea ${status === "running" ? "running" : status === "done" ? "done" : ""}`} onPointerDown={handleClick} role="button" tabIndex={0} aria-label="CPS clicking test area">
-          {ripples.map((r) => (<span key={r.id} className="ripple" style={{ left: r.x - 14, top: r.y - 14 }} />))}
+        <div ref={boxRef} className={`clickArea ${status === "running" ? "running" : status === "done" ? "done" : ""}`} onPointerDown={handleClick} role="button" tabIndex={0} aria-label="CPS clicking test area">
           <div className="timer">{status === "running" ? (mode === "time" ? `${timeLeft.toFixed(1)}s` : `${clicks}/100 Clicks`) : status === "done" ? "DONE" : mode === "time" ? `${duration}s` : "100 Clicks"}</div>
           <div className="number">{clicks}</div>
           <div className="instruction">{status === "idle" && "👆 CLICK TO START"}{status === "running" && "⚡ CLICK AS FAST AS YOU CAN"}{status === "done" && `${cps.toFixed(2)} CPS`}</div>
           <div className="hint">{status === "idle" && "Your first click starts the timer"}{status === "running" && `Current ${cps.toFixed(2)} CPS • ${inputType}`}{status === "done" && "Tap the area or Play Again to start another test"}</div>
+          {status === "running" && combo >= 5 && <div className="comboBadge">🔥 COMBO x{combo}</div>}
           <div className="progress"><div className="progressFill" style={{ width: `${progress}%` }} /></div>
         </div>
 
