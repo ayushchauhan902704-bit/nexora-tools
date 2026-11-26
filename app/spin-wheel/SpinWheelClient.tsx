@@ -1,1297 +1,334 @@
 "use client";
-
-import {
-  ChangeEvent,
-  KeyboardEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
 
-const COLORS = [
-  "#2563EB",
-  "#7C3AED",
-  "#DB2777",
-  "#EA580C",
-  "#059669",
-  "#0891B2",
-  "#4F46E5",
-  "#CA8A04",
-  "#DC2626",
-  "#0F766E",
-  "#9333EA",
-  "#0284C7",
-  "#16A34A",
-  "#C026D3",
-  "#D97706",
-  "#2563EB",
-];
+const COLORS = ["#16a34a","#0ea5e9","#f59e0b","#ef4444","#8b5cf6","#ec4899","#14b8a6","#f97316","#22c55e","#3b82f6","#eab308","#a855f7"];
 
-const DEFAULT_NAMES = [
-  "Ayush",
-  "Rahul",
-  "Priya",
-  "Aman",
-  "Sneha",
-  "Vikash",
-  "Neha",
-  "Rohan",
-];
-
-type HistoryItem = {
-  name: string;
-  time: string;
+const PRESETS: Record<string, string[]> = {
+  "🎁 Giveaway": ["Ayush","Rahul","Priya","Aman","Sneha","Vikash","Neha","Rohan"],
+  "🏫 Classroom": ["Aarav","Diya","Kabir","Meera","Arjun","Anaya","Vihaan","Zara"],
+  "✅ Yes / No": ["YES","NO","YES","NO","YES","NO"],
+  "🍔 Kya Khaye?": ["Pizza","Burger","Momos","Biryani","Chole Bhature","Pasta","Sandwich","Chai"],
+  "👥 Team Picker": ["Team A","Team B","Team A","Team B","Team A","Team B"],
+  "🎲 Truth / Dare": ["Truth","Dare","Truth","Dare","Truth","Dare","Truth","Dare"],
 };
 
-const SPIN_DURATION = 4800;
-
 export default function SpinWheelClient() {
-  const [names, setNames] = useState<string[]>(DEFAULT_NAMES);
+  const [names, setNames] = useState<string[]>(["Ayush","Rahul","Priya","Aman","Sneha","Vikash","Neha","Rohan"]);
   const [input, setInput] = useState("");
-  const [bulkInput, setBulkInput] = useState("");
-  const [showBulk, setShowBulk] = useState(false);
-
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-
   const [winner, setWinner] = useState<string | null>(null);
-
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-
+  const [history, setHistory] = useState<string[]>([]);
   const [removeWinner, setRemoveWinner] = useState(false);
-  const [noRepeat, setNoRepeat] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-
-  const [message, setMessage] = useState(
-    "Add names, then spin the wheel to pick a winner."
-  );
+  const [soundOn, setSoundOn] = useState(true);
+  const [vibrateOn, setVibrateOn] = useState(true);
+  const [voiceOn, setVoiceOn] = useState(true);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const rotationRef = useRef(0);
-  const namesRef = useRef<string[]>(DEFAULT_NAMES);
-
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const tickIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [activePreset, setActivePreset] = useState("Custom");
-
-  useEffect(() => {
-    namesRef.current = names;
-  }, [names]);
-
-  useEffect(() => {
-    rotationRef.current = rotation;
-  }, [rotation]);
-
-  useEffect(() => {
-    drawWheel();
-
-    const handleResize = () => drawWheel();
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-
-      if (tickIntervalRef.current) {
-        clearInterval(tickIntervalRef.current);
-      }
-
-      if (spinTimeoutRef.current) {
-        clearTimeout(spinTimeoutRef.current);
-      }
-
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-      }
-    };
-  }, [names, rotation]);
-
-  const uniqueNames = useMemo(() => {
-    const seen = new Set<string>();
-
-    return names.filter((name) => {
-      const key = name.trim().toLowerCase();
-
-      if (!key || seen.has(key)) {
-        return false;
-      }
-
-      seen.add(key);
-      return true;
-    });
-  }, [names]);
-
-  const drawWheel = () => {
-    const canvas = canvasRef.current;
-
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-
-    if (rect.width === 0) return;
-
-    const size = Math.min(rect.width, 620);
-    const dpr = window.devicePixelRatio || 1;
-
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    ctx.scale(dpr, dpr);
-
-    const center = size / 2;
-    const radius = center - 7;
-
-    ctx.clearRect(0, 0, size, size);
-
-    const list = uniqueNames;
-
-    if (list.length === 0) {
-      drawEmptyWheel(ctx, center, radius);
-      return;
-    }
-
-    const segment = (Math.PI * 2) / list.length;
-
-    for (let i = 0; i < list.length; i++) {
-      const start = i * segment;
-      const end = start + segment;
-
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.arc(center, center, radius, start, end);
-      ctx.closePath();
-
-      ctx.fillStyle = COLORS[i % COLORS.length];
-      ctx.fill();
-
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      drawWheelText(
-        ctx,
-        list[i],
-        center,
-        center,
-        radius,
-        start,
-        segment,
-        list.length
-      );
-    }
-
-    // Outer ring
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, Math.PI * 2);
-
-    ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 5;
-    ctx.stroke();
-
-    // Inner ring
-    ctx.beginPath();
-    ctx.arc(center, center, radius - 8, 0, Math.PI * 2);
-
-    ctx.strokeStyle = "rgba(255,255,255,0.65)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Center hub
-    const hubRadius = Math.min(48, size * 0.115);
-
-    const gradient = ctx.createRadialGradient(
-      center - 8,
-      center - 8,
-      2,
-      center,
-      center,
-      hubRadius
-    );
-
-    gradient.addColorStop(0, "#ffffff");
-    gradient.addColorStop(1, "#e5e7eb");
-
-    ctx.beginPath();
-    ctx.arc(center, center, hubRadius, 0, Math.PI * 2);
-
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = "#111827";
-    ctx.font = `900 ${Math.max(11, size * 0.032)}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.fillText("SPIN", center, center);
-  };
-
-  const drawEmptyWheel = (
-    ctx: CanvasRenderingContext2D,
-    center: number,
-    radius: number
-  ) => {
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, Math.PI * 2);
-
-    ctx.fillStyle = "#f3f4f6";
-    ctx.fill();
-
-    ctx.strokeStyle = "#d1d5db";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.fillStyle = "#6b7280";
-    ctx.font =
-      '700 15px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.fillText("ADD NAMES", center, center - 8);
-
-    ctx.font =
-      '500 12px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-
-    ctx.fillText("to start spinning", center, center + 14);
-  };
-
-  const drawWheelText = (
-    ctx: CanvasRenderingContext2D,
-    name: string,
-    center: number,
-    centerY: number,
-    radius: number,
-    start: number,
-    segment: number,
-    total: number
-  ) => {
-    ctx.save();
-
-    const angle = start + segment / 2;
-
-    ctx.translate(center, centerY);
-    ctx.rotate(angle);
-
-    const fontSize =
-      total <= 8
-        ? 18
-        : total <= 12
-          ? 15
-          : total <= 20
-            ? 12
-            : 10;
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `800 ${fontSize}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-
-    const maxChars =
-      total <= 8 ? 18 : total <= 12 ? 14 : total <= 20 ? 11 : 8;
-
-    const safeName =
-      name.length > maxChars
-        ? `${name.slice(0, maxChars - 1)}…`
-        : name;
-
-    ctx.shadowColor = "rgba(0,0,0,0.25)";
-    ctx.shadowBlur = 3;
-
-    ctx.fillText(safeName, radius - 24, 0);
-
-    ctx.restore();
-  };
-
-  const addName = () => {
-    const value = input.trim();
-
-    if (!value) return;
-
-    if (
-      names.some(
-        (name) => name.trim().toLowerCase() === value.toLowerCase()
-      )
-    ) {
-      setMessage("That name is already in the list.");
-      return;
-    }
-
-    setNames((prev) => [...prev, value]);
-    setInput("");
-    setMessage(`${value} added to the wheel.`);
-    setActivePreset("Custom");
-  };
-
-  const removeName = (index: number) => {
-    if (spinning) return;
-
-    setNames((prev) => prev.filter((_, i) => i !== index));
-    setWinner(null);
-    setActivePreset("Custom");
-  };
-
-  const clearAll = () => {
-    if (spinning) return;
-
-    setNames([]);
-    setWinner(null);
-    setHistory([]);
-    setMessage("Wheel cleared. Add names to begin.");
-    setActivePreset("Custom");
-  };
-
-  const shuffleNames = () => {
-    if (spinning || names.length < 2) return;
-
-    const shuffled = [...names];
-
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    setNames(shuffled);
-    setMessage("Names shuffled.");
-  };
-
-  const addBulkNames = () => {
-    const incoming = bulkInput
-      .split(/\r?\n/)
-      .map((name) => name.trim())
-      .filter(Boolean);
-
-    if (!incoming.length) {
-      setMessage("Paste at least one name.");
-      return;
-    }
-
-    const combined = [...names, ...incoming];
-
-    const seen = new Set<string>();
-
-    const cleaned = combined.filter((name) => {
-      const key = name.toLowerCase();
-
-      if (seen.has(key)) {
-        return false;
-      }
-
-      seen.add(key);
-      return true;
-    });
-
-    const addedCount = cleaned.length - names.length;
-
-    setNames(cleaned);
-    setBulkInput("");
-    setShowBulk(false);
-    setActivePreset("Custom");
-
-    setMessage(
-      addedCount > 0
-        ? `${addedCount} new name${addedCount === 1 ? "" : "s"} added.`
-        : "No new names were added."
-    );
-  };
-
-  const applyPreset = (preset: string) => {
-    if (spinning) return;
-
-    setActivePreset(preset);
-
-    if (preset === "Giveaway") {
-      setNames([
-        "Alex",
-        "Jordan",
-        "Taylor",
-        "Morgan",
-        "Casey",
-        "Jamie",
-        "Riley",
-        "Avery",
-      ]);
-    }
-
-    if (preset === "Classroom") {
-      setNames([
-        "Student 1",
-        "Student 2",
-        "Student 3",
-        "Student 4",
-        "Student 5",
-        "Student 6",
-        "Student 7",
-        "Student 8",
-        "Student 9",
-        "Student 10",
-      ]);
-    }
-
-    if (preset === "Teams") {
-      setNames([
-        "Team A",
-        "Team B",
-        "Team C",
-        "Team D",
-        "Team E",
-        "Team F",
-      ]);
-    }
-
-    if (preset === "Lunch") {
-      setNames([
-        "Pizza",
-        "Burger",
-        "Tacos",
-        "Pasta",
-        "Sushi",
-        "Sandwich",
-      ]);
-    }
-
-    setWinner(null);
-    setMessage(`${preset} list loaded.`);
-  };
-
-  const createAudioContext = () => {
-    if (!soundEnabled) return null;
-
+  const audioRef = useRef<AudioContext | null>(null);
+  const lastTickRef = useRef(0);
+  const spinningRef = useRef(false);
+
+  const playTick = useCallback(() => {
+    if (!soundOn) return;
     try {
-      if (!audioContextRef.current) {
-        const AudioCtx =
-          window.AudioContext ||
-          (
-            window as typeof window & {
-              webkitAudioContext?: typeof AudioContext;
-            }
-          ).webkitAudioContext;
+      if (!audioRef.current) audioRef.current = new AudioContext();
+      const ctx = audioRef.current;
+      if (ctx.state === "suspended") void ctx.resume();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.frequency.value = 900; o.type = "square";
+      g.gain.setValueAtTime(0.03, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.04);
+    } catch {}
+  }, [soundOn]);
 
-        if (!AudioCtx) return null;
-
-        audioContextRef.current = new AudioCtx();
-      }
-
-      if (audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume().catch(() => {});
-      }
-
-      return audioContextRef.current;
-    } catch {
-      return null;
-    }
-  };
-
-  const playTick = (frequency = 850) => {
-    const audio = createAudioContext();
-
-    if (!audio) return;
-
-    try {
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
-
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency;
-
-      gain.gain.setValueAtTime(0.0001, audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(
-        0.045,
-        audio.currentTime + 0.005
-      );
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        audio.currentTime + 0.045
-      );
-
-      oscillator.connect(gain);
-      gain.connect(audio.destination);
-
-      oscillator.start();
-      oscillator.stop(audio.currentTime + 0.05);
-    } catch {
-      // Ignore audio errors.
-    }
-  };
-
-  const speakWinner = (name: string) => {
-    if (!soundEnabled || typeof window === "undefined") return;
-
+  const speakWinner = useCallback((name: string) => {
+    if (!voiceOn) return;
     try {
       window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(`Winner is ${name}`);
+      u.rate = 1; u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    } catch {}
+  }, [voiceOn]);
 
-      const utterance = new SpeechSynthesisUtterance(
-        `The winner is ${name}`
-      );
+  const drawWheel = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const size = 340;
+    const center = size / 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (canvas.width !== size * dpr) { canvas.width = size * dpr; canvas.height = size * dpr; canvas.style.width = `${size}px`; canvas.style.height = `${size}px`; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
 
-      utterance.rate = 0.92;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      // Speech may be unavailable in some browsers.
+    if (names.length === 0) {
+      ctx.beginPath(); ctx.arc(center, center, center - 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#f1f5f9"; ctx.fill();
+      ctx.fillStyle = "#94a3b8"; ctx.font = "800 14px 'Plus Jakarta Sans', sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("Add names to start", center, center);
+      return;
     }
+
+    const anglePer = (Math.PI * 2) / names.length;
+    names.forEach((name, i) => {
+      const start = i * anglePer;
+      const end = start + anglePer;
+      ctx.beginPath(); ctx.moveTo(center, center);
+      ctx.arc(center, center, center - 4, start, end);
+      ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2.5; ctx.stroke();
+
+      ctx.save(); ctx.translate(center, center); ctx.rotate(start + anglePer / 2);
+      ctx.textAlign = "right"; ctx.fillStyle = "#fff";
+      ctx.font = "800 14px 'Plus Jakarta Sans', sans-serif";
+      ctx.fillText(name.slice(0, 14), center - 22, 5);
+      // chota dot outer pe
+      ctx.beginPath(); ctx.arc(center - 12, 0, 4, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.fill();
+      ctx.restore();
+    });
+
+    // Outer golden ring
+    ctx.beginPath(); ctx.arc(center, center, center - 2, 0, Math.PI * 2);
+    ctx.strokeStyle = "#eab308"; ctx.lineWidth = 5; ctx.stroke();
+    // Center
+    ctx.beginPath(); ctx.arc(center, center, 34, 0, Math.PI * 2);
+    ctx.fillStyle = "#0f172a"; ctx.fill();
+    ctx.strokeStyle = "#eab308"; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.font = "800 13px 'Plus Jakarta Sans', sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("SPIN", center, center + 5);
+  }, [names]);
+
+  useEffect(() => { drawWheel(); }, [drawWheel]);
+
+  // Tick sound + vibration jab ghum raha hai
+  useEffect(() => {
+    if (!spinning) return;
+    const iv = window.setInterval(() => {
+      playTick();
+      if (vibrateOn) { try { navigator.vibrate?.(12); } catch {} }
+    }, 110);
+    return () => window.clearInterval(iv);
+  }, [spinning, playTick, vibrateOn]);
+
+  const addName = () => {
+    if (!input.trim()) return;
+    if (names.includes(input.trim())) { alert("Ye naam pehle se hai!"); return; }
+    setNames([...names, input.trim()]);
+    setInput("");
   };
 
-  const vibrate = (pattern: number | number[]) => {
-    try {
-      if ("vibrate" in navigator) {
-        navigator.vibrate(pattern);
-      }
-    } catch {
-      // Ignore unsupported vibration.
-    }
-  };
-
-  const getWinnerIndex = (finalRotation: number, count: number) => {
-    const segment = 360 / count;
-
-    // Pointer is at the bottom of the wheel = 90 degrees.
-    const pointerAngle = 90;
-
-    const normalized =
-      ((pointerAngle - (finalRotation % 360)) + 360) % 360;
-
-    return Math.floor(normalized / segment) % count;
+  const addMany = (list: string[]) => {
+    setNames(list); setWinner(null); setHistory([]);
   };
 
   const spin = () => {
-    const currentNames = namesRef.current;
+    if (spinningRef.current || names.length < 2) return;
+    spinningRef.current = true;
+    setSpinning(true); setWinner(null);
+    if (vibrateOn) { try { navigator.vibrate?.(40); } catch {} }
 
-    if (spinning) return;
+    const extra = 360 * 7 + Math.floor(Math.random() * 360);
+    const newRot = rotation + extra;
+    setRotation(newRot);
 
-    if (currentNames.length < 2) {
-      setMessage("Add at least 2 names to spin the wheel.");
-      return;
-    }
+    // Pointer upar hai (270 deg) - wahi winner
+    const normalized = (360 - (newRot % 360)) % 360;
+    // Pointer 270 pe hai, isliye +90 shift
+    const pointerAngle = (normalized + 90) % 360;
+    const idx = Math.floor(pointerAngle / (360 / names.length)) % names.length;
 
-    createAudioContext();
+    setTimeout(() => {
+      const win = names[idx];
+      setWinner(win);
+      setHistory([win, ...history].slice(0, 10));
+      setSpinning(false); spinningRef.current = false;
+      confetti({ particleCount: 220, spread: 100, origin: { y: 0.55 }, colors: ["#16a34a","#eab308","#0ea5e9","#ef4444"] });
+      if (vibrateOn) { try { navigator.vibrate?.([80, 40, 80, 40, 150]); } catch {} }
+      speakWinner(win);
+      if (removeWinner) setNames(names.filter(n => n !== win));
+    }, 4500);
+  };
 
-    if (typeof window !== "undefined") {
-      window.speechSynthesis?.cancel();
-    }
-
-    setSpinning(true);
-    setWinner(null);
-    setMessage("Spinning… watch the pointer.");
-
-    vibrate([20, 30, 20]);
-
-    const extraTurns = 6 + Math.floor(Math.random() * 3);
-
-    const randomOffset = Math.floor(Math.random() * 360);
-
-    const newRotation =
-      rotationRef.current + extraTurns * 360 + randomOffset;
-
-    setRotation(newRotation);
-
-    rotationRef.current = newRotation;
-
-    let tickCount = 0;
-
-    if (soundEnabled) {
-      tickIntervalRef.current = setInterval(() => {
-        tickCount++;
-
-        playTick(650 + Math.min(tickCount * 10, 350));
-      }, 85);
-    }
-
-    spinTimeoutRef.current = setTimeout(() => {
-      if (tickIntervalRef.current) {
-        clearInterval(tickIntervalRef.current);
-        tickIntervalRef.current = null;
-      }
-
-      const currentList = namesRef.current;
-
-      if (!currentList.length) {
-        setSpinning(false);
-        return;
-      }
-
-      const index = getWinnerIndex(
-        newRotation,
-        currentList.length
-      );
-
-      const selectedWinner = currentList[index];
-
-      setWinner(selectedWinner);
-      setSpinning(false);
-
-      const now = new Date();
-
-      const time = now.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      setHistory((prev) =>
-        [
-          {
-            name: selectedWinner,
-            time,
-          },
-          ...prev,
-        ].slice(0, 10)
-      );
-
-      setMessage(`${selectedWinner} has been selected.`);
-
-      vibrate([60, 40, 120]);
-
-      playTick(1200);
-
-      window.setTimeout(() => {
-        speakWinner(selectedWinner);
-      }, 180);
-
-      confetti({
-        particleCount: 220,
-        spread: 100,
-        startVelocity: 35,
-        origin: {
-          x: 0.5,
-          y: 0.42,
-        },
-      });
-
-      if (removeWinner || noRepeat) {
-        setNames((prev) => {
-          const winnerIndex = prev.findIndex(
-            (name) => name === selectedWinner
-          );
-
-          if (winnerIndex === -1) return prev;
-
-          return prev.filter((_, i) => i !== winnerIndex);
-        });
-      }
-    }, SPIN_DURATION);
+  const copyWinner = async () => {
+    if (!winner) return;
+    try { await navigator.clipboard.writeText(`🏆 Winner: ${winner} - via thenexoratools.com/spin-wheel`); alert("Winner copied!"); } catch {}
   };
 
   const shareWinner = async () => {
     if (!winner) return;
-
-    const text = `🎉 Winner: ${winner}\nPicked with the Spin Wheel on thenexoratools.com`;
-
+    const text = `🏆 Winner is ${winner}! Spin Wheel - thenexoratools.com`;
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Spin Wheel Winner",
-          text,
-        });
-
-        return;
-      }
-
-      await navigator.clipboard.writeText(text);
-
-      setMessage("Winner result copied to clipboard.");
-    } catch {
-      setMessage("Unable to share the result on this device.");
-    }
-  };
-
-  const handleInputKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      addName();
-    }
-  };
-
-  const handleBulkChange = (
-    event: ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    setBulkInput(event.target.value);
+      if (navigator.share) await navigator.share({ title: "Spin Wheel Winner", text, url: window.location.href });
+      else await navigator.clipboard.writeText(text);
+    } catch {}
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#111827]">
-      <style jsx global>{`
-        * {
-          box-sizing: border-box;
-        }
-
-        html {
-          scroll-behavior: smooth;
-        }
-
-        body {
-          margin: 0;
-          background: #ffffff;
-          color: #111827;
-          font-family:
-            Inter,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
-        }
-
-        button,
-        input,
-        textarea {
-          font: inherit;
-        }
-
-        ::selection {
-          background: #dbeafe;
-          color: #111827;
-        }
-
-        .spin-glow {
-          animation: spinGlow 1.8s ease-in-out infinite;
-        }
-
-        @keyframes spinGlow {
-          0%,
-          100% {
-            box-shadow:
-              0 0 0 1px rgba(37, 99, 235, 0.08),
-              0 20px 70px rgba(15, 23, 42, 0.08);
-          }
-
-          50% {
-            box-shadow:
-              0 0 0 1px rgba(37, 99, 235, 0.18),
-              0 25px 85px rgba(37, 99, 235, 0.12);
-          }
-        }
-
-        .winner-pop {
-          animation: winnerPop 0.45s ease-out;
-        }
-
-        @keyframes winnerPop {
-          0% {
-            transform: scale(0.92);
-            opacity: 0;
-          }
-
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
+    <main className="page">
+      <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+        .page { min-height: 100vh; background: #ffffff; color: #0f172a; padding: 16px 14px 40px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; }
+        .wrap { width: 100%; max-width: 900px; margin: auto; }
+        .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo span { color: #16a34a; }
+        .topBest { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 12px; font-size: 11px; font-weight: 700; color: #334155; }
+        .hero { text-align: center; margin-bottom: 14px; }
+        .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 11px; font-weight: 800; margin-bottom: 10px; }
+        h1 { margin: 0; font-size: clamp(30px, 6vw, 42px); line-height: 1.05; letter-spacing: -1px; font-weight: 800; }
+        h1 span { color: #16a34a; }
+        .sub { color: #64748b; max-width: 620px; margin: 10px auto 0; font-size: 13px; line-height: 1.6; }
+        .presets { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+        .preset { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; color: #334155; }
+        .preset:active { transform: scale(0.97); }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 22px; padding: 16px; box-shadow: 0 10px 40px rgba(15,23,42,0.06); }
+        .inputRow { display: flex; gap: 8px; }
+        .inputRow input { flex: 1; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 999px; padding: 13px 16px; outline: none; font-size: 14px; font-weight: 600; font-family: inherit; }
+        .inputRow input:focus { border-color: #16a34a; background: #fff; }
+        .addBtn { border: 0; background: #0f172a; color: #fff; border-radius: 999px; padding: 0 22px; font-weight: 800; cursor: pointer; }
+        .quickRow { display: flex; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
+        .quick { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 999px; padding: 7px 12px; font-size: 11px; font-weight: 700; cursor: pointer; color: #475569; }
+        .wheelWrap { margin-top: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 22px; padding: 22px 14px 18px; box-shadow: 0 10px 40px rgba(15,23,42,0.06); text-align: center; position: relative; overflow: hidden; }
+        .wheelCenter { display: flex; justify-content: center; position: relative; }
+        .pointer { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); z-index: 20; width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 34px solid #eab308; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
+        .pointer:after { content: ''; position: absolute; top: -34px; left: -6px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 12px solid #0f172a; }
+        .spinBtn { width: 100%; max-width: 420px; margin-top: 18px; border: 0; border-radius: 999px; padding: 16px; font-size: 17px; font-weight: 800; cursor: pointer; background: #16a34a; color: #fff; box-shadow: 0 8px 24px rgba(22,163,74,0.3); }
+        .spinBtn:disabled { opacity: .6; }
+        .spinBtn:active { transform: scale(0.98); }
+        .winnerBox { margin: 16px auto 0; max-width: 420px; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 18px; padding: 16px; animation: pop .3s ease; }
+        @keyframes pop { from { transform: scale(.9); } to { transform: scale(1); } }
+        .winnerLabel { font-size: 11px; font-weight: 800; color: #15803d; letter-spacing: 1px; }
+        .winnerName { font-size: 32px; font-weight: 800; line-height: 1.1; margin-top: 4px; }
+        .winnerBtns { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .wBtn { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .history { margin-top: 14px; text-align: center; }
+        .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .chip { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 11px; font-size: 11px; font-weight: 700; }
+        .listCard { margin-top: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 22px; padding: 16px; }
+        .listHead { display: flex; justify-content: space-between; align-items: center; }
+        .listHead b { font-size: 14px; }
+        .listHead span { font-size: 11px; color: #94a3b8; font-weight: 700; }
+        .namesList { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 260px; overflow: auto; }
+        .nameItem { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 9px 10px; font-size: 13px; font-weight: 700; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+        .remove { border: 0; background: transparent; color: #ef4444; font-size: 18px; cursor: pointer; line-height: 1; }
+        .toggles { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .toggle { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 11px; font-weight: 700; color: #64748b; cursor: pointer; }
+        .toggle.on { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+        .toggleRow { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; }
+        .toggleRow input { accent-color: #16a34a; width: 16px; height: 16px; }
+        .content { margin-top: 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; }
+        .content h2 { margin: 0 0 8px; font-size: 18px; font-weight: 800; }
+        .content h3 { margin: 14px 0 5px; font-size: 14px; font-weight: 800; }
+        .content p, .content li { color: #64748b; font-size: 12px; line-height: 1.7; }
+        .footer { text-align: center; margin-top: 16px; color: #94a3b8; font-size: 10px; }
+        @media (max-width: 620px) { .namesList { grid-template-columns: 1fr; } }
       `}</style>
 
-      <div className="mx-auto w-full max-w-[1180px] px-4 pb-14 pt-5 sm:px-6 lg:px-8">
-        {/* Header */}
-        <header className="mb-5 flex items-center justify-between">
-          <div>
-            <div className="text-[13px] font-black tracking-[-0.02em] text-[#111827]">
-              thenexoratools
-            </div>
-
-            <div className="mt-0.5 text-[10px] font-medium text-[#9ca3af]">
-              Free online tools
-            </div>
-          </div>
-
-          <div className="rounded-full border border-[#e5e7eb] bg-[#f9fafb] px-3 py-1.5 text-[10px] font-bold text-[#6b7280]">
-            RANDOM PICKER
-          </div>
+      <div className="wrap">
+        <header className="top">
+          <div className="logo">thenexoratools<span>.com</span></div>
+          <div className="topBest">🎡 {names.length} Entries</div>
         </header>
 
-        {/* Title */}
-        <section className="mb-5 text-center">
-          <h1 className="text-[25px] font-black tracking-[-0.04em] text-[#111827] sm:text-[30px]">
-            Spin Wheel
-          </h1>
-
-          <p className="mx-auto mt-1.5 max-w-[620px] text-[12px] leading-5 text-[#6b7280]">
-            Add names, spin the wheel, and let the pointer choose a random
-            winner.
-          </p>
+        <section className="hero">
+          <div className="tag">🎡 FREE • NO SIGN UP • VOICE + VIBRATION</div>
+          <h1>Spin Wheel <span>- Random Picker</span></h1>
+          <p className="sub">Giveaway winner, classroom, team ya khana decide karo. Naam likho, SPIN dabao, jaha teer rukega wahi winner hoga.</p>
         </section>
 
-        {/* Main layout */}
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px]">
-          {/* Wheel side */}
-          <section
-            className={`rounded-[26px] border border-[#e5e7eb] bg-white p-4 shadow-[0_18px_70px_rgba(15,23,42,0.07)] sm:p-6 ${
-              !spinning ? "spin-glow" : ""
-            }`}
-          >
-            {/* Status */}
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#9ca3af]">
-                  Random winner
-                </p>
-
-                <p className="mt-0.5 text-[12px] font-semibold text-[#374151]">
-                  {spinning
-                    ? "The wheel is spinning..."
-                    : `${uniqueNames.length} entries ready`}
-                </p>
-              </div>
-
-              <div className="rounded-full bg-[#eff6ff] px-3 py-1.5 text-[10px] font-bold text-[#2563eb]">
-                {uniqueNames.length} names
-              </div>
-            </div>
-
-            {/* Wheel */}
-            <div className="flex flex-col items-center">
-              <div className="relative w-full max-w-[600px]">
-                {/* Wheel */}
-                <div
-                  className="relative mx-auto aspect-square w-[min(88vw,600px)]"
-                  style={{
-                    transform: `rotate(${rotation}deg)`,
-                    transition: spinning
-                      ? `transform ${SPIN_DURATION}ms cubic-bezier(0.12, 0.8, 0.08, 1)`
-                      : "none",
-                  }}
-                >
-                  <canvas
-                    ref={canvasRef}
-                    className="h-full w-full"
-                    aria-label="Random name spin wheel"
-                  />
-                </div>
-
-                {/* Fixed pointer at bottom */}
-                <div className="pointer-events-none absolute bottom-[-20px] left-1/2 z-20 -translate-x-1/2">
-                  <div className="relative flex h-[38px] w-[52px] items-center justify-center">
-                    <div
-                      className="absolute bottom-0 left-1/2 h-0 w-0 -translate-x-1/2"
-                      style={{
-                        borderLeft: "16px solid transparent",
-                        borderRight: "16px solid transparent",
-                        borderBottom: "28px solid #111827",
-                      }}
-                    />
-
-                    <div
-                      className="absolute bottom-[4px] left-1/2 h-0 w-0 -translate-x-1/2"
-                      style={{
-                        borderLeft: "11px solid transparent",
-                        borderRight: "11px solid transparent",
-                        borderBottom: "19px solid #ffffff",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Winner */}
-              <div className="mt-8 w-full max-w-[520px] text-center">
-                {winner ? (
-                  <div className="winner-pop rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-5 py-4">
-                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#16a34a]">
-                      Winner
-                    </p>
-
-                    <p className="mt-1 text-[25px] font-black tracking-[-0.03em] text-[#111827]">
-                      {winner}
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                      <button
-                        onClick={shareWinner}
-                        className="rounded-full border border-[#d1d5db] bg-white px-4 py-2 text-[10px] font-bold text-[#374151] transition hover:border-[#9ca3af]"
-                      >
-                        Share result
-                      </button>
-
-                      <button
-                        onClick={spin}
-                        disabled={spinning || uniqueNames.length < 2}
-                        className="rounded-full bg-[#111827] px-4 py-2 text-[10px] font-black text-white transition hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Spin again
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-3">
-                    <p className="text-[11px] font-semibold text-[#6b7280]">
-                      {message}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Main spin button */}
-              <button
-                onClick={spin}
-                disabled={spinning || uniqueNames.length < 2}
-                className="mt-4 w-full max-w-[520px] rounded-2xl bg-[#111827] py-3.5 text-[13px] font-black tracking-[-0.01em] text-white shadow-[0_12px_30px_rgba(17,24,39,0.16)] transition hover:-translate-y-0.5 hover:bg-[#2563eb] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {spinning ? "Spinning..." : "SPIN THE WHEEL"}
-              </button>
-
-              <p className="mt-2 text-center text-[9px] font-medium text-[#9ca3af]">
-                The fixed pointer at the bottom selects the winner.
-              </p>
-            </div>
-          </section>
-
-          {/* Controls */}
-          <aside className="space-y-4">
-            {/* Add names */}
-            <section className="rounded-[22px] border border-[#e5e7eb] bg-white p-4 shadow-[0_12px_45px_rgba(15,23,42,0.05)]">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="text-[13px] font-black text-[#111827]">
-                    Add names
-                  </h2>
-
-                  <p className="mt-0.5 text-[10px] text-[#9ca3af]">
-                    One name at a time
-                  </p>
-                </div>
-
-                <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[9px] font-bold text-[#6b7280]">
-                  {uniqueNames.length}
-                </span>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleInputKeyDown}
-                  disabled={spinning}
-                  placeholder="Enter a name..."
-                  className="min-w-0 flex-1 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 text-[11px] font-medium text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#2563eb] focus:bg-white"
-                />
-
-                <button
-                  onClick={addName}
-                  disabled={spinning}
-                  className="rounded-xl bg-[#2563eb] px-4 text-[10px] font-black text-white transition hover:bg-[#1d4ed8] disabled:opacity-40"
-                >
-                  Add
-                </button>
-              </div>
-
-              <button
-                onClick={() => setShowBulk((prev) => !prev)}
-                disabled={spinning}
-                className="mt-2 text-[10px] font-bold text-[#2563eb] hover:underline"
-              >
-                {showBulk ? "Hide bulk input" : "Paste multiple names"}
-              </button>
-
-              {showBulk && (
-                <div className="mt-3">
-                  <textarea
-                    value={bulkInput}
-                    onChange={handleBulkChange}
-                    disabled={spinning}
-                    rows={6}
-                    placeholder={`Alex
-Jordan
-Taylor
-Morgan`}
-                    className="w-full resize-none rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 text-[11px] font-medium leading-5 text-[#111827] outline-none focus:border-[#2563eb] focus:bg-white"
-                  />
-
-                  <button
-                    onClick={addBulkNames}
-                    className="mt-2 w-full rounded-xl bg-[#111827] py-2.5 text-[10px] font-black text-white hover:bg-[#2563eb]"
-                  >
-                    Add names
-                  </button>
-                </div>
-              )}
-            </section>
-
-            {/* Presets */}
-            <section className="rounded-[22px] border border-[#e5e7eb] bg-white p-4 shadow-[0_12px_45px_rgba(15,23,42,0.05)]">
-              <h2 className="text-[13px] font-black text-[#111827]">
-                Quick lists
-              </h2>
-
-              <p className="mt-0.5 text-[10px] text-[#9ca3af]">
-                Start instantly with a ready-made list.
-              </p>
-
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {["Giveaway", "Classroom", "Teams", "Lunch"].map(
-                  (preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => applyPreset(preset)}
-                      disabled={spinning}
-                      className={`rounded-xl border px-3 py-2.5 text-[10px] font-bold transition ${
-                        activePreset === preset
-                          ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
-                          : "border-[#e5e7eb] bg-[#f9fafb] text-[#4b5563] hover:border-[#bfdbfe]"
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  )
-                )}
-              </div>
-            </section>
-
-            {/* Options */}
-            <section className="rounded-[22px] border border-[#e5e7eb] bg-white p-4 shadow-[0_12px_45px_rgba(15,23,42,0.05)]">
-              <h2 className="text-[13px] font-black text-[#111827]">
-                Wheel options
-              </h2>
-
-              <div className="mt-3 space-y-3">
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-bold text-[#374151]">
-                      Remove winner
-                    </p>
-
-                    <p className="text-[9px] text-[#9ca3af]">
-                      Remove the selected name after each spin.
-                    </p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={removeWinner}
-                    onChange={(e) =>
-                      setRemoveWinner(e.target.checked)
-                    }
-                    disabled={spinning}
-                    className="h-4 w-4 accent-[#2563eb]"
-                  />
-                </label>
-
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-bold text-[#374151]">
-                      No repeat winners
-                    </p>
-
-                    <p className="text-[9px] text-[#9ca3af]">
-                      Keep winners out of future spins.
-                    </p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={noRepeat}
-                    onChange={(e) => setNoRepeat(e.target.checked)}
-                    disabled={spinning}
-                    className="h-4 w-4 accent-[#2563eb]"
-                  />
-                </label>
-
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-bold text-[#374151]">
-                      Sound & voice
-                    </p>
-
-                    <p className="text-[9px] text-[#9ca3af]">
-                      Spin ticks and winner announcement.
-                    </p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={soundEnabled}
-                    onChange={(e) =>
-                      setSoundEnabled(e.target.checked)
-                    }
-                    disabled={spinning}
-                    className="h-4 w-4 accent-[#2563eb]"
-                  />
-                </label>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button
-                  onClick={shuffleNames}
-                  disabled={spinning || names.length < 2}
-                  className="rounded-xl border border-[#e5e7eb] bg-[#f9fafb] py-2.5 text-[10px] font-bold text-[#4b5563] hover:border-[#bfdbfe] disabled:opacity-40"
-                >
-                  Shuffle
-                </button>
-
-                <button
-                  onClick={clearAll}
-                  disabled={spinning || names.length === 0}
-                  className="rounded-xl border border-[#fee2e2] bg-[#fffafa] py-2.5 text-[10px] font-bold text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-40"
-                >
-                  Clear all
-                </button>
-              </div>
-            </section>
-
-            {/* Entries */}
-            <section className="rounded-[22px] border border-[#e5e7eb] bg-white p-4 shadow-[0_12px_45px_rgba(15,23,42,0.05)]">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="text-[13px] font-black text-[#111827]">
-                    Entries
-                  </h2>
-
-                  <p className="mt-0.5 text-[10px] text-[#9ca3af]">
-                    These names are on the wheel.
-                  </p>
-                </div>
-
-                <span className="text-[10px] font-bold text-[#6b7280]">
-                  {uniqueNames.length}
-                </span>
-              </div>
-
-              <div className="max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
-                {uniqueNames.map((name, index) => (
-                  <div
-                    key={`${name}-${index}`}
-                    className="flex items-center justify-between rounded-xl bg-[#f9fafb] px-3 py-2"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{
-                          background:
-                            COLORS[index % COLORS.length],
-                        }}
-                      />
-
-                      <span className="truncate text-[10px] font-semibold text-[#374151]">
-                        {name}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => removeName(index)}
-                      disabled={spinning}
-                      aria-label={`Remove ${name}`}
-                      className="ml-2 text-[16px] font-medium leading-none text-[#9ca3af] hover:text-[#dc2626] disabled:opacity-30"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
-                {uniqueNames.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-[#d1d5db] px-3 py-8 text-center">
-                    <p className="text-[10px] font-bold text-[#6b7280]">
-                      No entries yet
-                    </p>
-
-                    <p className="mt-1 text-[9px] text-[#9ca3af]">
-                      Add names above to build your wheel.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </section>
-          </aside>
+        <div className="presets">
+          {Object.keys(PRESETS).map(k => (
+            <button key={k} className="preset" onClick={() => addMany(PRESETS[k])}>{k}</button>
+          ))}
         </div>
 
-        {/* Winner history */}
-        {history.length > 0 && (
-          <section className="mt-5 rounded-[22px] border border-[#e5e7eb] bg-white p-4 shadow-[0_12px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[13px] font-black text-[#111827]">
-                  Winner history
-                </h2>
-
-                <p className="mt-0.5 text-[10px] text-[#9ca3af]">
-                  Your most recent selections.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setHistory([])}
-                className="text-[9px] font-bold text-[#6b7280] hover:text-[#dc2626]"
-              >
-                Clear history
-              </button>
-            </div>
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-              {history.map((item, index) => (
-                <div
-                  key={`${item.name}-${item.time}-${index}`}
-                  className="flex items-center justify-between rounded-xl bg-[#f9fafb] px-3 py-2.5"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-[11px] font-black text-[#2563eb]">
-                      #{index + 1}
-                    </span>
-
-                    <span className="truncate text-[10px] font-bold text-[#374151]">
-                      {item.name}
-                    </span>
-                  </div>
-
-                  <span className="ml-2 text-[8px] font-medium text-[#9ca3af]">
-                    {item.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* How to use */}
-        <section className="mx-auto mt-8 max-w-[850px] text-center">
-          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#111827]">
-            Free Random Name Picker
-          </h2>
-
-          <p className="mt-2 text-[11px] leading-5 text-[#6b7280]">
-            Use the wheel for giveaways, classrooms, team selection,
-            games, lunch decisions, contests, raffles, and everyday
-            random choices. Add as many names as you need, then spin.
-          </p>
-
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {[
-              "Giveaways",
-              "Classrooms",
-              "Team Picker",
-              "Random Winner",
-              "Games",
-              "Contests",
-              "Raffles",
-              "Decision Maker",
-            ].map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-[#e5e7eb] bg-[#f9fafb] px-3 py-1.5 text-[9px] font-bold text-[#6b7280]"
-              >
-                {tag}
-              </span>
-            ))}
+        {/* UPAR WALA BOX - NAAM LIKHNE WALA */}
+        <div className="card">
+          <div className="inputRow">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addName()} placeholder="Player ka naam likho... e.g. Ayush" />
+            <button onClick={addName} className="addBtn">+ Add</button>
           </div>
-        </section>
+          <div className="quickRow">
+            <button className="quick" onClick={() => { setNames([]); setWinner(null); setHistory([]); }}>🗑️ Clear All</button>
+            <button className="quick" onClick={() => { const a = [...names]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } setNames(a); }}>🔀 Shuffle</button>
+            <button className="quick" onClick={() => addMany(PRESETS["🎁 Giveaway"])}>✨ Demo Names</button>
+          </div>
+          <label className="toggleRow">
+            <input type="checkbox" checked={removeWinner} onChange={e => setRemoveWinner(e.target.checked)} />
+            Winner ko list se auto hata do (Elimination Mode)
+          </label>
+        </div>
 
-        {/* Footer */}
-        <footer className="mt-9 border-t border-[#f0f0f0] pt-5 text-center">
-          <p className="text-[9px] font-medium text-[#9ca3af]">
-            Free to use • No sign-up required • thenexoratools
-          </p>
-        </footer>
+        {/* BEECH ME WHEEL */}
+        <div className="wheelWrap">
+          <div className="wheelCenter">
+            <div className="pointer" />
+            <div style={{ transform: `rotate(${rotation}deg)`, transition: spinning ? "transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)" : "none", lineHeight: 0 }}>
+              <canvas ref={canvasRef} width={340} height={340} style={{ maxWidth: "100%", height: "auto" }} />
+            </div>
+          </div>
+
+          <button onClick={spin} disabled={spinning || names.length < 2} className="spinBtn">
+            {spinning ? "Spinning... 🎡" : "🎡 SPIN NOW"}
+          </button>
+          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 8, fontWeight: 600 }}>{names.length < 2 ? "Kam se kam 2 naam chahiye" : "Teer jaha rukega, wahi Winner hoga"}</p>
+
+          {winner && (
+            <div className="winnerBox">
+              <div className="winnerLabel">🏆 WINNER</div>
+              <div className="winnerName">{winner}</div>
+              <div className="winnerBtns">
+                <button className="wBtn" onClick={copyWinner}>📋 Copy Winner</button>
+                <button className="wBtn" onClick={shareWinner}>📤 Share Winner</button>
+                <button className="wBtn" onClick={spin}>↻ Spin Again</button>
+              </div>
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <div className="history">
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8" }}>RECENT WINNERS</div>
+              <div className="chips">{history.map((h, i) => <span key={i} className="chip">🏆 {h}</span>)}</div>
+            </div>
+          )}
+        </div>
+
+        {/* NAMES LIST */}
+        <div className="listCard">
+          <div className="listHead"><b>Entries ({names.length})</b><span>Tap × to remove</span></div>
+          <div className="namesList">
+            {names.map((n, i) => (
+              <div key={i} className="nameItem">
+                <span><span className="dot" style={{ background: COLORS[i % COLORS.length] }} />{n}</span>
+                <button className="remove" onClick={() => setNames(names.filter((_, idx) => idx !== i))}>×</button>
+              </div>
+            ))}
+            {names.length === 0 && <p style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", gridColumn: "1 / -1", padding: 20 }}>Koi entry nahi hai, upar se naam add karo</p>}
+          </div>
+        </div>
+
+        <div className="toggles">
+          <button className={`toggle ${soundOn ? "on" : ""}`} onClick={() => setSoundOn(v => !v)}>{soundOn ? "🔊 Tick Sound ON" : "🔇 Tick Sound OFF"}</button>
+          <button className={`toggle ${vibrateOn ? "on" : ""}`} onClick={() => setVibrateOn(v => !v)}>{vibrateOn ? "📳 Vibration ON" : "📳 Vibration OFF"}</button>
+          <button className={`toggle ${voiceOn ? "on" : ""}`} onClick={() => setVoiceOn(v => !v)}>{voiceOn ? "🗣️ Winner Voice ON" : "🗣️ Winner Voice OFF"}</button>
+        </div>
+
+        <section className="content">
+          <h2>Spin Wheel - Random Name Picker</h2>
+          <p>Spin Wheel ek free random picker hai. Giveaway winner chunne, classroom me student pick karne, team banane ya khana decide karne ke liye iska use karo. Bas naam add karo aur SPIN dabao.</p>
+          <h3>Kaise use kare?</h3>
+          <p>1. Upar wale box me naam likho aur Add dabao. 2. Preset se Giveaway, Classroom, Yes/No bhi 1 click me load kar sakte ho. 3. SPIN dabao. Teer jaha rukega, wahi winner hoga.</p>
+          <h3>Elimination Mode kya hai?</h3>
+          <p>Agar ye ON hai to winner list se auto hat jayega. Isse tum ek-ek karke sabko eliminate karke final winner nikal sakte ho - classroom aur giveaway ke liye best hai.</p>
+        </section>
+        <div className="footer">© {new Date().getFullYear()} thenexoratools.com</div>
       </div>
     </main>
   );
