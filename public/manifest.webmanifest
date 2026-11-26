@@ -8,13 +8,13 @@
   "description": "Free Countdown Timer - Works Offline",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icon-192.jpg",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512.jpg",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
