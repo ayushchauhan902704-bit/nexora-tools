@@ -1,65 +1,96 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import confetti from "canvas-confetti";
 
 const COLORS = [
-  "#16a34a",
-  "#0ea5e9",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#22c55e",
-  "#3b82f6",
-  "#eab308",
-  "#a855f7",
+  "#7c3aed",
+  "#2563eb",
+  "#0891b2",
+  "#059669",
+  "#65a30d",
+  "#ca8a04",
+  "#ea580c",
+  "#dc2626",
+  "#db2777",
+  "#9333ea",
+  "#4f46e5",
+  "#0f766e",
 ];
 
-const PRESETS: Record<string, string[]> = {
-  "🎁 Giveaway": [
-    "Ayush",
-    "Rahul",
-    "Priya",
-    "Aman",
-    "Sneha",
-    "Vikash",
-    "Neha",
-    "Rohan",
-  ],
-
-  "🏫 Classroom": [
-    "Aarav",
-    "Diya",
-    "Kabir",
-    "Meera",
-    "Arjun",
-    "Anaya",
-    "Vihaan",
-    "Zara",
-  ],
-
-  "✅ Yes / No": ["YES", "NO"],
-
-  "🍔 What to Eat?": [
-    "Pizza",
-    "Burger",
-    "Momos",
-    "Biryani",
-    "Chole Bhature",
-    "Pasta",
-    "Sandwich",
-    "Chai",
-  ],
-
-  "👥 Team Picker": ["Team A", "Team B"],
-
-  "🎲 Truth / Dare": ["Truth", "Dare"],
-};
+const PRESETS = [
+  {
+    name: "🎁 Giveaway",
+    items: [
+      "Ayush",
+      "Rahul",
+      "Priya",
+      "Aman",
+      "Sneha",
+      "Vikash",
+      "Neha",
+      "Rohan",
+    ],
+  },
+  {
+    name: "🏫 Classroom",
+    items: [
+      "Aarav",
+      "Diya",
+      "Kabir",
+      "Meera",
+      "Arjun",
+      "Anaya",
+      "Vihaan",
+      "Zara",
+    ],
+  },
+  {
+    name: "✅ Yes / No",
+    items: ["Yes", "No"],
+  },
+  {
+    name: "🍔 What to Eat?",
+    items: [
+      "Pizza",
+      "Burger",
+      "Momos",
+      "Biryani",
+      "Chole Bhature",
+      "Pasta",
+      "Sandwich",
+      "Chai",
+    ],
+  },
+  {
+    name: "👥 Team Picker",
+    items: ["Team A", "Team B"],
+  },
+  {
+    name: "🎲 Truth / Dare",
+    items: ["Truth", "Dare"],
+  },
+];
 
 export default function SpinWheelClient() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wheelRef = useRef<HTMLDivElement | null>(null);
+
+  const animationRef = useRef<number | null>(null);
+  const tickTimerRef =
+    useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const audioRef = useRef<AudioContext | null>(null);
+
+  const rotationRef = useRef(0);
+  const namesRef = useRef<string[]>([]);
+  const spinningRef = useRef(false);
+
   const [names, setNames] = useState<string[]>([
     "Ayush",
     "Rahul",
@@ -73,88 +104,32 @@ export default function SpinWheelClient() {
 
   const [input, setInput] = useState("");
   const [spinning, setSpinning] = useState(false);
-  const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
-  const [removeWinner, setRemoveWinner] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
-  const [vibrateOn, setVibrateOn] = useState(true);
-  const [voiceOn, setVoiceOn] = useState(true);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const audioRef = useRef<AudioContext | null>(null);
-  const spinningRef = useRef(false);
-  const rotationRef = useRef(0);
-  const namesRef = useRef(names);
+  const [removeWinner, setRemoveWinner] =
+    useState(false);
 
-  namesRef.current = names;
+  const [soundOn, setSoundOn] =
+    useState(true);
 
-  /* -----------------------------
-     Tick Sound
-  ----------------------------- */
+  const [vibrateOn, setVibrateOn] =
+    useState(true);
 
-  const playTick = useCallback(() => {
-    if (!soundOn) return;
+  const [voiceOn, setVoiceOn] =
+    useState(false);
 
-    try {
-      if (!audioRef.current) {
-        audioRef.current = new AudioContext();
-      }
+  /* ---------------------------------------------
+     KEEP REF IN SYNC
+  --------------------------------------------- */
 
-      const ctx = audioRef.current;
+  useEffect(() => {
+    namesRef.current = names;
+  }, [names]);
 
-      if (ctx.state === "suspended") {
-        void ctx.resume();
-      }
-
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      oscillator.frequency.value = 900;
-      oscillator.type = "square";
-
-      gain.gain.setValueAtTime(0.03, ctx.currentTime);
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + 0.04
-      );
-
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-
-      oscillator.start();
-      oscillator.stop(ctx.currentTime + 0.04);
-    } catch {}
-  }, [soundOn]);
-
-  /* -----------------------------
-     Winner Voice
-  ----------------------------- */
-
-  const speakWinner = useCallback(
-    (name: string) => {
-      if (!voiceOn) return;
-
-      try {
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(
-          `Winner is ${name}`
-        );
-
-        utterance.rate = 0.95;
-        utterance.pitch = 1;
-
-        window.speechSynthesis.speak(utterance);
-      } catch {}
-    },
-    [voiceOn]
-  );
-
-  /* -----------------------------
-     Draw Wheel
-  ----------------------------- */
+  /* ---------------------------------------------
+     DRAW WHEEL
+  --------------------------------------------- */
 
   const drawWheel = useCallback(() => {
     const canvas = canvasRef.current;
@@ -165,366 +140,1320 @@ export default function SpinWheelClient() {
 
     if (!ctx) return;
 
-    const size = 300;
+    const size = 800;
     const center = size / 2;
+    const radius = 375;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = size;
+    canvas.height = size;
 
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
+    ctx.clearRect(
+      0,
+      0,
+      size,
+      size
+    );
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const list = namesRef.current;
 
-    ctx.clearRect(0, 0, size, size);
-
-    if (names.length === 0) {
+    if (list.length === 0) {
       ctx.beginPath();
-      ctx.arc(center, center, center - 4, 0, Math.PI * 2);
+      ctx.arc(
+        center,
+        center,
+        radius,
+        0,
+        Math.PI * 2
+      );
 
-      ctx.fillStyle = "#f1f5f9";
+      ctx.fillStyle = "#111827";
       ctx.fill();
 
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "800 14px Arial, sans-serif";
+      ctx.font =
+        "800 30px Arial, sans-serif";
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-      ctx.fillText("Add entries to start", center, center);
+      ctx.fillText(
+        "Add choices",
+        center,
+        center
+      );
 
       return;
     }
 
-    const anglePer = (Math.PI * 2) / names.length;
+    const slice =
+      (Math.PI * 2) / list.length;
 
-    names.forEach((name, i) => {
-      const start = i * anglePer;
-      const end = start + anglePer;
+    /* Outer shadow */
 
-      /* Slice */
+    ctx.beginPath();
+
+    ctx.arc(
+      center,
+      center,
+      radius + 12,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fillStyle = "#020617";
+    ctx.fill();
+
+    /* Wheel slices */
+
+    list.forEach((name, index) => {
+      const start =
+        index * slice;
+
+      const end =
+        start + slice;
+
       ctx.beginPath();
 
-      ctx.moveTo(center, center);
+      ctx.moveTo(
+        center,
+        center
+      );
 
       ctx.arc(
         center,
         center,
-        center - 4,
+        radius,
         start,
         end
       );
 
       ctx.closePath();
 
-      ctx.fillStyle = COLORS[i % COLORS.length];
+      ctx.fillStyle =
+        COLORS[index % COLORS.length];
+
       ctx.fill();
 
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle =
+        "rgba(255,255,255,0.42)";
+
+      ctx.lineWidth = 4;
+
       ctx.stroke();
 
       /* Text */
+
+      const middle =
+        start + slice / 2;
+
       ctx.save();
 
-      ctx.translate(center, center);
+      ctx.translate(
+        center +
+          Math.cos(middle) *
+            radius *
+            0.67,
 
-      ctx.rotate(start + anglePer / 2);
+        center +
+          Math.sin(middle) *
+            radius *
+            0.67
+      );
 
-      ctx.textAlign = "right";
+      let textAngle = middle;
+
+      if (
+        textAngle >
+          Math.PI / 2 &&
+        textAngle <
+          Math.PI * 1.5
+      ) {
+        textAngle += Math.PI;
+      }
+
+      ctx.rotate(textAngle);
+
+      ctx.font =
+        "900 27px Arial, sans-serif";
+
       ctx.fillStyle = "#ffffff";
 
-      const fontSize = name.length > 10 ? 11 : 13;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-      ctx.font = `800 ${fontSize}px Arial, sans-serif`;
+      ctx.shadowColor =
+        "rgba(0,0,0,0.55)";
+
+      ctx.shadowBlur = 6;
+
+      const maxWidth =
+        radius * 0.48;
+
+      let label = name;
+
+      while (
+        label.length > 4 &&
+        ctx.measureText(label).width >
+          maxWidth
+      ) {
+        label =
+          label.slice(0, -1);
+      }
+
+      if (label !== name) {
+        label += "…";
+      }
 
       ctx.fillText(
-        name.slice(0, 14),
-        center - 20,
-        5
-      );
-
-      /* Small dot */
-      ctx.beginPath();
-
-      ctx.arc(
-        center - 12,
+        label,
         0,
-        3.5,
-        0,
-        Math.PI * 2
+        0
       );
-
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.fill();
 
       ctx.restore();
     });
 
     /* Outer border */
+
     ctx.beginPath();
 
     ctx.arc(
       center,
       center,
-      center - 2,
+      radius,
       0,
       Math.PI * 2
     );
 
-    ctx.strokeStyle = "#eab308";
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 8;
+
     ctx.stroke();
 
     /* Center */
+
     ctx.beginPath();
 
     ctx.arc(
       center,
       center,
-      30,
+      78,
       0,
       Math.PI * 2
     );
 
-    ctx.fillStyle = "#0f172a";
+    ctx.fillStyle = "#020617";
     ctx.fill();
 
-    ctx.strokeStyle = "#eab308";
-    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    ctx.arc(
+      center,
+      center,
+      73,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.strokeStyle = "#fbbf24";
+    ctx.lineWidth = 6;
+
     ctx.stroke();
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "800 12px Arial, sans-serif";
+
+    ctx.font =
+      "950 24px Arial, sans-serif";
+
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.shadowBlur = 0;
 
     ctx.fillText(
       "SPIN",
       center,
-      center + 4
+      center
     );
-  }, [names]);
+  }, []);
+
+  /* ---------------------------------------------
+     INITIAL DRAW
+  --------------------------------------------- */
 
   useEffect(() => {
     drawWheel();
   }, [drawWheel]);
 
-  /* -----------------------------
-     Tick / Vibration During Spin
-  ----------------------------- */
+  /* ---------------------------------------------
+     REDRAW WHEN NAMES CHANGE
+  --------------------------------------------- */
 
   useEffect(() => {
-    if (!spinning) return;
+    drawWheel();
+  }, [names, drawWheel]);
 
-    const interval = window.setInterval(() => {
-      playTick();
+  /* ---------------------------------------------
+     SOUND
+  --------------------------------------------- */
 
-      if (vibrateOn) {
-        try {
-          navigator.vibrate?.(12);
-        } catch {}
+  const playTick = useCallback(() => {
+    if (!soundOn) return;
+
+    try {
+      if (!audioRef.current) {
+        audioRef.current =
+          new AudioContext();
       }
-    }, 110);
 
-    return () => window.clearInterval(interval);
-  }, [spinning, playTick, vibrateOn]);
+      const audio =
+        audioRef.current;
 
-  /* -----------------------------
-     Add Entry
-  ----------------------------- */
+      if (
+        audio.state ===
+        "suspended"
+      ) {
+        audio.resume();
+      }
+
+      const oscillator =
+        audio.createOscillator();
+
+      const gain =
+        audio.createGain();
+
+      oscillator.type =
+        "square";
+
+      oscillator.frequency.value =
+        850;
+
+      gain.gain.setValueAtTime(
+        0.0001,
+        audio.currentTime
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.07,
+        audio.currentTime + 0.005
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audio.currentTime + 0.035
+      );
+
+      oscillator.connect(gain);
+      gain.connect(audio.destination);
+
+      oscillator.start();
+
+      oscillator.stop(
+        audio.currentTime + 0.04
+      );
+    } catch {}
+  }, [soundOn]);
+
+  /* ---------------------------------------------
+     VIBRATION
+  --------------------------------------------- */
+
+  const vibrate = useCallback(() => {
+    if (!vibrateOn) return;
+
+    try {
+      if (
+        typeof navigator !==
+          "undefined" &&
+        "vibrate" in navigator
+      ) {
+        navigator.vibrate(10);
+      }
+    } catch {}
+  }, [vibrateOn]);
+
+  /* ---------------------------------------------
+     APPLY ROTATION DIRECTLY
+  --------------------------------------------- */
+
+  const applyRotation = (
+    degrees: number
+  ) => {
+    rotationRef.current =
+      degrees;
+
+    const wheel =
+      wheelRef.current;
+
+    if (wheel) {
+      wheel.style.transform =
+        `rotate(${degrees}deg)`;
+    }
+  };
+
+  /* ---------------------------------------------
+     RESET
+  --------------------------------------------- */
+
+  const resetWheel = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(
+        animationRef.current
+      );
+
+      animationRef.current =
+        null;
+    }
+
+    if (tickTimerRef.current) {
+      clearInterval(
+        tickTimerRef.current
+      );
+
+      tickTimerRef.current =
+        null;
+    }
+
+    applyRotation(0);
+  };
+
+  /* ---------------------------------------------
+     PRESET
+  --------------------------------------------- */
+
+  const loadPreset = (
+    items: string[]
+  ) => {
+    if (spinningRef.current) return;
+
+    namesRef.current = [
+      ...items,
+    ];
+
+    setNames([
+      ...items,
+    ]);
+
+    setWinner(null);
+    setHistory([]);
+
+    resetWheel();
+  };
+
+  /* ---------------------------------------------
+     ADD NAME
+  --------------------------------------------- */
 
   const addName = () => {
-    const clean = input.trim();
+    if (spinningRef.current)
+      return;
 
-    if (!clean) return;
+    const value =
+      input.trim();
 
-    if (names.includes(clean)) {
-      alert("This entry is already on the wheel.");
+    if (!value) return;
+
+    const exists =
+      namesRef.current.some(
+        (item) =>
+          item.toLowerCase() ===
+          value.toLowerCase()
+      );
+
+    if (exists) {
+      setInput("");
       return;
     }
 
-    setNames((old) => [...old, clean]);
+    const updated = [
+      ...namesRef.current,
+      value,
+    ];
+
+    namesRef.current =
+      updated;
+
+    setNames(updated);
+
     setInput("");
+    setWinner(null);
   };
 
-  /* -----------------------------
-     Preset
-  ----------------------------- */
+  /* ---------------------------------------------
+     REMOVE NAME
+  --------------------------------------------- */
 
-  const addMany = (list: string[]) => {
-    setNames([...list]);
+  const removeName = (
+    index: number
+  ) => {
+    if (spinningRef.current)
+      return;
+
+    const updated =
+      namesRef.current.filter(
+        (_, i) =>
+          i !== index
+      );
+
+    namesRef.current =
+      updated;
+
+    setNames(updated);
+
+    setWinner(null);
+  };
+
+  /* ---------------------------------------------
+     BULK ADD
+  --------------------------------------------- */
+
+  const addMany = (
+    value: string
+  ) => {
+    if (spinningRef.current)
+      return;
+
+    const values =
+      value
+        .split(/\n|,/)
+        .map((x) =>
+          x.trim()
+        )
+        .filter(Boolean);
+
+    const unique =
+      Array.from(
+        new Set(values)
+      );
+
+    namesRef.current =
+      unique;
+
+    setNames(unique);
+
     setWinner(null);
     setHistory([]);
-    setRotation(0);
-    rotationRef.current = 0;
+
+    resetWheel();
   };
 
-  /* -----------------------------
-     Spin
-  ----------------------------- */
+  /* ---------------------------------------------
+     SPIN
+  --------------------------------------------- */
 
   const spin = () => {
     if (
-      spinningRef.current ||
-      namesRef.current.length < 2
+      spinningRef.current
     ) {
       return;
     }
 
-    spinningRef.current = true;
+    const current =
+      namesRef.current;
+
+    if (current.length < 2) {
+      return;
+    }
+
+    if (
+      animationRef.current
+    ) {
+      cancelAnimationFrame(
+        animationRef.current
+      );
+    }
+
+    /* Start */
+
+    spinningRef.current =
+      true;
 
     setSpinning(true);
     setWinner(null);
 
-    if (vibrateOn) {
-      try {
-        navigator.vibrate?.(40);
-      } catch {}
+    vibrate();
+
+    /* -----------------------------------------
+       IMPORTANT:
+       9 FULL ROTATIONS + RANDOM ANGLE
+    ----------------------------------------- */
+
+    const startRotation =
+      rotationRef.current;
+
+    const randomAngle =
+      Math.random() * 360;
+
+    const totalRotation =
+      360 * 9 +
+      randomAngle;
+
+    const finalRotation =
+      startRotation +
+      totalRotation;
+
+    /* 5.8 seconds */
+
+    const duration = 5800;
+
+    const startTime =
+      performance.now();
+
+    /* -----------------------------------------
+       TICK SOUND
+    ----------------------------------------- */
+
+    if (tickTimerRef.current) {
+      clearInterval(
+        tickTimerRef.current
+      );
     }
 
-    const currentNames = [...namesRef.current];
+    tickTimerRef.current =
+      setInterval(() => {
+        playTick();
+        vibrate();
+      }, 90);
 
-    /*
-      IMPORTANT:
+    /* -----------------------------------------
+       ANIMATION LOOP
+    ----------------------------------------- */
 
-      The wheel is now rotated as one complete visual wheel.
-      The pointer stays fixed at the top.
+    const animate = (
+      now: number
+    ) => {
+      const elapsed =
+        now - startTime;
 
-      Minimum:
-      7 full rotations
+      let progress =
+        elapsed /
+        duration;
 
-      Plus:
-      random angle
+      if (progress > 1) {
+        progress = 1;
+      }
 
-      This makes the wheel visibly spin around and around.
-    */
+      /*
+        Smooth deceleration.
 
-    const extraRotation =
-      360 * 7 + Math.floor(Math.random() * 360);
+        Start fast.
+        Middle fast.
+        End slowly.
+      */
 
-    const newRotation =
-      rotationRef.current + extraRotation;
+      const eased =
+        1 -
+        Math.pow(
+          1 - progress,
+          4
+        );
 
-    rotationRef.current = newRotation;
+      const currentRotation =
+        startRotation +
+        totalRotation *
+          eased;
 
-    setRotation(newRotation);
+      /*
+        THIS IS THE IMPORTANT PART.
 
-    /*
-      Calculate which segment is under the
-      fixed top pointer after rotation.
-    */
+        We directly update the actual
+        wheel element every animation frame.
 
-    const finalAngle =
-      ((newRotation % 360) + 360) % 360;
+        No CSS transition.
+        No React state animation.
+      */
 
-    const pointerAngle = 270;
+      applyRotation(
+        currentRotation
+      );
 
-    let relativeAngle =
-      (pointerAngle - finalAngle + 360) % 360;
+      if (progress < 1) {
+        animationRef.current =
+          requestAnimationFrame(
+            animate
+          );
 
-    const segmentAngle =
-      360 / currentNames.length;
+        return;
+      }
 
-    let winnerIndex =
-      Math.floor(relativeAngle / segmentAngle);
+      /* ---------------------------------------
+         FINAL POSITION
+      --------------------------------------- */
 
-    if (winnerIndex >= currentNames.length) {
-      winnerIndex = currentNames.length - 1;
-    }
+      applyRotation(
+        finalRotation
+      );
 
-    window.setTimeout(() => {
-      const win = currentNames[winnerIndex];
+      animationRef.current =
+        null;
 
-      setWinner(win);
+      if (tickTimerRef.current) {
+        clearInterval(
+          tickTimerRef.current
+        );
 
-      setHistory((old) => [
-        win,
-        ...old,
-      ].slice(0, 10));
+        tickTimerRef.current =
+          null;
+      }
+
+      /* ---------------------------------------
+         FIND WINNER
+      --------------------------------------- */
+
+      const segment =
+        360 /
+        current.length;
+
+      const normalized =
+        ((finalRotation %
+          360) +
+          360) %
+        360;
+
+      /*
+        Pointer = 12 o'clock.
+
+        Canvas starts at 3 o'clock.
+        Therefore pointer angle = 270°.
+      */
+
+      const pointerAngle =
+        270;
+
+      let relative =
+        pointerAngle -
+        normalized;
+
+      relative =
+        ((relative %
+          360) +
+          360) %
+        360;
+
+      const winnerIndex =
+        Math.floor(
+          relative /
+            segment
+        );
+
+      const selected =
+        current[
+          winnerIndex %
+            current.length
+        ];
+
+      /* ---------------------------------------
+         RESULT
+      --------------------------------------- */
+
+      setWinner(
+        selected
+      );
+
+      setHistory(
+        (previous) => [
+          selected,
+          ...previous.filter(
+            (item) =>
+              item !==
+              selected
+          ),
+        ].slice(0, 10)
+      );
+
+      spinningRef.current =
+        false;
 
       setSpinning(false);
-      spinningRef.current = false;
+
+      /* ---------------------------------------
+         CONFETTI
+      --------------------------------------- */
 
       confetti({
-        particleCount: 220,
-        spread: 100,
+        particleCount: 160,
+        spread: 95,
+        startVelocity: 35,
         origin: {
-          y: 0.55,
+          x: 0.5,
+          y: 0.62,
         },
-        colors: [
-          "#16a34a",
-          "#eab308",
-          "#0ea5e9",
-          "#ef4444",
-        ],
       });
 
-      if (vibrateOn) {
+      /* ---------------------------------------
+         VOICE
+      --------------------------------------- */
+
+      if (
+        voiceOn &&
+        typeof window !==
+          "undefined" &&
+        "speechSynthesis" in
+          window
+      ) {
         try {
-          navigator.vibrate?.([
-            80,
-            40,
-            80,
-            40,
-            150,
-          ]);
+          window.speechSynthesis.cancel();
+
+          const speech =
+            new SpeechSynthesisUtterance(
+              `Winner is ${selected}`
+            );
+
+          speech.rate = 0.9;
+          speech.pitch = 1;
+
+          window.speechSynthesis.speak(
+            speech
+          );
         } catch {}
       }
 
-      speakWinner(win);
+      /* ---------------------------------------
+         REMOVE WINNER
+      --------------------------------------- */
 
-      if (removeWinner) {
-        setNames((old) =>
-          old.filter((n) => n !== win)
+      if (
+        removeWinner
+      ) {
+        const remaining =
+          current.filter(
+            (name) =>
+              name !==
+              selected
+          );
+
+        namesRef.current =
+          remaining;
+
+        setNames(
+          remaining
+        );
+
+        setTimeout(() => {
+          drawWheel();
+        }, 30);
+      }
+    };
+
+    animationRef.current =
+      requestAnimationFrame(
+        animate
+      );
+  };
+
+  /* ---------------------------------------------
+     CLEANUP
+  --------------------------------------------- */
+
+  useEffect(() => {
+    return () => {
+      if (
+        animationRef.current
+      ) {
+        cancelAnimationFrame(
+          animationRef.current
         );
       }
-    }, 4800);
-  };
 
-  /* -----------------------------
-     Copy Winner
-  ----------------------------- */
-
-  const copyWinner = async () => {
-    if (!winner) return;
-
-    try {
-      await navigator.clipboard.writeText(
-        `🏆 Winner: ${winner} - Spin Wheel`
-      );
-
-      alert("Winner copied!");
-    } catch {}
-  };
-
-  /* -----------------------------
-     Share Winner
-  ----------------------------- */
-
-  const shareWinner = async () => {
-    if (!winner) return;
-
-    const text =
-      `🏆 Winner is ${winner}! ` +
-      `Spin Wheel Random Picker`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Spin Wheel Winner",
-          text,
-          url: window.location.href,
-        });
-      } else {
-        await navigator.clipboard.writeText(text);
-        alert("Winner details copied!");
+      if (
+        tickTimerRef.current
+      ) {
+        clearInterval(
+          tickTimerRef.current
+        );
       }
-    } catch {}
-  };
+
+      try {
+        audioRef.current?.close();
+      } catch {}
+    };
+  }, []);
 
   return (
     <main className="page">
+      <div className="container">
+
+        {/* HEADER */}
+
+        <header className="header">
+          <div>
+            <div className="brand">
+              NEXORA
+            </div>
+
+            <h1>
+              Spin Wheel
+            </h1>
+
+            <p className="subtitle">
+              Random Name Picker & Wheel Spinner
+            </p>
+          </div>
+
+          <div className="badge">
+            FREE
+          </div>
+        </header>
+
+        {/* SEO INTRO */}
+
+        <section className="seoIntro">
+          <h2>
+            Free Random Spin Wheel
+          </h2>
+
+          <p>
+            Use this free spin wheel to
+            randomly pick a name, winner,
+            student, team, giveaway entry,
+            or make a quick decision.
+            Add your choices and spin the
+            wheel instantly.
+          </p>
+        </section>
+
+        {/* PRESETS */}
+
+        <section className="presets">
+          <div className="sectionTitle">
+            Quick Picks
+          </div>
+
+          <div className="presetGrid">
+            {PRESETS.map(
+              (preset) => (
+                <button
+                  key={
+                    preset.name
+                  }
+                  className="presetButton"
+                  onClick={() =>
+                    loadPreset(
+                      preset.items
+                    )
+                  }
+                  disabled={
+                    spinning
+                  }
+                >
+                  {
+                    preset.name
+                  }
+                </button>
+              )
+            )}
+          </div>
+        </section>
+
+        {/* MAIN */}
+
+        <div className="layout">
+
+          {/* CONTROLS */}
+
+          <section className="panel controls">
+
+            <div className="panelHeader">
+              <div>
+                <h2>
+                  Your Choices
+                </h2>
+
+                <p>
+                  Add names or options
+                </p>
+              </div>
+
+              <span className="count">
+                {names.length}
+              </span>
+            </div>
+
+            {/* ADD */}
+
+            <div className="addRow">
+              <input
+                value={input}
+                onChange={(e) =>
+                  setInput(
+                    e.target.value
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (
+                    e.key ===
+                    "Enter"
+                  ) {
+                    addName();
+                  }
+                }}
+                placeholder="Enter a name or choice..."
+                disabled={
+                  spinning
+                }
+              />
+
+              <button
+                className="addButton"
+                onClick={
+                  addName
+                }
+                disabled={
+                  spinning
+                }
+              >
+                Add
+              </button>
+            </div>
+
+            {/* NAME LIST */}
+
+            <div className="nameList">
+              {names.map(
+                (
+                  name,
+                  index
+                ) => (
+                  <div
+                    className="nameItem"
+                    key={`${name}-${index}`}
+                  >
+                    <span className="number">
+                      {index +
+                        1}
+                    </span>
+
+                    <span className="name">
+                      {name}
+                    </span>
+
+                    <button
+                      className="removeButton"
+                      onClick={() =>
+                        removeName(
+                          index
+                        )
+                      }
+                      disabled={
+                        spinning
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                )
+              )}
+
+              {names.length ===
+                0 && (
+                <div className="empty">
+                  Add at least
+                  two choices
+                  to spin the
+                  wheel.
+                </div>
+              )}
+            </div>
+
+            {/* BULK */}
+
+            <details className="bulk">
+              <summary>
+                Add multiple choices
+              </summary>
+
+              <textarea
+                placeholder="One per line or separated by commas"
+                disabled={
+                  spinning
+                }
+                onBlur={(e) => {
+                  if (
+                    e.target.value.trim()
+                  ) {
+                    addMany(
+                      e.target.value
+                    );
+
+                    e.target.value =
+                      "";
+                  }
+                }}
+              />
+            </details>
+
+            {/* SETTINGS */}
+
+            <div className="settings">
+
+              <label className="setting">
+                <span>
+                  🔊 Sound
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={
+                    soundOn
+                  }
+                  onChange={(
+                    e
+                  ) =>
+                    setSoundOn(
+                      e.target
+                        .checked
+                    )
+                  }
+                />
+              </label>
+
+              <label className="setting">
+                <span>
+                  📳 Vibration
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={
+                    vibrateOn
+                  }
+                  onChange={(
+                    e
+                  ) =>
+                    setVibrateOn(
+                      e.target
+                        .checked
+                    )
+                  }
+                />
+              </label>
+
+              <label className="setting">
+                <span>
+                  🔊 Announce winner
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={
+                    voiceOn
+                  }
+                  onChange={(
+                    e
+                  ) =>
+                    setVoiceOn(
+                      e.target
+                        .checked
+                    )
+                  }
+                />
+              </label>
+
+              <label className="setting">
+                <span>
+                  🗑️ Remove winner
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={
+                    removeWinner
+                  }
+                  onChange={(
+                    e
+                  ) =>
+                    setRemoveWinner(
+                      e.target
+                        .checked
+                    )
+                  }
+                />
+              </label>
+
+            </div>
+          </section>
+
+          {/* WHEEL */}
+
+          <section className="panel wheelPanel">
+
+            {/* POINTER */}
+
+            <div className="pointer">
+              <div className="pointerInner" />
+            </div>
+
+            {/* ROTATING WHEEL */}
+
+            <div
+              ref={
+                wheelRef
+              }
+              className="wheelRotator"
+            >
+              <canvas
+                ref={
+                  canvasRef
+                }
+                className="wheelCanvas"
+              />
+            </div>
+
+            {/* BUTTON */}
+
+            <button
+              className="spinButton"
+              onClick={
+                spin
+              }
+              disabled={
+                spinning ||
+                names.length <
+                  2
+              }
+            >
+              {spinning
+                ? "SPINNING..."
+                : "SPIN THE WHEEL"}
+            </button>
+
+            {/* WINNER */}
+
+            <div
+              className={`result ${
+                winner
+                  ? "show"
+                  : ""
+              }`}
+            >
+              {winner && (
+                <>
+                  <span className="winnerLabel">
+                    WINNER
+                  </span>
+
+                  <strong>
+                    {winner}
+                  </strong>
+                </>
+              )}
+            </div>
+
+            {/* HISTORY */}
+
+            {history.length >
+              0 && (
+              <div className="history">
+
+                <div className="historyTitle">
+                  Recent Winners
+                </div>
+
+                <div className="historyList">
+                  {history.map(
+                    (
+                      item,
+                      index
+                    ) => (
+                      <span
+                        key={`${item}-${index}`}
+                        className="historyItem"
+                      >
+                        {item}
+                      </span>
+                    )
+                  )}
+                </div>
+
+              </div>
+            )}
+
+          </section>
+        </div>
+
+        {/* SEO CONTENT */}
+
+        <section className="seoContent">
+
+          <h2>
+            Random Wheel & Name Picker
+          </h2>
+
+          <p>
+            This online random wheel is
+            useful for giveaways, contests,
+            classrooms, team selection,
+            games, raffles, random decisions
+            and choosing a winner fairly.
+          </p>
+
+          <div className="seoGrid">
+
+            <div>
+              <h3>
+                Giveaway Winner Picker
+              </h3>
+
+              <p>
+                Enter your participants
+                and spin the wheel to
+                randomly select a giveaway
+                or contest winner.
+              </p>
+            </div>
+
+            <div>
+              <h3>
+                Classroom Randomizer
+              </h3>
+
+              <p>
+                Pick students randomly
+                for activities, questions,
+                teams or classroom tasks.
+              </p>
+            </div>
+
+            <div>
+              <h3>
+                Random Decision Wheel
+              </h3>
+
+              <p>
+                Add your options and let
+                the random wheel make
+                the choice for you.
+              </p>
+            </div>
+
+            <div>
+              <h3>
+                Team Picker
+              </h3>
+
+              <p>
+                Quickly select teams or
+                randomly assign participants
+                using the wheel spinner.
+              </p>
+            </div>
+
+          </div>
+
+          <p className="keywords">
+            Spin Wheel · Random Name Picker ·
+            Wheel Spinner · Picker Wheel ·
+            Random Wheel · Random Picker ·
+            Giveaway Picker · Winner Picker ·
+            Classroom Randomizer · Student Picker ·
+            Team Picker · Decision Wheel ·
+            Yes or No Wheel · Random Choice Generator
+          </p>
+
+        </section>
+
+      </div>
 
       <style jsx>{`
-
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
         * {
           box-sizing: border-box;
@@ -532,1000 +1461,773 @@ export default function SpinWheelClient() {
 
         .page {
           min-height: 100vh;
-          background: #ffffff;
-          color: #0f172a;
-          padding: 10px 12px 30px;
-          font-family: 'Plus Jakarta Sans', Inter, sans-serif;
-          overflow-x: hidden;
+          background:
+            radial-gradient(
+              circle at top,
+              #111827 0%,
+              #080d1b 48%,
+              #050814 100%
+            );
+          color: white;
+          padding: 28px 16px 70px;
+          font-family:
+            Inter,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Arial,
+            sans-serif;
         }
 
-        .wrap {
+        .container {
           width: 100%;
-          max-width: 900px;
-          margin: auto;
+          max-width: 1180px;
+          margin: 0 auto;
         }
 
-        .top {
+        .header {
           display: flex;
-          align-items: center;
           justify-content: space-between;
+          align-items: flex-start;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        .brand {
+          color: #27d5c3;
+          font-size: 13px;
+          font-weight: 950;
+          letter-spacing: 3px;
           margin-bottom: 8px;
-        }
-
-        .logo {
-          font-size: 16px;
-          font-weight: 800;
-          letter-spacing: -0.5px;
-        }
-
-        .logo span {
-          color: #16a34a;
-        }
-
-        .topBest {
-          background: #f1f5f9;
-          border: 1px solid #e2e8f0;
-          border-radius: 999px;
-          padding: 5px 10px;
-          font-size: 11px;
-          font-weight: 700;
-          color: #334155;
-        }
-
-        .hero {
-          text-align: center;
-          margin-bottom: 8px;
-        }
-
-        .tag {
-          display: inline-block;
-          padding: 4px 10px;
-          border-radius: 999px;
-          background: #f0fdf4;
-          border: 1px solid #bbf7d0;
-          color: #15803d;
-          font-size: 10px;
-          font-weight: 800;
-          margin-bottom: 6px;
         }
 
         h1 {
           margin: 0;
-          font-size: 26px;
-          line-height: 1.1;
-          letter-spacing: -0.8px;
-          font-weight: 800;
+          font-size: clamp(
+            30px,
+            5vw,
+            48px
+          );
+          line-height: 1;
+          font-weight: 950;
         }
 
-        h1 span {
-          color: #16a34a;
+        .subtitle {
+          margin: 10px 0 0;
+          color: #94a3b8;
+          font-size: 15px;
         }
 
-        .sub {
-          color: #64748b;
-          max-width: 650px;
-          margin: 5px auto 0;
-          font-size: 12px;
-          line-height: 1.5;
+        .badge {
+          padding: 8px 12px;
+          border-radius: 999px;
+          background:
+            rgba(
+              124,
+              108,
+              255,
+              0.14
+            );
+          border: 1px solid
+            rgba(
+              124,
+              108,
+              255,
+              0.35
+            );
+          color: #c4b5fd;
+          font-size: 10px;
+          font-weight: 950;
+        }
+
+        .seoIntro {
+          background:
+            rgba(
+              15,
+              23,
+              42,
+              0.8
+            );
+          border: 1px solid
+            rgba(
+              148,
+              163,
+              184,
+              0.13
+            );
+          border-radius: 18px;
+          padding: 18px;
+          margin-bottom: 18px;
+        }
+
+        .seoIntro h2 {
+          margin: 0 0 7px;
+          font-size: 20px;
+        }
+
+        .seoIntro p {
+          margin: 0;
+          color: #94a3b8;
+          line-height: 1.7;
+          font-size: 14px;
         }
 
         .presets {
-          display: flex;
-          gap: 6px;
-          margin-bottom: 10px;
-          overflow-x: auto;
-          padding-bottom: 2px;
-          scrollbar-width: none;
+          margin-bottom: 18px;
         }
 
-        .presets::-webkit-scrollbar {
-          display: none;
-        }
-
-        .preset {
-          flex-shrink: 0;
-          border: 1px solid #e2e8f0;
-          background: #fff;
-          border-radius: 999px;
-          padding: 7px 12px;
+        .sectionTitle {
+          color: #cbd5e1;
           font-size: 11px;
-          font-weight: 700;
-          cursor: pointer;
-          color: #334155;
+          font-weight: 900;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          margin-bottom: 9px;
         }
 
-        .preset:hover {
-          border-color: #16a34a;
-          color: #15803d;
-        }
-
-        .card {
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
-          padding: 12px;
-          box-shadow: 0 6px 24px rgba(15,23,42,0.05);
-        }
-
-        .inputRow {
+        .presetGrid {
           display: flex;
+          flex-wrap: wrap;
           gap: 8px;
         }
 
-        .inputRow input {
-          flex: 1;
-          min-width: 0;
-          border: 1.5px solid #e2e8f0;
-          background: #ffffff !important;
-          color: #0f172a !important;
-          -webkit-text-fill-color: #0f172a !important;
-          caret-color: #16a34a;
-          border-radius: 999px;
-          padding: 12px 14px;
-          outline: none;
-          font-size: 15px;
-          font-weight: 700;
-          font-family: inherit;
-        }
-
-        .inputRow input::placeholder {
-          color: #94a3b8;
-          font-weight: 600;
-        }
-
-        .inputRow input:focus {
-          border-color: #16a34a;
-          box-shadow: 0 0 0 3px rgba(22,163,74,0.08);
-        }
-
-        .addBtn {
-          flex-shrink: 0;
-          border: 0;
-          background: #0f172a;
-          color: #fff;
-          border-radius: 999px;
-          padding: 0 18px;
+        .presetButton {
+          border: 1px solid #263247;
+          background: #111827;
+          color: #e2e8f0;
+          border-radius: 10px;
+          padding: 9px 12px;
+          font-size: 12px;
           font-weight: 800;
           cursor: pointer;
-          font-size: 13px;
         }
 
-        .quickRow {
-          display: flex;
-          gap: 7px;
-          margin-top: 8px;
-          flex-wrap: wrap;
+        .presetButton:hover {
+          border-color: #7c6cff;
         }
 
-        .quick {
-          border: 1px solid #e2e8f0;
-          background: #f8fafc;
-          border-radius: 999px;
-          padding: 6px 10px;
-          font-size: 11px;
-          font-weight: 700;
-          cursor: pointer;
-          color: #475569;
-        }
-
-        .wheelWrap {
-          margin-top: 10px;
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 20px;
-          padding: 18px 10px 14px;
-          box-shadow: 0 10px 30px rgba(15,23,42,0.06);
-          text-align: center;
-          overflow: hidden;
-        }
-
-        .wheelCenter {
-          display: flex;
-          justify-content: center;
-        }
-
-        /*
-          IMPORTANT:
-          The wheel itself rotates.
-          The pointer does NOT rotate.
-        */
-
-        .wheelBox {
-          width: 300px;
-          height: 300px;
-          max-width: 86vw;
-          max-height: 86vw;
-          position: relative;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .wheelRotator {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          transform-origin: 50% 50%;
-          will-change: transform;
-        }
-
-        .wheelCanvas {
-          width: 100% !important;
-          height: 100% !important;
-          display: block;
-          border-radius: 50%;
-        }
-
-        .pointer {
-          position: absolute;
-          top: -4px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 30;
-
-          width: 0;
-          height: 0;
-
-          border-left: 15px solid transparent;
-          border-right: 15px solid transparent;
-          border-top: 28px solid #eab308;
-
-          filter:
-            drop-shadow(0 3px 4px rgba(0,0,0,0.25));
-
-          pointer-events: none;
-        }
-
-        .spinBtn {
-          width: 100%;
-          max-width: 380px;
-          margin-top: 14px;
-          border: 0;
-          border-radius: 999px;
-          padding: 14px;
-          font-size: 16px;
-          font-weight: 800;
-          cursor: pointer;
-          background: #16a34a;
-          color: #fff;
-          box-shadow: 0 8px 24px rgba(22,163,74,0.3);
-          position: relative;
-          z-index: 10;
-        }
-
-        .spinBtn:hover:not(:disabled) {
-          background: #15803d;
-        }
-
-        .spinBtn:disabled {
-          opacity: .6;
+        .presetButton:disabled {
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
-        .winnerBox {
-          margin: 14px auto 0;
-          max-width: 380px;
-          background: #f0fdf4;
-          border: 2px solid #16a34a;
-          border-radius: 16px;
-          padding: 14px;
+        .layout {
+          display: grid;
+          grid-template-columns:
+            minmax(280px, 0.8fr)
+            minmax(360px, 1.2fr);
+          gap: 18px;
+          align-items: stretch;
         }
 
-        .winnerLabel {
-          font-size: 10px;
-          font-weight: 800;
-          color: #15803d;
-          letter-spacing: 1px;
+        .panel {
+          background:
+            rgba(
+              15,
+              23,
+              42,
+              0.84
+            );
+          border: 1px solid
+            rgba(
+              148,
+              163,
+              184,
+              0.13
+            );
+          border-radius: 22px;
+          box-shadow:
+            0 20px 70px
+              rgba(
+                0,
+                0,
+                0,
+                0.25
+              );
         }
 
-        .winnerName {
-          font-size: 30px;
-          font-weight: 800;
-          line-height: 1.1;
-          margin-top: 4px;
-          word-break: break-word;
+        .controls {
+          padding: 20px;
         }
 
-        .winnerBtns {
-          display: flex;
-          justify-content: center;
-          gap: 7px;
-          margin-top: 9px;
-          flex-wrap: wrap;
-        }
-
-        .wBtn {
-          border: 1px solid #e2e8f0;
-          background: #fff;
-          border-radius: 999px;
-          padding: 7px 12px;
-          font-size: 11px;
-          font-weight: 700;
-          cursor: pointer;
-        }
-
-        .history {
-          margin-top: 12px;
-          text-align: center;
-        }
-
-        .chips {
-          display: flex;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 5px;
-          margin-top: 7px;
-        }
-
-        .chip {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 999px;
-          padding: 6px 10px;
-          font-size: 11px;
-          font-weight: 700;
-        }
-
-        .listCard {
-          margin-top: 12px;
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 20px;
-          padding: 14px;
-        }
-
-        .listHead {
+        .panelHeader {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          margin-bottom: 16px;
         }
 
-        .listHead b {
+        .panelHeader h2 {
+          margin: 0;
+          font-size: 20px;
+        }
+
+        .panelHeader p {
+          margin: 4px 0 0;
+          color: #64748b;
+          font-size: 12px;
+        }
+
+        .count {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          background: #1e293b;
+          color: #c4b5fd;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .addRow {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .addRow input {
+          flex: 1;
+          min-width: 0;
+          background: #080d1b;
+          border: 1px solid #263247;
+          border-radius: 10px;
+          padding: 12px;
+          color: white;
+          outline: none;
           font-size: 13px;
         }
 
-        .listHead span {
-          font-size: 10px;
-          color: #94a3b8;
-          font-weight: 700;
+        .addRow input:focus {
+          border-color: #7c6cff;
         }
 
-        .namesList {
-          margin-top: 10px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 7px;
-          max-height: 240px;
-          overflow: auto;
+        .addButton {
+          border: 0;
+          background: #7c6cff;
+          color: white;
+          border-radius: 10px;
+          padding: 0 16px;
+          font-weight: 950;
+          cursor: pointer;
+        }
+
+        .nameList {
+          max-height: 310px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
         .nameItem {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 11px;
+          gap: 9px;
+          background: #0b1222;
+          border: 1px solid #172238;
+          border-radius: 10px;
           padding: 8px 10px;
-          font-size: 13px;
-          font-weight: 700;
-          min-width: 0;
         }
 
-        .dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          display: inline-block;
-          margin-right: 7px;
-          flex-shrink: 0;
-        }
-
-        .remove {
-          border: 0;
-          background: transparent;
-          color: #ef4444;
-          font-size: 18px;
-          cursor: pointer;
-          line-height: 1;
-        }
-
-        .toggles {
-          display: flex;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 7px;
-          margin-top: 12px;
-        }
-
-        .toggle {
-          border: 1px solid #e2e8f0;
-          background: #fff;
-          border-radius: 999px;
-          padding: 7px 12px;
-          font-size: 11px;
-          font-weight: 700;
-          color: #64748b;
-          cursor: pointer;
-        }
-
-        .toggle.on {
-          background: #f0fdf4;
-          border-color: #bbf7d0;
-          color: #15803d;
-        }
-
-        .toggleRow {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          margin-top: 9px;
-          font-size: 11px;
-          font-weight: 600;
-          color: #475569;
-          cursor: pointer;
-        }
-
-        .toggleRow input {
-          accent-color: #16a34a;
-          width: 15px;
-          height: 15px;
-        }
-
-        .content {
-          margin-top: 16px;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 16px;
-        }
-
-        .content h2 {
-          margin: 0 0 7px;
-          font-size: 17px;
-          font-weight: 800;
-        }
-
-        .content h3 {
-          margin: 12px 0 4px;
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        .content p {
-          color: #64748b;
-          font-size: 12px;
-          line-height: 1.7;
-        }
-
-        .keywordLine {
-          margin-top: 8px;
-          font-size: 11px;
-          color: #64748b;
-          line-height: 1.7;
-        }
-
-        .footer {
-          text-align: center;
-          margin-top: 14px;
+        .number {
+          width: 24px;
+          height: 24px;
+          border-radius: 7px;
+          display: grid;
+          place-items: center;
+          background: #1e293b;
           color: #94a3b8;
           font-size: 10px;
+          font-weight: 950;
         }
 
-        @media (max-width: 620px) {
-          .namesList {
+        .name {
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .removeButton {
+          width: 27px;
+          height: 27px;
+          border: 0;
+          background: transparent;
+          color: #64748b;
+          font-size: 20px;
+          cursor: pointer;
+          border-radius: 7px;
+        }
+
+        .removeButton:hover {
+          color: #f87171;
+          background:
+            rgba(
+              248,
+              113,
+              113,
+              0.1
+            );
+        }
+
+        .empty {
+          text-align: center;
+          color: #64748b;
+          padding: 30px 10px;
+          font-size: 13px;
+        }
+
+        .bulk {
+          margin-top: 13px;
+          color: #94a3b8;
+          font-size: 12px;
+        }
+
+        .bulk summary {
+          cursor: pointer;
+          font-weight: 800;
+        }
+
+        .bulk textarea {
+          width: 100%;
+          min-height: 90px;
+          margin-top: 8px;
+          resize: vertical;
+          background: #080d1b;
+          border: 1px solid #263247;
+          border-radius: 10px;
+          color: white;
+          padding: 10px;
+          outline: none;
+          font-size: 12px;
+        }
+
+        .settings {
+          display: grid;
+          gap: 7px;
+          margin-top: 15px;
+        }
+
+        .setting {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 9px 10px;
+          background: #0b1222;
+          border: 1px solid #172238;
+          border-radius: 9px;
+          color: #cbd5e1;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .setting input {
+          accent-color: #7c6cff;
+        }
+
+        /* ==============================
+           WHEEL
+        ============================== */
+
+        .wheelPanel {
+          min-height: 620px;
+          padding: 25px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .wheelPanel::before {
+          content: "";
+          position: absolute;
+          width: 500px;
+          height: 500px;
+          border-radius: 50%;
+          background:
+            radial-gradient(
+              circle,
+              rgba(
+                124,
+                108,
+                255,
+                0.12
+              ),
+              transparent 68%
+            );
+          pointer-events: none;
+        }
+
+        /*
+          IMPORTANT:
+          There is NO CSS transition here.
+
+          JavaScript requestAnimationFrame
+          controls the rotation directly.
+        */
+
+        .wheelRotator {
+          position: relative;
+          z-index: 2;
+          width: min(
+            100%,
+            500px
+          );
+          aspect-ratio: 1 / 1;
+          border-radius: 50%;
+          transform-origin: center center;
+          will-change: transform;
+          transform: rotate(0deg);
+        }
+
+        .wheelCanvas {
+          display: block;
+          width: 100% !important;
+          height: 100% !important;
+          border-radius: 50%;
+        }
+
+        /* POINTER */
+
+        .pointer {
+          position: absolute;
+          z-index: 20;
+          top: 15px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+
+          border-left:
+            19px solid transparent;
+
+          border-right:
+            19px solid transparent;
+
+          border-top:
+            38px solid white;
+
+          filter:
+            drop-shadow(
+              0 4px 6px
+                rgba(
+                  0,
+                  0,
+                  0,
+                  0.6
+                )
+            );
+        }
+
+        .pointerInner {
+          position: absolute;
+          left: -12px;
+          top: -34px;
+          width: 0;
+          height: 0;
+
+          border-left:
+            12px solid transparent;
+
+          border-right:
+            12px solid transparent;
+
+          border-top:
+            25px solid #ef4444;
+        }
+
+        .spinButton {
+          position: relative;
+          z-index: 5;
+          width: min(
+            100%,
+            360px
+          );
+          margin-top: 20px;
+          padding: 15px 18px;
+          border: 0;
+          border-radius: 14px;
+
+          background:
+            linear-gradient(
+              135deg,
+              #7c6cff,
+              #5b4de8
+            );
+
+          color: white;
+          font-size: 15px;
+          font-weight: 950;
+          letter-spacing: 0.5px;
+
+          box-shadow:
+            0 12px 35px
+              rgba(
+                124,
+                108,
+                255,
+                0.28
+              );
+
+          cursor: pointer;
+        }
+
+        .spinButton:active {
+          transform: scale(0.98);
+        }
+
+        .spinButton:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
+        .result {
+          position: relative;
+          z-index: 4;
+          min-height: 75px;
+          margin-top: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .result.show {
+          animation:
+            winnerPop
+              0.45s
+              ease-out;
+        }
+
+        .winnerLabel {
+          color: #fbbf24;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 2px;
+        }
+
+        .result strong {
+          margin-top: 3px;
+          font-size: clamp(
+            24px,
+            5vw,
+            36px
+          );
+          font-weight: 950;
+
+          background:
+            linear-gradient(
+              90deg,
+              white,
+              #c4b5fd,
+              #67e8f9
+            );
+
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+
+        .history {
+          width: 100%;
+          max-width: 500px;
+          position: relative;
+          z-index: 4;
+          margin-top: 8px;
+        }
+
+        .historyTitle {
+          margin-bottom: 7px;
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+
+        .historyList {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .historyItem {
+          padding: 5px 9px;
+          border-radius: 999px;
+          background: #111827;
+          border: 1px solid #263247;
+          color: #cbd5e1;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        /* SEO */
+
+        .seoContent {
+          margin-top: 20px;
+          padding: 22px;
+          background:
+            rgba(
+              15,
+              23,
+              42,
+              0.65
+            );
+          border: 1px solid
+            rgba(
+              148,
+              163,
+              184,
+              0.12
+            );
+          border-radius: 20px;
+        }
+
+        .seoContent h2 {
+          margin: 0 0 9px;
+          font-size: 22px;
+        }
+
+        .seoContent > p {
+          margin: 0;
+          color: #94a3b8;
+          line-height: 1.7;
+          font-size: 13px;
+        }
+
+        .seoGrid {
+          display: grid;
+          grid-template-columns:
+            repeat(4, 1fr);
+          gap: 12px;
+          margin-top: 18px;
+        }
+
+        .seoGrid > div {
+          padding: 14px;
+          background: #0b1222;
+          border: 1px solid #172238;
+          border-radius: 13px;
+        }
+
+        .seoGrid h3 {
+          margin: 0 0 6px;
+          font-size: 13px;
+        }
+
+        .seoGrid p {
+          margin: 0;
+          color: #64748b;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        .keywords {
+          margin-top: 17px !important;
+          color: #475569 !important;
+          font-size: 10px !important;
+        }
+
+        @keyframes winnerPop {
+          0% {
+            opacity: 0;
+            transform: scale(0.7);
+          }
+
+          70% {
+            transform: scale(1.08);
+          }
+
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @media (max-width: 850px) {
+          .layout {
             grid-template-columns: 1fr;
           }
 
-          h1 {
-            font-size: 24px;
+          .wheelPanel {
+            min-height: 0;
+            padding: 20px 14px 25px;
           }
 
-          .wheelBox {
-            width: 290px;
-            height: 290px;
+          .wheelRotator {
+            width: min(
+              100%,
+              460px
+            );
+          }
+
+          .seoGrid {
+            grid-template-columns:
+              repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 520px) {
+          .page {
+            padding:
+              20px 10px 50px;
+          }
+
+          .header {
+            margin-bottom: 15px;
+          }
+
+          h1 {
+            font-size: 30px;
+          }
+
+          .subtitle {
+            font-size: 13px;
+          }
+
+          .presetGrid {
+            display: grid;
+            grid-template-columns:
+              repeat(2, 1fr);
+          }
+
+          .presetButton {
+            width: 100%;
+            padding: 9px 6px;
+          }
+
+          .controls {
+            padding: 15px;
+          }
+
+          .wheelPanel {
+            border-radius: 18px;
+          }
+
+          .wheelRotator {
+            width: 100%;
+          }
+
+          .pointer {
+            top: 10px;
+          }
+
+          .spinButton {
+            margin-top: 15px;
+          }
+
+          .seoGrid {
+            grid-template-columns: 1fr;
           }
         }
 
       `}</style>
-
-      <div className="wrap">
-
-        {/* TOP */}
-        <header className="top">
-          <div className="logo">
-            thenexoratools<span>.com</span>
-          </div>
-
-          <div className="topBest">
-            🎡 {names.length} Entries
-          </div>
-        </header>
-
-        {/* HERO */}
-        <section className="hero">
-
-          <div className="tag">
-            🎡 FREE • NO SIGN UP • RANDOM PICKER
-          </div>
-
-          <h1>
-            Spin Wheel <span>- Random Name Picker</span>
-          </h1>
-
-          <p className="sub">
-            Spin the wheel to randomly pick a winner, name,
-            team, student, decision, or choice in seconds.
-          </p>
-
-        </section>
-
-        {/* PRESETS */}
-        <div className="presets">
-
-          {Object.keys(PRESETS).map((key) => (
-            <button
-              key={key}
-              className="preset"
-              onClick={() => addMany(PRESETS[key])}
-            >
-              {key}
-            </button>
-          ))}
-
-        </div>
-
-        {/* INPUT */}
-        <div className="card">
-
-          <div className="inputRow">
-
-            <input
-              value={input}
-              onChange={(e) =>
-                setInput(e.target.value)
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  addName();
-                }
-              }}
-              placeholder="Enter a name or option..."
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-
-            <button
-              onClick={addName}
-              className="addBtn"
-            >
-              + Add
-            </button>
-
-          </div>
-
-          <div className="quickRow">
-
-            <button
-              className="quick"
-              onClick={() => {
-                setNames([]);
-                setWinner(null);
-                setHistory([]);
-                setRotation(0);
-                rotationRef.current = 0;
-              }}
-            >
-              🗑️ Clear All
-            </button>
-
-            <button
-              className="quick"
-              onClick={() => {
-                const shuffled = [...names];
-
-                for (
-                  let i = shuffled.length - 1;
-                  i > 0;
-                  i--
-                ) {
-                  const j =
-                    Math.floor(
-                      Math.random() * (i + 1)
-                    );
-
-                  [
-                    shuffled[i],
-                    shuffled[j],
-                  ] = [
-                    shuffled[j],
-                    shuffled[i],
-                  ];
-                }
-
-                setNames(shuffled);
-              }}
-            >
-              🔀 Shuffle
-            </button>
-
-            <button
-              className="quick"
-              onClick={() =>
-                addMany(PRESETS["🎁 Giveaway"])
-              }
-            >
-              ✨ Demo Names
-            </button>
-
-          </div>
-
-          {/* ELIMINATION */}
-          <label className="toggleRow">
-
-            <input
-              type="checkbox"
-              checked={removeWinner}
-              onChange={(e) =>
-                setRemoveWinner(e.target.checked)
-              }
-            />
-
-            Automatically remove the winner
-            after each spin (Elimination Mode)
-
-          </label>
-
-        </div>
-
-        {/* WHEEL */}
-        <div className="wheelWrap">
-
-          <div className="wheelCenter">
-
-            <div className="wheelBox">
-
-              {/* FIXED POINTER */}
-              <div className="pointer" />
-
-              {/* ONLY THIS ROTATES */}
-              <div
-                className="wheelRotator"
-                style={{
-                  transform: `rotate(${rotation}deg)`,
-                  transition: spinning
-                    ? "transform 4.8s cubic-bezier(0.12, 0.8, 0.08, 1)"
-                    : "none",
-                }}
-              >
-
-                <canvas
-                  ref={canvasRef}
-                  width={300}
-                  height={300}
-                  className="wheelCanvas"
-                />
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* SPIN BUTTON */}
-          <button
-            onClick={spin}
-            disabled={
-              spinning ||
-              names.length < 2
-            }
-            className="spinBtn"
-          >
-            {spinning
-              ? "Spinning... 🎡"
-              : "🎡 SPIN THE WHEEL"}
-          </button>
-
-          <p
-            style={{
-              fontSize: 11,
-              color: "#94a3b8",
-              marginTop: 7,
-              fontWeight: 600,
-            }}
-          >
-            {names.length < 2
-              ? "Add at least 2 entries to spin"
-              : "The pointer determines the winner"}
-          </p>
-
-          {/* WINNER */}
-          {winner && (
-            <div className="winnerBox">
-
-              <div className="winnerLabel">
-                🏆 WINNER
-              </div>
-
-              <div className="winnerName">
-                {winner}
-              </div>
-
-              <div className="winnerBtns">
-
-                <button
-                  className="wBtn"
-                  onClick={copyWinner}
-                >
-                  📋 Copy Winner
-                </button>
-
-                <button
-                  className="wBtn"
-                  onClick={shareWinner}
-                >
-                  📤 Share Winner
-                </button>
-
-                <button
-                  className="wBtn"
-                  onClick={spin}
-                >
-                  ↻ Spin Again
-                </button>
-
-              </div>
-
-            </div>
-          )}
-
-          {/* HISTORY */}
-          {history.length > 0 && (
-            <div className="history">
-
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  color: "#94a3b8",
-                }}
-              >
-                RECENT WINNERS
-              </div>
-
-              <div className="chips">
-
-                {history.map((item, index) => (
-                  <span
-                    key={`${item}-${index}`}
-                    className="chip"
-                  >
-                    🏆 {item}
-                  </span>
-                ))}
-
-              </div>
-
-            </div>
-          )}
-
-        </div>
-
-        {/* ENTRIES */}
-        <div className="listCard">
-
-          <div className="listHead">
-
-            <b>
-              Entries ({names.length})
-            </b>
-
-            <span>
-              Tap × to remove
-            </span>
-
-          </div>
-
-          <div className="namesList">
-
-            {names.map((name, index) => (
-              <div
-                key={`${name}-${index}`}
-                className="nameItem"
-              >
-
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    minWidth: 0,
-                  }}
-                >
-
-                  <span
-                    className="dot"
-                    style={{
-                      background:
-                        COLORS[
-                          index % COLORS.length
-                        ],
-                    }}
-                  />
-
-                  <span
-                    style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {name}
-                  </span>
-
-                </span>
-
-                <button
-                  className="remove"
-                  onClick={() =>
-                    setNames((old) =>
-                      old.filter(
-                        (_, i) => i !== index
-                      )
-                    )
-                  }
-                  aria-label={`Remove ${name}`}
-                >
-                  ×
-                </button>
-
-              </div>
-            ))}
-
-            {names.length === 0 && (
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "#94a3b8",
-                  textAlign: "center",
-                  gridColumn: "1 / -1",
-                  padding: 20,
-                }}
-              >
-                No entries yet. Add a name above to
-                create your random wheel.
-              </p>
-            )}
-
-          </div>
-
-        </div>
-
-        {/* SETTINGS */}
-        <div className="toggles">
-
-          <button
-            className={`toggle ${
-              soundOn ? "on" : ""
-            }`}
-            onClick={() =>
-              setSoundOn((value) => !value)
-            }
-          >
-            {soundOn
-              ? "🔊 Tick Sound ON"
-              : "🔇 Tick Sound OFF"}
-          </button>
-
-          <button
-            className={`toggle ${
-              vibrateOn ? "on" : ""
-            }`}
-            onClick={() =>
-              setVibrateOn((value) => !value)
-            }
-          >
-            {vibrateOn
-              ? "📳 Vibration ON"
-              : "📳 Vibration OFF"}
-          </button>
-
-          <button
-            className={`toggle ${
-              voiceOn ? "on" : ""
-            }`}
-            onClick={() =>
-              setVoiceOn((value) => !value)
-            }
-          >
-            {voiceOn
-              ? "🗣️ Winner Voice ON"
-              : "🗣️ Winner Voice OFF"}
-          </button>
-
-        </div>
-
-        {/* SEO CONTENT */}
-        <section className="content">
-
-          <h2>
-            Free Spin Wheel - Random Name Picker
-          </h2>
-
-          <p>
-            Use this free spin wheel and random name picker
-            to choose a winner, student, team, activity,
-            food option, or random decision. Enter your
-            entries, spin the wheel, and let the fixed
-            pointer select a random result.
-          </p>
-
-          <h3>
-            Random Wheel for Giveaways
-          </h3>
-
-          <p>
-            Create a simple giveaway picker for contests,
-            promotions, social media giveaways, classroom
-            activities, raffles, and random winner selection.
-            Add names and spin the wheel to select a winner.
-          </p>
-
-          <h3>
-            Classroom Randomizer and Student Picker
-          </h3>
-
-          <p>
-            Teachers and students can use the wheel as a
-            classroom randomizer, student picker, group
-            selector, or activity picker. Add student names
-            and spin the wheel whenever you need a random
-            selection.
-          </p>
-
-          <h3>
-            Team Picker and Decision Wheel
-          </h3>
-
-          <p>
-            Use the random wheel to create teams, choose
-            between options, make quick decisions, select
-            activities, or decide what to eat. Presets for
-            Yes or No, Team Picker, Truth or Dare, and food
-            choices are included.
-          </p>
-
-          <h3>
-            How to Use the Spin Wheel
-          </h3>
-
-          <p>
-            1. Enter your names or options.
-            2. Add as many entries as you need.
-            3. Choose a preset or create your own list.
-            4. Press Spin the Wheel.
-            5. The fixed pointer shows the selected winner.
-          </p>
-
-          <p className="keywordLine">
-            Popular uses include random name picker, spin
-            the wheel, wheel spinner, picker wheel, random
-            wheel, random picker, giveaway picker, winner
-            picker, classroom randomizer, student picker,
-            team picker, decision wheel, yes or no wheel,
-            random choice generator, and contest winner
-            picker.
-          </p>
-
-        </section>
-
-        <div className="footer">
-          © {new Date().getFullYear()} thenexoratools.com
-        </div>
-
-      </div>
-
     </main>
   );
 }
