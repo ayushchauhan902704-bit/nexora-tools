@@ -1,3 +1,4 @@
+import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
 
@@ -66,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       </head>
-      <body style={{ margin: 0, background: "#ffffff" }}>{children}</body>
+      <body style={{ margin: 0, background: "#080b14" }}>{children}</body>
     </html>
   );
 }
