@@ -21,7 +21,7 @@ function RealDice({ value, color, rolling }: { value: number; color: string; rol
 export default function CoinFlipClient() {
   const [view, setView] = useState<"home" | "coin" | "dice">("home");
 
-  // COIN
+  // COIN - same as before, perfect hai
   const [headLabel, setHeadLabel] = useState("Heads");
   const [tailLabel, setTailLabel] = useState("Tails");
   const [coinResult, setCoinResult] = useState<"H" | "T" | null>(null);
@@ -30,14 +30,14 @@ export default function CoinFlipClient() {
   const [headsCount, setHeadsCount] = useState(0);
   const [tailsCount, setTailsCount] = useState(0);
 
-  // DICE
-  const [playerCount, setPlayerCount] = useState(2);
+  // DICE - ✅ NAYA
+  const [howMany, setHowMany] = useState("1"); // pehle 1 hi hoga
   const [playerNames, setPlayerNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"]);
   const [diceVal, setDiceVal] = useState(6);
   const [rolling, setRolling] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState(0);
-  const [results, setResults] = useState<number[]>([]);
-  const [diceWinner, setDiceWinner] = useState<string | null>(null);
+
+  const playerCount = Math.max(1, Math.min(6, parseInt(howMany) || 1));
 
   const flipCoin = () => {
     if (flipping) return;
@@ -45,13 +45,11 @@ export default function CoinFlipClient() {
     setCoinResult(null);
     setFlyKey((k) => k + 1);
     const isHead = Math.random() > 0.5;
-    // 1.6 sec fly + ghumega
     setTimeout(() => {
       setCoinResult(isHead ? "H" : "T");
       setFlipping(false);
       if (isHead) setHeadsCount((h) => h + 1);
       else setTailsCount((t) => t + 1);
-      // Fatne wala confetti
       confetti({ particleCount: 180, spread: 100, origin: { y: 0.5 }, colors: ["#facc15", "#22c55e", "#ef4444", "#3b82f6"] });
       try { navigator.vibrate?.([80, 40, 80]); } catch {}
     }, 1600);
@@ -60,33 +58,23 @@ export default function CoinFlipClient() {
   const rollDice = () => {
     if (rolling) return;
     setRolling(true);
-    setDiceWinner(null);
-    setResults([]);
-    setCurrentPlayer(0);
-    // Har player ek-ek karke roll karega
+    // 1 player ho to bas 1 baar, warna har player ki baari
     let playerIdx = 0;
-    const allResults: number[] = [];
     const doOnePlayer = () => {
       setCurrentPlayer(playerIdx);
       let c = 0;
       const iv = setInterval(() => {
         setDiceVal(Math.floor(Math.random() * 6) + 1);
         c++;
-        if (c > 8) {
+        if (c > 10) {
           clearInterval(iv);
-          const final = Math.floor(Math.random() * 6) + 1;
-          setDiceVal(final);
-          allResults.push(final);
-          setResults([...allResults]);
-          confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: [PLAYER_COLORS[playerIdx]] });
-          try { navigator.vibrate?.(40); } catch {}
+          setDiceVal(Math.floor(Math.random() * 6) + 1);
+          try { navigator.vibrate?.(50); } catch {}
           playerIdx++;
           if (playerIdx < playerCount) {
-            setTimeout(doOnePlayer, 400);
+            setTimeout(doOnePlayer, 500);
           } else {
-            setRolling(false);
-            const max = Math.max(...allResults);
-            setDiceWinner(playerNames[allResults.indexOf(max)]);
+            setTimeout(() => setRolling(false), 200);
           }
         }
       }, 90);
@@ -94,7 +82,7 @@ export default function CoinFlipClient() {
     doOnePlayer();
   };
 
-  // ============ HOME - 2 PHOTO ============
+  // ============ HOME ============
   if (view === "home") {
     return (
       <main className="page">
@@ -106,9 +94,7 @@ export default function CoinFlipClient() {
             <h1>Coin Flip <span>& Dice Roller</span></h1>
             <p className="sub">Kisko touch karna hai? Coin ya Dice - tap karo, andar game khulega.</p>
           </section>
-
           <div className="homeGrid">
-            {/* LEFT - REAL COIN PHOTO */}
             <div className="homeCard" onClick={() => setView("coin")}>
               <div className="homeCoin">
                 <div className="homeCoinInner"><span>H</span><small>HEADS</small></div>
@@ -118,8 +104,6 @@ export default function CoinFlipClient() {
               <p>Toss ke liye - Cricket, Team, Decision</p>
               <button className="openBtn">OPEN COIN →</button>
             </div>
-
-            {/* RIGHT - REAL DICE PHOTO */}
             <div className="homeCard" onClick={() => setView("dice")}>
               <div className="homeDice">
                 <span className="d-pip" /><span className="d-pip" /><span className="d-pip" />
@@ -130,7 +114,6 @@ export default function CoinFlipClient() {
               <button className="openBtn dark">OPEN DICE →</button>
             </div>
           </div>
-
           <section className="content">
             <h2>Coin Flip & Dice Roller</h2>
             <p>Coin pe tap karo to toss hoga, Dice pe tap karo to roll hoga. Dono ekdum real jaisa feel denge.</p>
@@ -140,7 +123,7 @@ export default function CoinFlipClient() {
     );
   }
 
-  // ============ COIN PAGE - BEECH ME BADA REAL COIN ============
+  // ============ COIN PAGE ============
   if (view === "coin") {
     return (
       <main className="page">
@@ -148,15 +131,11 @@ export default function CoinFlipClient() {
         <div className="wrap">
           <button className="backBtn" onClick={() => setView("home")}>← Back</button>
           <header className="top"><div className="logo">thenexoratools<span>.com</span></div><div className="topBest">🪙 Coin Flip</div></header>
-
-          {/* Upar chota lamba box - Naam likhne ke liye */}
           <div className="nameBar">
             <input value={headLabel} onChange={(e) => setHeadLabel(e.target.value)} placeholder="Heads - Apna naam / Team" maxLength={14} />
             <span>VS</span>
             <input value={tailLabel} onChange={(e) => setTailLabel(e.target.value)} placeholder="Tails - Dusra naam / Team" maxLength={14} />
           </div>
-
-          {/* Beech me bada Real Coin */}
           <div className="bigStage" onClick={flipCoin}>
             <div className="coin-scene">
               <div key={flyKey} className={`big-coin ${flipping ? "coin-fly" : ""}`}>
@@ -167,12 +146,9 @@ export default function CoinFlipClient() {
                 </div>
               </div>
             </div>
-            <p className="stageText">
-              {flipping ? "Coin udd raha hai... 🪙" : coinResult ? `🏆 ${coinResult === "H" ? headLabel : tailLabel} Jeeta!` : "Coin ko touch karo"}
-            </p>
+            <p className="stageText">{flipping ? "Coin udd raha hai... 🪙" : coinResult ? `🏆 ${coinResult === "H" ? headLabel : tailLabel} Jeeta!` : "Coin ko touch karo"}</p>
             <small className="stageSub">{flipping ? "" : "Tap karke toss karo"}</small>
           </div>
-
           <button className="bigBtn green" onClick={flipCoin} disabled={flipping}>{flipping ? "FLIPPING... 🪙" : "FLIP COIN 🚀"}</button>
           <div className="stats">
             <div className="stat">{headLabel || "Heads"}<b>{headsCount}</b></div>
@@ -185,7 +161,7 @@ export default function CoinFlipClient() {
     );
   }
 
-  // ============ DICE PAGE - BEECH ME EK REAL DICE, COLOR CHANGE ============
+  // ============ DICE PAGE - ✅ NAYA CLEAN ============
   return (
     <main className="page">
       <style jsx>{`${css}`}</style>
@@ -193,36 +169,45 @@ export default function CoinFlipClient() {
         <button className="backBtn" onClick={() => setView("home")}>← Back</button>
         <header className="top"><div className="logo">thenexoratools<span>.com</span></div><div className="topBest">🎲 Dice Roller</div></header>
 
-        {/* Upar lambi line - Player kitne honge 1-6 */}
-        <div className="playerBar">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <button key={n} className={`pBtn ${playerCount === n ? "on" : ""}`} onClick={() => { setPlayerCount(n); setResults([]); setDiceWinner(null); setDiceVal(6); }}>
-              {n}P
-            </button>
-          ))}
-        </div>
-        <div className="playerNames">
-          {Array.from({ length: playerCount }, (_, i) => (
-            <input key={i} value={playerNames[i]} onChange={(e) => { const a = [...playerNames]; a[i] = e.target.value; setPlayerNames(a); }} style={{ borderColor: PLAYER_COLORS[i] }} placeholder={`Player ${i + 1}`} maxLength={10} />
-          ))}
+        {/* ✅ Upar - How many players? Log khud likhenge */}
+        <div className="howManyBox">
+          <label>How many players?</label>
+          <input
+            type="number" min={1} max={6} value={howMany}
+            onChange={(e) => {
+              let v = e.target.value;
+              if (v === "") { setHowMany(""); return; }
+              let n = parseInt(v);
+              if (n > 6) n = 6;
+              if (n < 1) n = 1;
+              setHowMany(String(n));
+            }}
+            placeholder="1"
+          />
+          <span>/ 6</span>
         </div>
 
-        {/* Beech me ek hi Real Dice - color har player pe change */}
-        <div className="bigStage" onClick={rollDice}>
-          <div className="turnLabel" style={{ background: PLAYER_COLORS[currentPlayer] }}>
-            {rolling ? `${playerNames[currentPlayer]} ki baari...` : diceWinner ? `🏆 ${diceWinner} Jeeta!` : `${playerNames[currentPlayer]} - Tap Dice`}
-          </div>
-          <RealDice value={diceVal} color={PLAYER_COLORS[currentPlayer]} rolling={rolling} />
-          <p className="stageText">{rolling ? "Dice udd raha hai... 🎲" : `Number: ${diceVal}`}</p>
-          <div className="diceResults">
-            {results.map((r, i) => (
-              <span key={i} style={{ background: PLAYER_COLORS[i] }}>{playerNames[i]}: {r}</span>
+        {/* Player ke naam - sirf jitne player hai utne hi dikhenge */}
+        {playerCount > 1 && (
+          <div className="playerNames">
+            {Array.from({ length: playerCount }, (_, i) => (
+              <input key={i} value={playerNames[i]} onChange={(e) => { const a = [...playerNames]; a[i] = e.target.value; setPlayerNames(a); }} style={{ borderColor: PLAYER_COLORS[i] }} placeholder={`Player ${i + 1}`} maxLength={10} />
             ))}
           </div>
+        )}
+
+        {/* ✅ Beech me SIRF DICE - neeche kuch likha nahi */}
+        <div className="bigStage diceStage" onClick={rollDice}>
+          <RealDice
+            value={diceVal}
+            // ✅ 1 player ho to color hamesha same (pehla wala), warna har player ka alag
+            color={playerCount === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[currentPlayer]}
+            rolling={rolling}
+          />
         </div>
 
         <button className="bigBtn black" onClick={rollDice} disabled={rolling}>{rolling ? "ROLLING... 🎲" : "ROLL DICE 🎲"}</button>
-        {diceWinner && !rolling && <div className="winnerLine">🏆 Winner: {diceWinner}</div>}
+        {/* ✅ Winner / Number wali line hata di - bilkul clean */}
       </div>
     </main>
   );
@@ -247,14 +232,12 @@ h1 span { color: #16a34a; }
 .homeCard p { color: #64748b; font-size: 12px; margin: 0; }
 .openBtn { margin-top: 14px; border: 0; background: #16a34a; color: #fff; border-radius: 999px; padding: 11px 18px; font-weight: 800; font-size: 13px; width: 100%; cursor: pointer; }
 .openBtn.dark { background: #0f172a; }
-/* Real Coin Home */
 .homeCoin { width: 130px; height: 130px; margin: 10px auto; position: relative; }
 .homeCoinInner { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fde047, #eab308 55%, #a16207); border: 5px solid #ca8a04; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 12px 25px rgba(0,0,0,0.25), inset 0 -6px 12px rgba(0,0,0,0.2); }
 .homeCoinInner span { font-size: 48px; font-weight: 900; color: #422006; line-height: 1; }
 .homeCoinInner small { font-size: 9px; font-weight: 800; letter-spacing: 2px; color: #713f12; }
 .homeCoinInner.back { transform: translateX(18px) scale(0.9); background: radial-gradient(circle at 35% 30%, #e2e8f0, #94a3b8); border-color: #64748b; z-index: -1; }
 .homeCoinInner.back span, .homeCoinInner.back small { color: #0f172a; }
-/* Real Dice Home */
 .homeDice { width: 130px; height: 130px; margin: 10px auto; border-radius: 26px; background: linear-gradient(145deg, #ef4444, #b91c1c); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); padding: 22px; gap: 6px; box-shadow: 0 12px 25px rgba(0,0,0,0.25), inset 0 -8px 14px rgba(0,0,0,0.25); }
 .d-pip { width: 22px; height: 22px; background: #fff; border-radius: 50%; place-self: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
 .content { margin-top: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; }
@@ -266,12 +249,13 @@ h1 span { color: #16a34a; }
 .nameBar input:focus { border-color: #16a34a; background: #fff; }
 .nameBar span { font-weight: 800; color: #94a3b8; font-size: 12px; }
 .bigStage { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px 14px; text-align: center; min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 30px rgba(15,23,42,0.06); overflow: hidden; }
+.diceStage { min-height: 340px; }
 .stageText { font-size: 18px; font-weight: 800; margin: 18px 0 0; }
 .stageSub { color: #94a3b8; font-size: 11px; font-weight: 600; }
 .coin-scene { perspective: 1200px; }
 .big-coin { width: 230px; height: 230px; }
 .coin-face { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fde047, #eab308 55%, #a16207); border: 8px solid #ca8a04; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.3), inset 0 -10px 18px rgba(0,0,0,0.25); }
-.coin-letter { font-size: 100px; font-weight: 900; color: #422006; line-height: 0.9; text-shadow: 0 2px 0 rgba(255,255,255,0.4); }
+.coin-letter { font-size: 100px; font-weight: 900; color: #422006; line-height: 0.9; }
 .coin-face small { font-size: 11px; font-weight: 800; color: #713f12; margin-top: 6px; max-width: 170px; word-break: break-word; }
 .coin-ring { position: absolute; inset: 14px; border: 2px dashed rgba(66,32,6,0.4); border-radius: 50%; }
 .coin-fly { animation: coinFly 1.6s cubic-bezier(0.3, 0.7, 0.3, 1) forwards; }
@@ -284,19 +268,26 @@ h1 span { color: #16a34a; }
 .stat { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px; text-align: center; font-size: 11px; font-weight: 700; }
 .stat b { display: block; font-size: 16px; }
 .winnerLine { margin-top: 10px; background: #f0fdf4; border: 1.5px solid #16a34a; border-radius: 12px; padding: 10px; text-align: center; font-weight: 800; font-size: 14px; }
-.playerBar { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
-.pBtn { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
-.pBtn.on { background: #0f172a; color: #fff; }
+.howManyBox { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 10px 16px; margin-bottom: 10px; }
+.howManyBox label { flex: 1; font-size: 13px; font-weight: 800; }
+.howManyBox input { width: 70px; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 9px; font-size: 16px; font-weight: 800; text-align: center; outline: none; background: #fff; }
+.howManyBox input:focus { border-color: #0f172a; }
+.howManyBox span { font-size: 12px; font-weight: 700; color: #94a3b8; }
 .playerNames { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
 .playerNames input { min-width: 90px; flex: 1; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 9px 10px; font-size: 12px; font-weight: 700; text-align: center; outline: none; }
-.turnLabel { padding: 7px 14px; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 800; margin-bottom: 18px; }
-.real-dice { width: 200px; height: 200px; border-radius: 32px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.3), inset 0 -10px 18px rgba(0,0,0,0.25); }
-.pip { width: 28px; height: 28px; background: #fff; border-radius: 50%; opacity: 0; place-self: center; box-shadow: inset 0 3px 5px rgba(0,0,0,0.35); }
+.real-dice { width: 210px; height: 210px; border-radius: 34px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 32px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.3), inset 0 -10px 18px rgba(0,0,0,0.25); }
+.pip { width: 30px; height: 30px; background: #fff; border-radius: 50%; opacity: 0; place-self: center; box-shadow: inset 0 3px 5px rgba(0,0,0,0.35); }
 .pip.show { opacity: 1; }
 .dice-shine { position: absolute; top: 12px; left: 18px; right: 18px; height: 30px; background: rgba(255,255,255,0.35); border-radius: 999px; filter: blur(6px); }
-.dice-fly { animation: diceFly 0.9s ease-in-out infinite; }
-@keyframes diceFly { 0% { transform: translateY(0) rotate(0) scale(1); } 30% { transform: translateY(-110px) rotate(180deg) scale(0.9); } 60% { transform: translateY(-140px) rotate(360deg) scale(0.85); } 100% { transform: translateY(0) rotate(540deg) scale(1); } }
-.diceResults { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
-.diceResults span { color: #fff; padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-@media (max-width: 650px) { .homeGrid { grid-template-columns: 1fr; } .big-coin { width: 200px; height: 200px; } .coin-letter { font-size: 80px; } .real-dice { width: 170px; height: 170px; padding: 24px; } }
+/* ✅ DICE AB SAHI SE FLY KAREGA - Upar, Ghumega, Neeche Girega */
+.dice-fly { animation: diceFlyGood 1.15s cubic-bezier(0.35, 0.7, 0.35, 1) infinite; }
+@keyframes diceFlyGood {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  20% { transform: translateY(-90px) rotate(180deg) scale(0.92); }
+  40% { transform: translateY(-160px) rotate(360deg) scale(0.88); }
+  60% { transform: translateY(-160px) rotate(540deg) scale(0.88); }
+  80% { transform: translateY(-50px) rotate(700deg) scale(0.96); }
+  100% { transform: translateY(0) rotate(720deg) scale(1); }
+}
+@media (max-width: 650px) { .homeGrid { grid-template-columns: 1fr; } .big-coin { width: 200px; height: 200px; } .coin-letter { font-size: 80px; } .real-dice { width: 180px; height: 180px; padding: 26px; } }
 `;
