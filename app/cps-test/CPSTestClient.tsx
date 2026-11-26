@@ -95,7 +95,7 @@ export default function CPSTestClient() {
   const finishTest = useCallback(() => {
     if (statusRef.current !== "running" || startRef.current === null) return;
     stopTimers();
-    const elapsed = (performance.now() - startRef.current) / 1000;
+    const elapsed = (window.performance.now() - startRef.current) / 1000;
     const finalCPS = modeRef.current === "time" ? clicksRef.current / Math.max(durationRef.current, 0.01) : clicksRef.current / Math.max(elapsed, 0.01);
     const stats = calcStats(clickTimesRef.current);
     setCps(finalCPS); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval); setElapsedFinal(elapsed); setTimeLeft(0);
@@ -106,7 +106,7 @@ export default function CPSTestClient() {
 
   const updateTimer = useCallback(() => {
     if (statusRef.current !== "running" || startRef.current === null) return;
-    const elapsed = (performance.now() - startRef.current) / 1000;
+    const elapsed = (window.performance.now() - startRef.current) / 1000;
     const remaining = Math.max(0, durationRef.current - elapsed);
     setTimeLeft(remaining); setCps(elapsed > 0 ? clicksRef.current / elapsed : 0);
     if (modeRef.current === "time" && remaining <= 0) { finishRef.current(); return; }
@@ -115,11 +115,11 @@ export default function CPSTestClient() {
   }, []);
 
   const startTest = useCallback(() => {
-    stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = performance.now(); statusRef.current = "running";
+    stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = window.performance.now(); statusRef.current = "running";
     setStatus("running"); setClicks(0); setCps(0); setPeak(0); setConsistency(0); setIntervalMs(0); setGraph([]); setTimeLeft(durationRef.current);
     graphRef.current = window.setInterval(() => {
       if (statusRef.current !== "running" || startRef.current === null) return;
-      const elapsed = (performance.now() - startRef.current) / 1000;
+      const elapsed = (window.performance.now() - startRef.current) / 1000;
       setGraph((old) => [...old.slice(-44), elapsed > 0 ? clicksRef.current / elapsed : 0]);
     }, 150);
     animationRef.current = requestAnimationFrame(updateTimer);
@@ -143,7 +143,7 @@ export default function CPSTestClient() {
     else setInputType("Pen");
     if (statusRef.current === "done") { resetTest(); return; }
     if (statusRef.current === "idle") startTest();
-    const now = performance.now(); clicksRef.current += 1; clickTimesRef.current.push(now); setClicks(clicksRef.current); clickSound();
+    const now = window.performance.now(); clicksRef.current += 1; clickTimesRef.current.push(now); setClicks(clicksRef.current); clickSound();
     const rect = e.currentTarget.getBoundingClientRect();
     const ripple: Ripple = { id: Date.now() + Math.random(), x: e.clientX - rect.left, y: e.clientY - rect.top };
     setRipples((old) => [...old.slice(-8), ripple]);
@@ -169,7 +169,7 @@ export default function CPSTestClient() {
     return { icon: "🚨", title: "Unusually High Speed", desc: "This CPS is unusually high for ordinary clicking. Hardware, clicking technique or automation may affect the result." };
   };
 
-  const performance = status === "done" ? getPerformance(cps) : null;
+  const resultInfo = status === "done" ? getPerformance(cps) : null;
   const progress = status === "idle" ? 0 : mode === "time" ? Math.min(100, ((duration - timeLeft) / duration) * 100) : Math.min(100, (clicks / 100) * 100);
   const currentPB = bestByTime[mode === "time" ? `${duration}s` : "100clicks"] || 0;
 
@@ -200,8 +200,6 @@ export default function CPSTestClient() {
         .custom { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 13px; margin-bottom: 12px; text-align: center; }
         .custom label { font-size: 11px; font-weight: 800; color: #475569; letter-spacing: .5px; }
         .custom input { width: 100%; margin-top: 8px; accent-color: #16a34a; }
-
-        /* BIG CLICK BOX - FULL SCREEN FEEL */
         .clickArea { position: relative; min-height: 460px; width: 100%; border: 2px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 10px 40px rgba(15,23,42,0.06); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .clickArea.running { border-color: #16a34a; background: #f0fdf4; }
         .clickArea.done { border-color: #16a34a; background: #f0fdf4; }
@@ -211,11 +209,8 @@ export default function CPSTestClient() {
         .hint { margin-top: 6px; color: #64748b; font-size: 12px; font-weight: 500; }
         .progress { width: 82%; height: 8px; margin-top: 20px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
         .progressFill { height: 100%; background: #16a34a; border-radius: inherit; transition: width .08s linear; }
-
-        /* GREEN DOT WHERE YOU CLICK */
         .ripple { position: absolute; width: 28px; height: 28px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 6px rgba(34,197,94,0.20); pointer-events: none; animation: ripple .45s ease-out forwards; }
         @keyframes ripple { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
-
         .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
         .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 5px; text-align: center; }
         .value { display: block; color: #16a34a; font-size: 22px; line-height: 1; font-weight: 800; }
@@ -228,10 +223,8 @@ export default function CPSTestClient() {
         .metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 5px; text-align: center; }
         .metric strong { display: block; font-size: 15px; color: #0f172a; }
         .metric span { display: block; margin-top: 3px; color: #94a3b8; font-size: 9px; font-weight: 800; }
-
-        /* RESULT - SLIDES UP FROM BOTTOM */
         .resultOverlay { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; padding: 12px; pointer-events: none; }
-        .result { pointer-events: auto; width: 100%; max-width: 900px; background: #fff; border: 2px solid #16a34a; border-radius: 22px 22px 22px 22px; padding: 20px; text-align: center; box-shadow: 0 -10px 40px rgba(0,0,0,0.18); animation: slideUp .45s cubic-bezier(.2,.9,.3,1.2) both; }
+        .result { pointer-events: auto; width: 100%; max-width: 900px; background: #fff; border: 2px solid #16a34a; border-radius: 22px; padding: 20px; text-align: center; box-shadow: 0 -10px 40px rgba(0,0,0,0.18); animation: slideUp .45s cubic-bezier(.2,.9,.3,1.2) both; }
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .resultScore { color: #16a34a; font-size: 48px; line-height: 1; font-weight: 800; letter-spacing: -1px; }
         .resultSmall { color: #94a3b8; font-size: 10px; font-weight: 800; margin-top: 5px; letter-spacing: .5px; }
@@ -323,14 +316,13 @@ export default function CPSTestClient() {
           </section>
         )}
 
-        {/* RESULT - BOTTOM SHEET SLIDE UP */}
-        {status === "done" && performance && (
+        {status === "done" && resultInfo && (
           <div className="resultOverlay">
             <section className="result">
               <div className="resultScore">{cps.toFixed(2)}</div>
               <div className="resultSmall">CLICKS PER SECOND {mode === "target" && ` • FINISHED IN ${elapsedFinal.toFixed(2)}s`}</div>
-              <div className="rank">{performance.icon} {performance.title}</div>
-              <p className="rankDesc">{performance.desc}</p>
+              <div className="rank">{resultInfo.icon} {resultInfo.title}</div>
+              <p className="rankDesc">{resultInfo.desc}</p>
               <div className="world">📊 Peak {peak.toFixed(1)} CPS • {consistency.toFixed(0)}% consistency • {inputType}</div>
               <div className="buttons">
                 <button className="action green" onClick={resetTest}>↻ Play Again</button>
