@@ -9,6 +9,10 @@ type Preset = {
   date: string;
 };
 
+const DEFAULT_TITLE = "New Year 2027";
+const DEFAULT_DATE = "2027-01-01T00:00:00";
+const STORAGE_KEY = "nexora-countdown";
+
 const PRESETS: Preset[] = [
   { label: "New Year 2027", icon: "🎆", date: "2027-01-01T00:00:00" },
   { label: "Christmas 2026", icon: "🎄", date: "2026-12-25T00:00:00" },
@@ -32,15 +36,18 @@ function pad(value: number) {
 }
 
 export default function CountdownClient() {
-  const [title, setTitle] = useState("New Year 2027");
-  const [target, setTarget] = useState("2027-01-01T00:00:00");
+  const [title, setTitle] = useState(DEFAULT_TITLE);
+  const [target, setTarget] = useState(DEFAULT_DATE);
   const [customDate, setCustomDate] = useState("");
   const [now, setNow] = useState(() => new Date());
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showIOS, setShowIOS] = useState(false);
+  const [copied, setCopied] = useState(false);
   const celebratedRef = useRef(false);
+  const hasLoadedRef = useRef(false);
 
+  // PWA
   useEffect(() => {
     const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
     const isStandalone = (window.navigator as any).standalone === true || window.matchMedia("(display-mode: standalone)").matches;
@@ -64,6 +71,50 @@ export default function CountdownClient() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // 1. LOAD - Link sabse pehle, fir Saved, fir Default
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linkTitle = params.get("t");
+    const linkDate = params.get("d");
+
+    // A. Agar Share Link se aaya hai
+    if (linkTitle && linkDate && new Date(linkDate).getTime() > Date.now()) {
+      const t = decodeURIComponent(linkTitle);
+      setTitle(t);
+      setTarget(linkDate);
+      setCustomDate(linkDate);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: t, target: linkDate }));
+      hasLoadedRef.current = true;
+      return;
+    }
+    // B. Agar apne phone me pehle se save hai aur abhi bhi time bacha hai
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.target && new Date(data.target).getTime() > Date.now()) {
+          setTitle(data.title || DEFAULT_TITLE);
+          setTarget(data.target);
+          setCustomDate(data.target);
+          hasLoadedRef.current = true;
+          return;
+        } else {
+          // Time khatam ho gaya hai to delete kar do, default dikhega
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch { localStorage.removeItem(STORAGE_KEY); }
+    hasLoadedRef.current = true;
+  }, []);
+
+  // 2. SAVE - Jab tak pura nahi hoga tab tak save rahega
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    if (new Date(target).getTime() > Date.now()) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ title, target }));
+    }
+  }, [title, target]);
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
@@ -73,8 +124,9 @@ export default function CountdownClient() {
   const isComplete = diff <= 0;
   const time = getTimeParts(diff);
 
+  // 3. KHATAM HOTE HI - Confetti + Auto Reset to Default
   useEffect(() => {
-    if (isComplete && !celebratedRef.current) {
+    if (isComplete && !celebratedRef.current && hasLoadedRef.current) {
       celebratedRef.current = true;
       const end = Date.now() + 2500;
       const colors = ["#6d5dfc", "#22c7a5", "#ffce54", "#ff6b9d"];
@@ -84,6 +136,18 @@ export default function CountdownClient() {
         if (Date.now() < end) requestAnimationFrame(frame);
       })();
       setTimeout(() => { confetti({ particleCount: 180, spread: 100, origin: { y: 0.4 }, colors }); }, 300);
+
+      // 5 second baad khud hi default pe aa jayega
+      const resetTimer = setTimeout(() => {
+        localStorage.removeItem(STORAGE_KEY);
+        setTitle(DEFAULT_TITLE);
+        setTarget(DEFAULT_DATE);
+        setCustomDate("");
+        celebratedRef.current = false;
+        // URL se ?t= & ?d= bhi hata do taaki wapas wahi purana na khule
+        window.history.replaceState({}, "", window.location.pathname);
+      }, 5000);
+      return () => clearTimeout(resetTimer);
     }
     if (!isComplete) celebratedRef.current = false;
   }, [isComplete]);
@@ -106,11 +170,28 @@ export default function CountdownClient() {
   }, [target]);
 
   const selectPreset = (preset: Preset) => { setTitle(preset.label); setTarget(preset.date); };
+
   const startCustomCountdown = () => {
     if (!customDate) return;
     setTarget(customDate);
     if (!title.trim()) setTitle("My Countdown");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // SHARE - Dono ke phone me wahi countdown chalega
+  const shareCountdown = async () => {
+    const url = `${window.location.origin}${window.location.pathname}?t=${encodeURIComponent(title)}&d=${encodeURIComponent(target)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: title, text: `Countdown to ${title} - NEXORA`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
+    }
   };
 
   return (
@@ -141,7 +222,6 @@ export default function CountdownClient() {
           </div>
         </section>
 
-        {/* ===== GOL WALA HISSA - AB FIXED ===== */}
         <section className="main-card">
           <div className="status-row">
             <span className={isComplete ? "status complete" : "status live"}>
@@ -164,7 +244,7 @@ export default function CountdownClient() {
             <div className="complete-box">
               <div className="complete-emoji">🎉</div>
               <div className="complete-title">The countdown has ended!</div>
-              <div className="complete-text">Your target time has arrived.</div>
+              <div className="complete-text">Your target time has arrived. 5 sec me wapas New Year countdown shuru ho jayega...</div>
             </div>
           ) : (
             <>
@@ -178,6 +258,18 @@ export default function CountdownClient() {
             </>
           )}
           <div className="target-line">Target: <strong>{formattedTarget}</strong></div>
+
+          {/* ===== TIMER KE NEECHE SHARE BUTTON ===== */}
+          {!isComplete && (
+            <>
+              <button type="button" className="share-btn" onClick={shareCountdown}>
+                <span>🔗</span>
+                <span>{copied ? "Link Copied! ✅" : "Share This Countdown"}</span>
+                <span>→</span>
+              </button>
+              <p className="save-note">✓ Ye countdown save ho gaya hai. Jab tak pura nahi hoga, yahi dikhega.</p>
+            </>
+          )}
         </section>
 
         <section className="section-card">
@@ -282,6 +374,8 @@ export default function CountdownClient() {
         .target-line strong { color: #555b67; }
         .complete-box { text-align: center; padding: 22px 10px 18px; border-radius: 18px; background: #faf9ff; border: 1px solid #ece9ff; }
         .complete-emoji { font-size: 42px; } .complete-title { margin-top: 7px; font-size: 18px; font-weight: 800; } .complete-text { margin-top: 5px; color: #858b97; font-size: 12px; }
+        .share-btn { width: 100%; margin-top: 16px; padding: 14px 16px; border: 1px solid #e1e4ea; border-radius: 13px; background: #f3f1ff; color: #171922; font-family: inherit; font-size: 12px; font-weight: 850; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; }
+        .save-note { margin: 10px 0 0; text-align: center; color: #168c72; font-size: 11px; font-weight: 700; }
         .section-card { margin-top: 16px; border-radius: 22px; padding: 20px; }
         .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
         .section-kicker { display: block; color: #6d5dfc; font-size: 9px; font-weight: 850; letter-spacing: 1.4px; margin-bottom: 5px; }
