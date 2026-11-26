@@ -32,6 +32,7 @@ export default function CPSTestClient() {
   const [consistency, setConsistency] = useState(0);
   const [intervalMs, setIntervalMs] = useState(0);
   const [sound, setSound] = useState(false);
+  const [vibrateOn, setVibrateOn] = useState(true);
   const [inputType, setInputType] = useState("Mouse / Touch");
   const [combo, setCombo] = useState(0);
 
@@ -48,6 +49,9 @@ export default function CPSTestClient() {
   const boxRef = useRef<HTMLDivElement | null>(null);
   const lastClickRef = useRef(0);
   const comboRef = useRef(0);
+  const vibrateRef = useRef(true);
+
+  useEffect(() => { vibrateRef.current = vibrateOn; }, [vibrateOn]);
 
   const stopTimers = useCallback(() => {
     if (animationRef.current !== null) { cancelAnimationFrame(animationRef.current); animationRef.current = null; }
@@ -76,7 +80,12 @@ export default function CPSTestClient() {
     } catch {}
   }, [sound]);
 
-  // ✅ NO.1 FIX - Direct DOM Ripple, React se nahi
+  const doVibrate = useCallback((pattern: number | number[]) => {
+    if (!vibrateRef.current) return;
+    try { navigator.vibrate?.(pattern); } catch {}
+  }, []);
+
+  // ✅ FINAL FIX - Inline style + Web Animation, styled-jsx pe depend nahi
   const spawnRipple = useCallback((clientX: number, clientY: number) => {
     const box = boxRef.current;
     if (!box) return;
@@ -84,20 +93,39 @@ export default function CPSTestClient() {
     const x = clientX - rect.left;
     const y = clientY - rect.top;
 
-    // 1. Green Gol
     const dot = document.createElement("div");
-    dot.className = "touch-dot";
-    dot.style.left = `${x - 30}px`;
-    dot.style.top = `${y - 30}px`;
+    dot.style.position = "absolute";
+    dot.style.left = `${x - 35}px`;
+    dot.style.top = `${y - 35}px`;
+    dot.style.width = "70px";
+    dot.style.height = "70px";
+    dot.style.borderRadius = "50%";
+    dot.style.background = "rgba(22,163,74,0.35)";
+    dot.style.border = "4px solid #16a34a";
+    dot.style.pointerEvents = "none";
+    dot.style.zIndex = "99";
     box.appendChild(dot);
+    dot.animate(
+      [{ transform: "scale(0.3)", opacity: 1 }, { transform: "scale(1.6)", opacity: 0 }],
+      { duration: 550, easing: "ease-out" }
+    );
 
-    // 2. +1 Udata hua
     const plus = document.createElement("div");
-    plus.className = "touch-plus";
     plus.textContent = "+1";
-    plus.style.left = `${x - 10}px`;
-    plus.style.top = `${y - 35}px`;
+    plus.style.position = "absolute";
+    plus.style.left = `${x - 12}px`;
+    plus.style.top = `${y - 40}px`;
+    plus.style.color = "#16a34a";
+    plus.style.fontSize = "24px";
+    plus.style.fontWeight = "800";
+    plus.style.fontFamily = "inherit";
+    plus.style.pointerEvents = "none";
+    plus.style.zIndex = "100";
     box.appendChild(plus);
+    plus.animate(
+      [{ transform: "translateY(0px)", opacity: 1 }, { transform: "translateY(-50px)", opacity: 0 }],
+      { duration: 550, easing: "ease-out" }
+    );
 
     setTimeout(() => { dot.remove(); plus.remove(); }, 600);
   }, []);
@@ -128,7 +156,8 @@ export default function CPSTestClient() {
     const stats = calcStats(clickTimesRef.current);
     setCps(finalCPS); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval); setElapsedFinal(elapsed); setTimeLeft(0);
     setStatus("done"); statusRef.current = "done"; saveResult(finalCPS);
-    try { navigator.vibrate?.(100); } catch {}
+    // Khatam hone pe zor wali lambi vibration
+    try { if (vibrateRef.current) navigator.vibrate?.([80, 40, 80, 40, 150]); } catch {}
   }, [calcStats, saveResult, stopTimers]);
 
   useEffect(() => { finishRef.current = finishTest; }, [finishTest]);
@@ -146,18 +175,19 @@ export default function CPSTestClient() {
   const startTest = useCallback(() => {
     stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = window.performance.now(); statusRef.current = "running";
     setStatus("running"); setClicks(0); setCps(0); setPeak(0); setConsistency(0); setIntervalMs(0); setGraph([]); setTimeLeft(durationRef.current); setCombo(0); comboRef.current = 0;
+    doVibrate(40);
+    if (boxRef.current) boxRef.current.querySelectorAll("[data-ripple]").forEach(n => n.remove());
     graphRef.current = window.setInterval(() => {
       if (statusRef.current !== "running" || startRef.current === null) return;
       const elapsed = (window.performance.now() - startRef.current) / 1000;
       setGraph((old) => [...old.slice(-44), elapsed > 0 ? clicksRef.current / elapsed : 0]);
     }, 150);
     animationRef.current = requestAnimationFrame(updateTimer);
-  }, [stopTimers, updateTimer]);
+  }, [stopTimers, updateTimer, doVibrate]);
 
   const resetTest = useCallback(() => {
     stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = null; statusRef.current = "idle";
     setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setPeak(0); setConsistency(0); setIntervalMs(0); setElapsedFinal(0); setTimeLeft(durationRef.current); setCombo(0); comboRef.current = 0;
-    if (boxRef.current) boxRef.current.querySelectorAll(".touch-dot, .touch-plus").forEach(n => n.remove());
   }, [stopTimers]);
 
   const changeDuration = useCallback((s: number) => {
@@ -167,19 +197,20 @@ export default function CPSTestClient() {
 
   const changeMode = useCallback((m: Mode) => { if (statusRef.current === "running") return; modeRef.current = m; setMode(m); resetTest(); }, [resetTest]);
 
-  const handleClick = (e: ReactPointerEvent<HTMLDivElement>) => {
-    // ✅ Har click pe turant gol + vibration
+  // ✅ Box sirf RUNNING me count karega, idle/done me nahi
+  const handleBoxClick = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (statusRef.current !== "running") {
+      // Idle/Done me box pe click karne pe bhi gol dikhe, par count na ho
+      spawnRipple(e.clientX, e.clientY);
+      return;
+    }
     spawnRipple(e.clientX, e.clientY);
-    try { navigator.vibrate?.(8); } catch {}
-
+    doVibrate(30); // Zor wali vibration
     if (e.pointerType === "mouse") setInputType("Mouse");
     else if (e.pointerType === "touch") setInputType("Touch");
     else setInputType("Pen");
-    if (statusRef.current === "done") { resetTest(); return; }
-    if (statusRef.current === "idle") startTest();
 
     const now = window.performance.now();
-    // Combo - agar 400ms ke andar dobara click to combo badhega
     if (now - lastClickRef.current < 400) { comboRef.current += 1; setCombo(comboRef.current); } else { comboRef.current = 1; setCombo(1); }
     lastClickRef.current = now;
 
@@ -236,9 +267,15 @@ export default function CPSTestClient() {
         .custom { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 13px; margin-bottom: 12px; text-align: center; }
         .custom label { font-size: 11px; font-weight: 800; color: #475569; letter-spacing: .5px; }
         .custom input { width: 100%; margin-top: 8px; accent-color: #16a34a; }
+        .startWrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; }
+        .startBtn { width: 100%; max-width: 420px; border: 0; border-radius: 999px; padding: 16px 20px; font-size: 17px; font-weight: 800; cursor: pointer; background: #16a34a; color: #fff; box-shadow: 0 8px 24px rgba(22,163,74,0.35); }
+        .startBtn:active { transform: scale(0.98); }
+        .startBtn:disabled { opacity: .55; cursor: not-allowed; }
+        .startHint { font-size: 11px; color: #94a3b8; font-weight: 600; }
         .clickArea { position: relative; min-height: 460px; width: 100%; border: 2px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 10px 40px rgba(15,23,42,0.06); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .clickArea.running { border-color: #16a34a; background: #f0fdf4; }
-        .clickArea.done { border-color: #16a34a; background: #f0fdf4; }
+        .clickArea.done { border-color: #16a34a; background: #f0fdf4; opacity: .7; }
+        .clickArea.idle { opacity: .85; }
         .timer { background: #0f172a; color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 800; position: relative; z-index: 2; }
         .number { font-size: clamp(80px, 18vw, 130px); line-height: .9; font-weight: 800; letter-spacing: -5px; margin-top: 10px; color: #0f172a; position: relative; z-index: 2; }
         .instruction { margin-top: 12px; font-size: 18px; font-weight: 800; color: #0f172a; position: relative; z-index: 2; }
@@ -247,13 +284,6 @@ export default function CPSTestClient() {
         @keyframes pop { from { transform: scale(.7); } to { transform: scale(1); } }
         .progress { width: 82%; height: 8px; margin-top: 20px; background: #e2e8f0; border-radius: 999px; overflow: hidden; position: relative; z-index: 2; }
         .progressFill { height: 100%; background: #16a34a; border-radius: inherit; transition: width .08s linear; }
-
-        /* ✅ FIXED GREEN DOT - BADA AUR CLEAR */
-        .touch-dot { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(34,197,94,0.35); border: 3px solid #16a34a; pointer-events: none; z-index: 10; animation: dotPop .6s ease-out forwards; }
-        @keyframes dotPop { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-        .touch-plus { position: absolute; color: #16a34a; font-size: 22px; font-weight: 800; pointer-events: none; z-index: 11; animation: plusUp .6s ease-out forwards; }
-        @keyframes plusUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-45px); opacity: 0; } }
-
         .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
         .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 5px; text-align: center; }
         .value { display: block; color: #16a34a; font-size: 22px; line-height: 1; font-weight: 800; }
@@ -278,8 +308,9 @@ export default function CPSTestClient() {
         button.action { border: 0; border-radius: 999px; padding: 12px 22px; font-size: 13px; font-weight: 800; cursor: pointer; }
         .green { background: #16a34a; color: #fff; }
         .gray { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; }
-        .sound { display: flex; justify-content: center; margin-top: 12px; }
-        .soundBtn { background: transparent; border: 0; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .toggles { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .toggleBtn { background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; padding: 8px 14px; font-size: 11px; font-weight: 700; color: #64748b; cursor: pointer; }
+        .toggleBtn.on { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
         .history { text-align: center; }
         .historyTitle { color: #94a3b8; font-size: 10px; font-weight: 800; }
         .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
@@ -330,11 +361,19 @@ export default function CPSTestClient() {
           </div>
         )}
 
-        <div ref={boxRef} className={`clickArea ${status === "running" ? "running" : status === "done" ? "done" : ""}`} onPointerDown={handleClick} role="button" tabIndex={0} aria-label="CPS clicking test area">
+        {/* ✅ START BUTTON - BOX KE UPAR */}
+        <div className="startWrap">
+          {status === "idle" && <button className="startBtn" onClick={startTest}>▶ START TEST</button>}
+          {status === "running" && <button className="startBtn" disabled>⚡ TEST RUNNING...</button>}
+          {status === "done" && <button className="startBtn" onClick={startTest}>↻ START AGAIN</button>}
+          <div className="startHint">{status === "idle" ? "Press START, then tap the box as fast as you can" : status === "running" ? "Now tap the white box below" : "Press START AGAIN to play again"}</div>
+        </div>
+
+        <div ref={boxRef} className={`clickArea ${status}`} onPointerDown={handleBoxClick} role="button" tabIndex={0} aria-label="CPS clicking test area">
           <div className="timer">{status === "running" ? (mode === "time" ? `${timeLeft.toFixed(1)}s` : `${clicks}/100 Clicks`) : status === "done" ? "DONE" : mode === "time" ? `${duration}s` : "100 Clicks"}</div>
           <div className="number">{clicks}</div>
-          <div className="instruction">{status === "idle" && "👆 CLICK TO START"}{status === "running" && "⚡ CLICK AS FAST AS YOU CAN"}{status === "done" && `${cps.toFixed(2)} CPS`}</div>
-          <div className="hint">{status === "idle" && "Your first click starts the timer"}{status === "running" && `Current ${cps.toFixed(2)} CPS • ${inputType}`}{status === "done" && "Tap the area or Play Again to start another test"}</div>
+          <div className="instruction">{status === "idle" && "👆 PRESS START ABOVE"}{status === "running" && "⚡ CLICK AS FAST AS YOU CAN"}{status === "done" && `${cps.toFixed(2)} CPS`}</div>
+          <div className="hint">{status === "idle" && "Box will count only after you press START"}{status === "running" && `Current ${cps.toFixed(2)} CPS • ${inputType}`}{status === "done" && "Press START AGAIN above to play again"}</div>
           {status === "running" && combo >= 5 && <div className="comboBadge">🔥 COMBO x{combo}</div>}
           <div className="progress"><div className="progressFill" style={{ width: `${progress}%` }} /></div>
         </div>
@@ -368,7 +407,7 @@ export default function CPSTestClient() {
               <p className="rankDesc">{resultInfo.desc}</p>
               <div className="world">📊 Peak {peak.toFixed(1)} CPS • {consistency.toFixed(0)}% consistency • {inputType}</div>
               <div className="buttons">
-                <button className="action green" onClick={resetTest}>↻ Play Again</button>
+                <button className="action green" onClick={startTest}>↻ Play Again</button>
                 <button className="action gray" onClick={shareResult}>📤 Share Result</button>
               </div>
             </section>
@@ -382,7 +421,10 @@ export default function CPSTestClient() {
           </div>
         )}
 
-        <div className="sound"><button className="soundBtn" onClick={() => setSound((v) => !v)}>{sound ? "🔊 Click sound ON" : "🔇 Click sound OFF"}</button></div>
+        <div className="toggles">
+          <button className={`toggleBtn ${sound ? "on" : ""}`} onClick={() => setSound((v) => !v)}>{sound ? "🔊 Sound ON" : "🔇 Sound OFF"}</button>
+          <button className={`toggleBtn ${vibrateOn ? "on" : ""}`} onClick={() => setVibrateOn((v) => !v)}>{vibrateOn ? "📳 Vibration ON" : "📳 Vibration OFF"}</button>
+        </div>
 
         {history.length > 0 && (
           <section className="panel history">
