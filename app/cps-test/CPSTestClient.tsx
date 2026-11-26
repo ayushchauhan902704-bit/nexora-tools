@@ -343,257 +343,218 @@ export default function CPSTestClient() {
   ]);
 
   useEffect(() => {
-    finishRef.current =
-      finishTest;
+    finishRef.current = finishTest;
   }, [finishTest]);
 
-  const updateTimer =
-    useCallback(() => {
-      if (
-        statusRef.current !==
-          "running" ||
-        startRef.current === null
-      ) {
-        return;
-      }
+  const updateTimer = useCallback(() => {
+    if (
+      statusRef.current !== "running" ||
+      startRef.current === null
+    ) {
+      return;
+    }
 
-      const elapsed =
-        (performance.now() -
-          startRef.current) /
-        1000;
+    const elapsed =
+      (performance.now() -
+        startRef.current) /
+      1000;
 
-      const remaining =
-        Math.max(
-          0,
-          durationRef.current -
-            elapsed
-        );
-
-      const liveCPS =
-        elapsed > 0
-          ? clicksRef.current /
-            elapsed
-          : 0;
-
-      setTimeLeft(
-        remaining
+    const remaining =
+      Math.max(
+        0,
+        durationRef.current -
+          elapsed
       );
 
-      setCps(
-        liveCPS
+    const liveCPS =
+      elapsed > 0
+        ? clicksRef.current /
+          elapsed
+        : 0;
+
+    setTimeLeft(remaining);
+    setCps(liveCPS);
+
+    if (
+      modeRef.current === "time" &&
+      remaining <= 0
+    ) {
+      finishRef.current();
+      return;
+    }
+
+    if (
+      modeRef.current === "target" &&
+      clicksRef.current >= 100
+    ) {
+      finishRef.current();
+      return;
+    }
+
+    animationRef.current =
+      requestAnimationFrame(
+        updateTimer
       );
+  }, []);
 
+  const startTest = useCallback(() => {
+    stopTimers();
+
+    clicksRef.current = 0;
+    clickTimesRef.current = [];
+
+    startRef.current =
+      performance.now();
+
+    statusRef.current = "running";
+
+    setStatus("running");
+    setClicks(0);
+    setCps(0);
+    setPeak(0);
+    setConsistency(0);
+    setIntervalMs(0);
+    setGraph([]);
+    setClickDots([]);
+
+    setTimeLeft(
+      durationRef.current
+    );
+
+    graphRef.current =
+      window.setInterval(() => {
+        if (
+          statusRef.current !== "running" ||
+          startRef.current === null
+        ) {
+          return;
+        }
+
+        const elapsed =
+          (performance.now() -
+            startRef.current) /
+          1000;
+
+        const liveCPS =
+          elapsed > 0
+            ? clicksRef.current /
+              elapsed
+            : 0;
+
+        setGraph((old) => [
+          ...old.slice(-44),
+          liveCPS,
+        ]);
+      }, 150);
+
+    animationRef.current =
+      requestAnimationFrame(
+        updateTimer
+      );
+  }, [
+    stopTimers,
+    updateTimer,
+  ]);
+
+  const resetTest = useCallback(() => {
+    stopTimers();
+
+    clicksRef.current = 0;
+    clickTimesRef.current = [];
+    startRef.current = null;
+
+    statusRef.current = "idle";
+
+    setStatus("idle");
+    setClicks(0);
+    setCps(0);
+    setGraph([]);
+    setClickDots([]);
+    setPeak(0);
+    setConsistency(0);
+    setIntervalMs(0);
+    setElapsedFinal(0);
+
+    setTimeLeft(
+      durationRef.current
+    );
+  }, [stopTimers]);
+
+  const changeDuration = useCallback(
+    (seconds: number) => {
       if (
-        modeRef.current ===
-          "time" &&
-        remaining <= 0
+        statusRef.current ===
+        "running"
       ) {
-        finishRef.current();
         return;
       }
 
-      if (
-        modeRef.current ===
-          "target" &&
-        clicksRef.current >=
-          100
-      ) {
-        finishRef.current();
-        return;
-      }
-
-      animationRef.current =
-        requestAnimationFrame(
-          updateTimer
-        );
-    }, []);
-
-  const startTest =
-    useCallback(() => {
       stopTimers();
 
-      clicksRef.current = 0;
-      clickTimesRef.current = [];
+      durationRef.current =
+        seconds;
 
-      startRef.current =
-        performance.now();
-
-      statusRef.current =
-        "running";
-
-      setStatus("running");
-      setClicks(0);
-      setCps(0);
-      setPeak(0);
-      setConsistency(0);
-      setIntervalMs(0);
-      setGraph([]);
-      setClickDots([]);
-
-      setTimeLeft(
-        durationRef.current
-      );
-
-      graphRef.current =
-        window.setInterval(() => {
-          if (
-            statusRef.current !==
-              "running" ||
-            startRef.current === null
-          ) {
-            return;
-          }
-
-          const elapsed =
-            (performance.now() -
-              startRef.current) /
-            1000;
-
-          const liveCPS =
-            elapsed > 0
-              ? clicksRef.current /
-                elapsed
-              : 0;
-
-          setGraph((old) => [
-            ...old.slice(-44),
-            liveCPS,
-          ]);
-        }, 150);
-
-      animationRef.current =
-        requestAnimationFrame(
-          updateTimer
-        );
-    }, [
-      stopTimers,
-      updateTimer,
-    ]);
-
-  const resetTest =
-    useCallback(() => {
-      stopTimers();
-
-      clicksRef.current = 0;
-      clickTimesRef.current = [];
       startRef.current = null;
 
-      statusRef.current =
-        "idle";
+      statusRef.current = "idle";
+
+      setDuration(seconds);
+      setCustomTime(seconds);
 
       setStatus("idle");
       setClicks(0);
       setCps(0);
       setGraph([]);
       setClickDots([]);
-      setPeak(0);
-      setConsistency(0);
-      setIntervalMs(0);
-      setElapsedFinal(0);
 
-      setTimeLeft(
-        durationRef.current
-      );
-    }, [stopTimers]);
+      setTimeLeft(seconds);
+    },
+    [stopTimers]
+  );
 
-  const changeDuration =
-    useCallback(
-      (seconds: number) => {
-        if (
-          statusRef.current ===
-          "running"
-        ) {
-          return;
-        }
+  const changeMode = useCallback(
+    (newMode: Mode) => {
+      if (
+        statusRef.current ===
+        "running"
+      ) {
+        return;
+      }
 
-        stopTimers();
+      modeRef.current =
+        newMode;
 
-        durationRef.current =
-          seconds;
+      setMode(newMode);
 
-        startRef.current =
-          null;
-
-        statusRef.current =
-          "idle";
-
-        setDuration(
-          seconds
-        );
-
-        setCustomTime(
-          seconds
-        );
-
-        setStatus("idle");
-        setClicks(0);
-        setCps(0);
-        setGraph([]);
-        setClickDots([]);
-
-        setTimeLeft(
-          seconds
-        );
-      },
-      [stopTimers]
-    );
-
-  const changeMode =
-    useCallback(
-      (newMode: Mode) => {
-        if (
-          statusRef.current ===
-          "running"
-        ) {
-          return;
-        }
-
-        modeRef.current =
-          newMode;
-
-        setMode(
-          newMode
-        );
-
-        resetTest();
-      },
-      [resetTest]
-    );
+      resetTest();
+    },
+    [resetTest]
+  );
 
   const handleClick = (
     event: ReactPointerEvent<HTMLDivElement>
   ) => {
     if (
-      event.pointerType ===
-      "mouse"
+      event.pointerType === "mouse"
     ) {
-      setInputType(
-        "Mouse"
-      );
+      setInputType("Mouse");
     } else if (
-      event.pointerType ===
-      "touch"
+      event.pointerType === "touch"
     ) {
-      setInputType(
-        "Touch"
-      );
+      setInputType("Touch");
     } else {
-      setInputType(
-        "Pen"
-      );
+      setInputType("Pen");
     }
 
     if (
-      statusRef.current ===
-      "done"
+      statusRef.current === "done"
     ) {
       resetTest();
       return;
     }
 
     if (
-      statusRef.current ===
-      "idle"
+      statusRef.current === "idle"
     ) {
       startTest();
     }
@@ -634,13 +595,12 @@ export default function CPSTestClient() {
     ]);
 
     window.setTimeout(() => {
-      setClickDots(
-        (old) =>
-          old.filter(
-            (item) =>
-              item.id !==
-              dot.id
-          )
+      setClickDots((old) =>
+        old.filter(
+          (item) =>
+            item.id !==
+            dot.id
+        )
       );
     }, 450);
 
@@ -649,62 +609,53 @@ export default function CPSTestClient() {
         clickTimesRef.current
       );
 
-    setPeak(
-      stats.peak
-    );
-
+    setPeak(stats.peak);
     setConsistency(
       stats.consistency
     );
-
     setIntervalMs(
       stats.interval
     );
 
     if (
-      modeRef.current ===
-        "target" &&
-      clicksRef.current >=
-        100
+      modeRef.current === "target" &&
+      clicksRef.current >= 100
     ) {
       finishRef.current();
     }
   };
 
-  const shareResult =
-    async () => {
-      const text =
-        `I scored ${cps.toFixed(
-          2
-        )} CPS on thenexoratools CPS Test. ` +
-        `Peak ${peak.toFixed(
-          1
-        )} CPS with ${consistency.toFixed(
-          0
-        )}% consistency.`;
+  const shareResult = async () => {
+    const text =
+      `I scored ${cps.toFixed(
+        2
+      )} CPS on thenexoratools CPS Test. ` +
+      `Peak ${peak.toFixed(
+        1
+      )} CPS with ${consistency.toFixed(
+        0
+      )}% consistency.`;
 
-      try {
-        if (
-          navigator.share
-        ) {
-          await navigator.share({
-            title:
-              "CPS Test Result",
-            text,
-            url:
-              window.location.href,
-          });
-        } else {
-          await navigator.clipboard.writeText(
-            `${text} ${window.location.href}`
-          );
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title:
+            "CPS Test Result",
+          text,
+          url:
+            window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(
+          `${text} ${window.location.href}`
+        );
 
-          window.alert(
-            "Result copied!"
-          );
-        }
-      } catch {}
-    };
+        window.alert(
+          "Result copied!"
+        );
+      }
+    } catch {}
+  };
 
   const getPerformance =
     (score: number) => {
@@ -767,7 +718,13 @@ export default function CPSTestClient() {
       };
     };
 
-  const performance =
+  /*
+   * IMPORTANT:
+   * Do not name this variable "performance".
+   * The browser already has a global performance object
+   * used by performance.now().
+   */
+  const performanceResult =
     status === "done"
       ? getPerformance(cps)
       : null;
@@ -1134,7 +1091,8 @@ export default function CPSTestClient() {
                 0.35
               );
           pointer-events: none;
-          animation: clickDot
+          animation:
+            clickDot
             0.45s ease-out
             forwards;
           z-index: 5;
@@ -1189,9 +1147,7 @@ export default function CPSTestClient() {
           font-weight: 950;
         }
 
-        .stat:nth-child(
-            2
-          )
+        .stat:nth-child(2)
           .value {
           color: #16a34a;
         }
@@ -1232,8 +1188,7 @@ export default function CPSTestClient() {
           flex: 1;
           min-width: 3px;
           max-width: 12px;
-          border-radius: 4px
-            4px 0 0;
+          border-radius: 4px 4px 0 0;
         }
 
         .metrics {
@@ -1488,8 +1443,7 @@ export default function CPSTestClient() {
 
         @media (max-width: 620px) {
           .page {
-            padding: 13px 10px
-              45px;
+            padding: 13px 10px 45px;
           }
 
           .top {
@@ -1607,9 +1561,7 @@ export default function CPSTestClient() {
                 : ""
             }`}
             onClick={() =>
-              changeMode(
-                "time"
-              )
+              changeMode("time")
             }
           >
             Time Test
@@ -1622,9 +1574,7 @@ export default function CPSTestClient() {
                 : ""
             }`}
             onClick={() =>
-              changeMode(
-                "target"
-              )
+              changeMode("target")
             }
           >
             100 Click Challenge
@@ -1637,9 +1587,7 @@ export default function CPSTestClient() {
               {DURATIONS.map(
                 (seconds) => (
                   <button
-                    key={
-                      seconds
-                    }
+                    key={seconds}
                     className={`duration ${
                       duration ===
                       seconds
@@ -1664,8 +1612,7 @@ export default function CPSTestClient() {
 
             <div className="custom">
               <label>
-                CUSTOM TEST TIME:
-                {" "}
+                CUSTOM TEST TIME:{" "}
                 {customTime}{" "}
                 SECONDS
               </label>
@@ -1674,20 +1621,15 @@ export default function CPSTestClient() {
                 type="range"
                 min={1}
                 max={60}
-                value={
-                  customTime
-                }
+                value={customTime}
                 disabled={
                   status ===
                   "running"
                 }
-                onChange={(
-                  event
-                ) => {
+                onChange={(event) => {
                   const value =
                     Number(
-                      event
-                        .target
+                      event.target
                         .value
                     );
 
@@ -1719,10 +1661,9 @@ export default function CPSTestClient() {
                   "6px 0 0",
               }}
             >
-              Click 100 times
-              as quickly as
-              possible. Your
-              completion time
+              Click 100 times as
+              quickly as possible.
+              Your completion time
               and CPS will be
               calculated
               automatically.
@@ -1732,11 +1673,9 @@ export default function CPSTestClient() {
 
         <div
           className={`clickArea ${
-            status ===
-            "running"
+            status === "running"
               ? "running"
-              : status ===
-                "done"
+              : status === "done"
                 ? "done"
                 : ""
           }`}
@@ -1750,17 +1689,13 @@ export default function CPSTestClient() {
           {clickDots.map(
             (dot) => (
               <span
-                key={
-                  dot.id
-                }
+                key={dot.id}
                 className="clickDot"
                 style={{
                   left:
-                    dot.x -
-                    6.5,
+                    dot.x - 6.5,
                   top:
-                    dot.y -
-                    6.5,
+                    dot.y - 6.5,
                 }}
               />
             )
@@ -1769,8 +1704,7 @@ export default function CPSTestClient() {
           <div className="timer">
             {status ===
             "running"
-              ? mode ===
-                "time"
+              ? mode === "time"
                 ? `${timeLeft.toFixed(
                     1
                   )}s`
@@ -1789,34 +1723,28 @@ export default function CPSTestClient() {
           </div>
 
           <div className="instruction">
-            {status ===
-              "idle" &&
+            {status === "idle" &&
               "CLICK ANYWHERE TO START"}
 
-            {status ===
-              "running" &&
+            {status === "running" &&
               "CLICK AS FAST AS YOU CAN"}
 
-            {status ===
-              "done" &&
+            {status === "done" &&
               `${cps.toFixed(
                 2
               )} CPS`}
           </div>
 
           <div className="hint">
-            {status ===
-              "idle" &&
+            {status === "idle" &&
               "Your first click starts the test"}
 
-            {status ===
-              "running" &&
+            {status === "running" &&
               `Current ${cps.toFixed(
                 2
               )} CPS • ${inputType}`}
 
-            {status ===
-              "done" &&
+            {status === "done" &&
               "Your result is ready below"}
           </div>
 
@@ -1843,9 +1771,7 @@ export default function CPSTestClient() {
 
           <div className="stat">
             <span className="value">
-              {cps.toFixed(
-                2
-              )}
+              {cps.toFixed(2)}
             </span>
 
             <span className="label">
@@ -1855,14 +1781,11 @@ export default function CPSTestClient() {
 
           <div className="stat">
             <span className="value">
-              {currentPB.toFixed(
-                2
-              )}
+              {currentPB.toFixed(2)}
             </span>
 
             <span className="label">
-              {mode ===
-              "time"
+              {mode === "time"
                 ? `${duration}s BEST`
                 : "100 CLICK BEST"}
             </span>
@@ -1870,33 +1793,31 @@ export default function CPSTestClient() {
 
           <div className="stat">
             <span className="value">
-              {mode ===
-              "time"
+              {mode === "time"
                 ? `${timeLeft.toFixed(
                     1
                   )}s`
-                : status ===
-                    "done"
+                : status === "done"
                   ? `${elapsedFinal.toFixed(
                       2
                     )}s`
-                  : `${100 - clicks}`}
+                  : `${Math.max(
+                      0,
+                      100 - clicks
+                    )}`}
             </span>
 
             <span className="label">
-              {mode ===
-              "time"
+              {mode === "time"
                 ? "TIME LEFT"
-                : status ===
-                    "done"
+                : status === "done"
                   ? "TOTAL TIME"
                   : "CLICKS LEFT"}
             </span>
           </div>
         </div>
 
-        {graph.length >
-          2 && (
+        {graph.length > 2 && (
           <section className="panel">
             <div className="panelTitle">
               Live Performance
@@ -1923,20 +1844,17 @@ export default function CPSTestClient() {
                     "#16a34a";
 
                   if (
-                    value >=
-                    10
+                    value >= 10
                   ) {
                     background =
                       "#dc2626";
                   } else if (
-                    value >=
-                    7
+                    value >= 7
                   ) {
                     background =
                       "#9333ea";
                   } else if (
-                    value >=
-                    5
+                    value >= 5
                   ) {
                     background =
                       "#16a34a";
@@ -1965,6 +1883,7 @@ export default function CPSTestClient() {
                     1
                   )}
                 </strong>
+
                 <span>
                   PEAK CPS
                 </span>
@@ -1976,6 +1895,7 @@ export default function CPSTestClient() {
                     2
                   )}
                 </strong>
+
                 <span>
                   AVERAGE CPS
                 </span>
@@ -1988,6 +1908,7 @@ export default function CPSTestClient() {
                   )}
                   %
                 </strong>
+
                 <span>
                   CONSISTENCY
                 </span>
@@ -2001,6 +1922,7 @@ export default function CPSTestClient() {
                       )}ms`
                     : "—"}
                 </strong>
+
                 <span>
                   AVG INTERVAL
                 </span>
@@ -2009,14 +1931,11 @@ export default function CPSTestClient() {
           </section>
         )}
 
-        {status ===
-          "done" &&
-          performance && (
+        {status === "done" &&
+          performanceResult && (
             <section className="result">
               <div className="resultScore">
-                {cps.toFixed(
-                  2
-                )}
+                {cps.toFixed(2)}
               </div>
 
               <div className="resultSmall">
@@ -2029,15 +1948,15 @@ export default function CPSTestClient() {
               </div>
 
               <div className="rank">
-                {performance.icon}{" "}
+                {performanceResult.icon}{" "}
                 {
-                  performance.title
+                  performanceResult.title
                 }
               </div>
 
               <p className="rankDesc">
                 {
-                  performance.desc
+                  performanceResult.desc
                 }
               </p>
 
@@ -2050,19 +1969,15 @@ export default function CPSTestClient() {
                 </span>
 
                 <span className="infoChip">
-                  {
-                    consistency.toFixed(
-                      0
-                    )
-                  }
+                  {consistency.toFixed(
+                    0
+                  )}
                   % Consistency
                 </span>
 
                 <span className="infoChip">
                   Input:{" "}
-                  {
-                    inputType
-                  }
+                  {inputType}
                 </span>
               </div>
 
@@ -2088,8 +2003,7 @@ export default function CPSTestClient() {
             </section>
           )}
 
-        {status !==
-          "done" && (
+        {status !== "done" && (
           <div className="buttons">
             <button
               className="action green"
@@ -2127,8 +2041,7 @@ export default function CPSTestClient() {
           </button>
         </div>
 
-        {history.length >
-          0 && (
+        {history.length > 0 && (
           <section className="panel history">
             <div className="historyTitle">
               LAST 10 SCORES
@@ -2241,8 +2154,7 @@ export default function CPSTestClient() {
         </section>
 
         <footer className="footer">
-          ©{" "}
-          {new Date().getFullYear()}{" "}
+          © {new Date().getFullYear()}{" "}
           thenexoratools
         </footer>
       </div>
