@@ -4,199 +4,329 @@ import {
   PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 type GameState =
   | "idle"
-  | "waiting"
-  | "ready"
-  | "result";
+  | "playing"
+  | "finished"
+  | "failed";
 
-type Round = {
-  number: number;
+type TargetType = "red" | "yellow";
+
+type RoundResult = {
+  round: number;
   time: number;
 };
 
-const TOTAL_ROUNDS = 5;
-const PB_KEY = "nexora_reaction_best_v2";
+const TOTAL_ROUNDS = 10;
+const TOTAL_DOTS = 20;
+const BEST_KEY = "nexora_reaction_target_best_v1";
 
 export default function ReactionClient() {
-  const [state, setState] =
+  const [gameState, setGameState] =
     useState<GameState>("idle");
 
   const [round, setRound] = useState(0);
 
   const [results, setResults] =
-    useState<Round[]>([]);
+    useState<RoundResult[]>([]);
 
-  const [lastTime, setLastTime] =
+  const [activeTarget, setActiveTarget] =
     useState<number | null>(null);
 
-  const [falseStarts, setFalseStarts] =
-    useState(0);
+  const [targetType, setTargetType] =
+    useState<TargetType>("red");
 
-  const [personalBest, setPersonalBest] =
+  const [lastReaction, setLastReaction] =
     useState<number | null>(null);
 
-  const [device, setDevice] =
-    useState("Touch");
+  const [bestScore, setBestScore] =
+    useState<number | null>(null);
 
   const [message, setMessage] =
-    useState("Tap to start");
+    useState("Tap to begin");
 
-  const [countdown, setCountdown] =
+  const [trapEnabled, setTrapEnabled] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] =
     useState("");
 
-  const timerRef =
-    useRef<ReturnType<
-      typeof setTimeout
-    > | null>(null);
-
-  const startTimeRef =
+  const targetStartRef =
     useRef<number | null>(null);
 
-  const currentRoundRef =
+  const roundRef =
     useRef(0);
 
   const stateRef =
     useRef<GameState>("idle");
 
-  const resultsRef =
-    useRef<Round[]>([]);
+  const targetRef =
+    useRef<number | null>(null);
 
-  const falseStartsRef =
-    useRef(0);
+  const targetTypeRef =
+    useRef<TargetType>("red");
+
+  const lockedRef =
+    useRef(false);
+
+  const resultsRef =
+    useRef<RoundResult[]>([]);
+
+  const trapTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
 
   /* --------------------------------
-     LOAD PERSONAL BEST
+     LOAD BEST
   -------------------------------- */
 
   useEffect(() => {
     try {
       const saved =
-        localStorage.getItem(
-          PB_KEY,
-        );
+        localStorage.getItem(BEST_KEY);
 
       if (saved) {
-        const value =
-          Number(saved);
+        const value = Number(saved);
 
         if (
           Number.isFinite(value) &&
           value > 0
         ) {
-          setPersonalBest(value);
+          setBestScore(value);
         }
       }
     } catch {}
 
-    if (
-      typeof window !==
-      "undefined"
-    ) {
-      const touch =
-        "ontouchstart" in window ||
-        navigator.maxTouchPoints >
-          0;
-
-      setDevice(
-        touch
-          ? "Touch"
-          : "Mouse",
-      );
-    }
-
     return () => {
-      if (timerRef.current) {
+      if (trapTimerRef.current) {
         clearTimeout(
-          timerRef.current,
+          trapTimerRef.current,
         );
       }
     };
   }, []);
 
   /* --------------------------------
-     KEEP REFS IN SYNC
+     SYNC STATE REFS
   -------------------------------- */
 
   useEffect(() => {
     stateRef.current =
-      state;
-  }, [state]);
+      gameState;
+  }, [gameState]);
 
   /* --------------------------------
-     RANDOM WAIT
+     RANDOM DOT
   -------------------------------- */
 
-  const randomDelay =
-    () => {
-      return (
-        1600 +
-        Math.random() * 3000
+  const getRandomDot =
+    useCallback(() => {
+      return Math.floor(
+        Math.random() *
+          TOTAL_DOTS,
       );
-    };
+    }, []);
+
+  /* --------------------------------
+     CLEAR TRAP TIMER
+  -------------------------------- */
+
+  const clearTrapTimer =
+    useCallback(() => {
+      if (
+        trapTimerRef.current
+      ) {
+        clearTimeout(
+          trapTimerRef.current,
+        );
+
+        trapTimerRef.current =
+          null;
+      }
+    }, []);
 
   /* --------------------------------
      START ROUND
   -------------------------------- */
 
-  const beginRound =
+  const startRound =
     useCallback(
       (roundNumber: number) => {
-        if (
-          timerRef.current
-        ) {
-          clearTimeout(
-            timerRef.current,
-          );
-        }
+        clearTrapTimer();
 
-        currentRoundRef.current =
+        lockedRef.current =
+          false;
+
+        roundRef.current =
           roundNumber;
 
         setRound(
           roundNumber,
         );
 
-        setLastTime(null);
-        setMessage(
-          "Wait for green",
+        setLastReaction(
+          null,
         );
-        setCountdown("");
-        setState("waiting");
+
+        setErrorMessage("");
+
+        /*
+          Always choose a new position
+          different from the previous one.
+        */
+        let nextDot =
+          getRandomDot();
+
+        if (
+          nextDot ===
+          targetRef.current
+        ) {
+          nextDot =
+            (nextDot + 1) %
+            TOTAL_DOTS;
+        }
+
+        /*
+          Most rounds are normal red targets.
+          Some rounds also include a yellow trap.
+        */
+        const showTrap =
+          Math.random() <
+          0.42;
+
+        setTrapEnabled(
+          showTrap,
+        );
+
+        const nextType: TargetType =
+          "red";
+
+        targetRef.current =
+          nextDot;
+
+        targetTypeRef.current =
+          nextType;
+
+        setActiveTarget(
+          nextDot,
+        );
+
+        setTargetType(
+          nextType,
+        );
+
+        setMessage(
+          "Tap the red target",
+        );
+
+        setGameState(
+          "playing",
+        );
 
         stateRef.current =
-          "waiting";
+          "playing";
 
-        const delay =
-          randomDelay();
+        /*
+          Start the timer only after
+          the new target is rendered.
+        */
+        requestAnimationFrame(() => {
+          targetStartRef.current =
+            performance.now();
+        });
 
-        timerRef.current =
-          setTimeout(() => {
-            if (
-              stateRef.current !==
-              "waiting"
-            ) {
-              return;
-            }
+        /*
+          If trap mode is enabled,
+          a second dot becomes yellow
+          after a short random delay.
+        */
+        if (showTrap) {
+          trapTimerRef.current =
+            setTimeout(() => {
+              if (
+                stateRef.current !==
+                  "playing" ||
+                lockedRef.current
+              ) {
+                return;
+              }
 
-            startTimeRef.current =
-              performance.now();
+              let trapDot =
+                getRandomDot();
 
-            setState("ready");
+              while (
+                trapDot ===
+                targetRef.current
+              ) {
+                trapDot =
+                  getRandomDot();
+              }
 
-            stateRef.current =
-              "ready";
+              /*
+                We use the same active
+                target state for the visible
+                trap and keep the red target
+                remembered separately through
+                the DOM data attribute.
+              */
+              setActiveTarget(
+                trapDot,
+              );
 
-            setMessage(
-              "CLICK NOW",
-            );
-          }, delay);
+              setTargetType(
+                "yellow",
+              );
+
+              targetTypeRef.current =
+                "yellow";
+
+              setMessage(
+                "RED = GO • YELLOW = OUT",
+              );
+
+              /*
+                Give the player a short
+                window to notice the trap.
+                Then restore the red target.
+              */
+              trapTimerRef.current =
+                setTimeout(() => {
+                  if (
+                    stateRef.current !==
+                      "playing" ||
+                    lockedRef.current
+                  ) {
+                    return;
+                  }
+
+                  setActiveTarget(
+                    targetRef.current,
+                  );
+
+                  setTargetType(
+                    "red",
+                  );
+
+                  targetTypeRef.current =
+                    "red";
+
+                  setMessage(
+                    "Tap the red target",
+                  );
+                }, 650);
+            }, 500 + Math.random() * 850);
+        }
       },
-      [],
+      [
+        clearTrapTimer,
+        getRandomDot,
+      ],
     );
 
   /* --------------------------------
@@ -205,129 +335,243 @@ export default function ReactionClient() {
 
   const startGame =
     useCallback(() => {
-      if (
-        stateRef.current ===
-        "waiting"
-      ) {
-        return;
-      }
+      clearTrapTimer();
 
-      if (
-        stateRef.current ===
-        "ready"
-      ) {
-        return;
-      }
+      lockedRef.current =
+        false;
 
       resultsRef.current =
         [];
 
-      falseStartsRef.current =
-        0;
-
-      currentRoundRef.current =
-        1;
-
       setResults([]);
-      setFalseStarts(0);
-      setRound(1);
-      setLastTime(null);
-      setState("waiting");
 
-      stateRef.current =
-        "waiting";
-
-      beginRound(1);
-    }, [beginRound]);
-
-  /* --------------------------------
-     FALSE START
-  -------------------------------- */
-
-  const falseStart =
-    useCallback(() => {
-      falseStartsRef.current +=
-        1;
-
-      setFalseStarts(
-        falseStartsRef.current,
+      setBestScore(
+        (current) =>
+          current,
       );
 
-      if (
-        timerRef.current
-      ) {
-        clearTimeout(
-          timerRef.current,
-        );
-      }
+      setRound(1);
+
+      roundRef.current =
+        1;
+
+      setLastReaction(
+        null,
+      );
+
+      setErrorMessage("");
 
       setMessage(
-        "Too early!",
+        "Get ready...",
       );
 
-      setCountdown(
-        "Wait for green",
+      /*
+        Tiny start delay gives the
+        player a clean beginning.
+      */
+      setGameState(
+        "playing",
       );
 
-      timerRef.current =
-        setTimeout(() => {
-          beginRound(
-            currentRoundRef.current,
-          );
-        }, 700);
-    }, [beginRound]);
+      stateRef.current =
+        "playing";
+
+      setTimeout(() => {
+        startRound(1);
+      }, 450);
+    }, [
+      clearTrapTimer,
+      startRound,
+    ]);
 
   /* --------------------------------
-     HANDLE REACTION
+     FINISH SUCCESS
   -------------------------------- */
 
-  const handleGameAction =
-    (
-      e?: ReactPointerEvent<HTMLDivElement>,
-    ) => {
-      if (
-        e?.pointerType ===
-        "mouse" &&
-        e.button !== 0
-      ) {
-        return;
-      }
+  const finishSuccess =
+    useCallback(
+      (
+        finalResults: RoundResult[],
+      ) => {
+        clearTrapTimer();
 
-      const current =
-        stateRef.current;
+        if (
+          finalResults.length !==
+          TOTAL_ROUNDS
+        ) {
+          return;
+        }
 
-      /* IDLE */
+        const times =
+          finalResults.map(
+            (item) =>
+              item.time,
+          );
 
-      if (
-        current ===
-        "idle"
-      ) {
-        startGame();
-        return;
-      }
+        const average =
+          Math.round(
+            times.reduce(
+              (sum, value) =>
+                sum + value,
+              0,
+            ) /
+              times.length,
+          );
 
-      /* WAITING */
+        try {
+          const old =
+            Number(
+              localStorage.getItem(
+                BEST_KEY,
+              ),
+            );
 
-      if (
-        current ===
-        "waiting"
-      ) {
-        falseStart();
-        return;
-      }
+          if (
+            !old ||
+            average < old
+          ) {
+            localStorage.setItem(
+              BEST_KEY,
+              String(
+                average,
+              ),
+            );
 
-      /* READY */
+            setBestScore(
+              average,
+            );
+          }
+        } catch {}
 
-      if (
-        current ===
-        "ready"
-      ) {
+        setActiveTarget(
+          null,
+        );
+
+        setTargetType(
+          "red",
+        );
+
+        setLastReaction(
+          null,
+        );
+
+        setMessage(
+          "Challenge complete",
+        );
+
+        setGameState(
+          "finished",
+        );
+
+        stateRef.current =
+          "finished";
+      },
+      [
+        clearTrapTimer,
+      ],
+    );
+
+  /* --------------------------------
+     FAIL GAME
+  -------------------------------- */
+
+  const failGame =
+    useCallback(() => {
+      clearTrapTimer();
+
+      lockedRef.current =
+        true;
+
+      setActiveTarget(
+        null,
+      );
+
+      setErrorMessage(
+        "You touched the yellow trap.",
+      );
+
+      setMessage(
+        "Challenge failed",
+      );
+
+      setGameState(
+        "failed",
+      );
+
+      stateRef.current =
+        "failed";
+    }, [
+      clearTrapTimer,
+    ]);
+
+  /* --------------------------------
+     HANDLE DOT CLICK
+  -------------------------------- */
+
+  const handleDotPress =
+    useCallback(
+      (
+        dotIndex: number,
+        event?: ReactPointerEvent<HTMLButtonElement>,
+      ) => {
+        if (
+          event?.pointerType ===
+            "mouse" &&
+          event.button !== 0
+        ) {
+          return;
+        }
+
+        if (
+          stateRef.current !==
+          "playing"
+        ) {
+          return;
+        }
+
+        if (
+          lockedRef.current
+        ) {
+          return;
+        }
+
+        /*
+          Only the visible active
+          target can produce an action.
+        */
+        if (
+          dotIndex !==
+          activeTarget
+        ) {
+          return;
+        }
+
+        lockedRef.current =
+          true;
+
+        /*
+          Yellow = instant failure.
+        */
+        if (
+          targetTypeRef.current ===
+          "yellow"
+        ) {
+          failGame();
+          return;
+        }
+
+        /*
+          Red = successful reaction.
+        */
         const start =
-          startTimeRef.current;
+          targetStartRef.current;
 
         if (
           start === null
         ) {
+          lockedRef.current =
+            false;
+
           return;
         }
 
@@ -343,141 +587,76 @@ export default function ReactionClient() {
             ),
           );
 
-        const newRound: Round = {
-          number:
-            currentRoundRef.current,
-          time: clean,
-        };
+        const newResult: RoundResult =
+          {
+            round:
+              roundRef.current,
+            time: clean,
+          };
 
-        const updated = [
-          ...resultsRef.current,
-          newRound,
-        ];
+        const updatedResults =
+          [
+            ...resultsRef.current,
+            newResult,
+          ];
 
         resultsRef.current =
-          updated;
+          updatedResults;
 
         setResults(
-          updated,
+          updatedResults,
         );
 
-        setLastTime(clean);
+        setLastReaction(
+          clean,
+        );
 
         if (
-          currentRoundRef.current <
+          roundRef.current >=
           TOTAL_ROUNDS
         ) {
-          const nextRound =
-            currentRoundRef.current +
-            1;
+          finishSuccess(
+            updatedResults,
+          );
 
-          currentRoundRef.current =
-            nextRound;
+          return;
+        }
 
-          setRound(
+        const nextRound =
+          roundRef.current +
+          1;
+
+        /*
+          Short transition before
+          next target appears.
+        */
+        setMessage(
+          `${clean} ms • Next target...`,
+        );
+
+        setTimeout(() => {
+          lockedRef.current =
+            false;
+
+          startRound(
             nextRound,
           );
-
-          setState(
-            "waiting",
-          );
-
-          stateRef.current =
-            "waiting";
-
-          setMessage(
-            "Next round...",
-          );
-
-          timerRef.current =
-            setTimeout(() => {
-              beginRound(
-                nextRound,
-              );
-            }, 650);
-        } else {
-          finishGame(
-            updated,
-          );
-        }
-      }
-    };
-
-  /* --------------------------------
-     FINISH
-  -------------------------------- */
-
-  const finishGame =
-    (finalResults: Round[]) => {
-      if (
-        finalResults.length !==
-        TOTAL_ROUNDS
-      ) {
-        return;
-      }
-
-      const times =
-        finalResults.map(
-          (r) => r.time,
-        );
-
-      const average =
-        times.reduce(
-          (a, b) =>
-            a + b,
-          0,
-        ) /
-        times.length;
-
-      const roundedAverage =
-        Math.round(
-          average,
-        );
-
-      try {
-        const old =
-          Number(
-            localStorage.getItem(
-              PB_KEY,
-            ),
-          );
-
-        if (
-          !old ||
-          roundedAverage <
-            old
-        ) {
-          localStorage.setItem(
-            PB_KEY,
-            String(
-              roundedAverage,
-            ),
-          );
-
-          setPersonalBest(
-            roundedAverage,
-          );
-        }
-      } catch {}
-
-      setState(
-        "result",
-      );
-
-      stateRef.current =
-        "result";
-
-      setMessage(
-        "Complete",
-      );
-    };
+        }, 350);
+      },
+      [
+        activeTarget,
+        failGame,
+        finishSuccess,
+        startRound,
+      ],
+    );
 
   /* --------------------------------
      KEYBOARD
   -------------------------------- */
 
   useEffect(() => {
-    const onKeyDown =
+    const handleKey =
       (event: KeyboardEvent) => {
         if (
           event.code !==
@@ -490,21 +669,28 @@ export default function ReactionClient() {
 
         event.preventDefault();
 
-        handleGameAction();
+        if (
+          stateRef.current ===
+          "idle"
+        ) {
+          startGame();
+        }
       };
 
     window.addEventListener(
       "keydown",
-      onKeyDown,
+      handleKey,
     );
 
     return () => {
       window.removeEventListener(
         "keydown",
-        onKeyDown,
+        handleKey,
       );
     };
-  });
+  }, [
+    startGame,
+  ]);
 
   /* --------------------------------
      CALCULATIONS
@@ -512,15 +698,16 @@ export default function ReactionClient() {
 
   const times =
     results.map(
-      (r) => r.time,
+      (item) =>
+        item.time,
     );
 
   const average =
     times.length
       ? Math.round(
           times.reduce(
-            (a, b) =>
-              a + b,
+            (sum, value) =>
+              sum + value,
             0,
           ) /
             times.length,
@@ -534,132 +721,102 @@ export default function ReactionClient() {
         )
       : 0;
 
-  const worstRound =
+  const slowestRound =
     times.length
       ? Math.max(
           ...times,
         )
       : 0;
 
-  const sorted =
-    [...times].sort(
-      (a, b) =>
-        a - b,
-    );
+  const consistency =
+    useMemo(() => {
+      if (
+        times.length <
+        2
+      ) {
+        return 100;
+      }
 
-  const median =
-    sorted.length
-      ? sorted[
-          Math.floor(
-            sorted.length /
+      const mean =
+        times.reduce(
+          (sum, value) =>
+            sum + value,
+          0,
+        ) /
+        times.length;
+
+      const variance =
+        times.reduce(
+          (sum, value) =>
+            sum +
+            Math.pow(
+              value -
+                mean,
               2,
-          )
-        ]
-      : 0;
+            ),
+          0,
+        ) /
+        times.length;
 
-  let consistency = 100;
+      const deviation =
+        Math.sqrt(
+          variance,
+        );
 
-  if (
-    times.length >= 2
-  ) {
-    const variance =
-      times.reduce(
-        (sum, value) =>
-          sum +
-          Math.pow(
-            value -
-              average,
-            2,
-          ),
-        0,
-      ) /
-      times.length;
-
-    const deviation =
-      Math.sqrt(
-        variance,
-      );
-
-    consistency =
-      Math.max(
+      return Math.max(
         0,
         Math.min(
           100,
           100 -
             (deviation /
               Math.max(
-                average,
+                mean,
                 1,
               )) *
               100,
         ),
       );
-  }
-
-  const getRating =
-    (ms: number) => {
-      if (
-        ms < 150
-      ) {
-        return {
-          title:
-            "Exceptional",
-          icon: "⚡",
-        };
-      }
-
-      if (
-        ms < 200
-      ) {
-        return {
-          title:
-            "Excellent",
-          icon: "🔥",
-        };
-      }
-
-      if (
-        ms < 250
-      ) {
-        return {
-          title:
-            "Very Fast",
-          icon: "🚀",
-        };
-      }
-
-      if (
-        ms < 300
-      ) {
-        return {
-          title:
-            "Fast",
-          icon: "👍",
-        };
-      }
-
-      if (
-        ms < 400
-      ) {
-        return {
-          title:
-            "Average",
-          icon: "🎯",
-        };
-      }
-
-      return {
-        title:
-          "Keep Practicing",
-        icon: "💪",
-      };
-    };
+    }, [
+      times,
+    ]);
 
   const rating =
-    average
-      ? getRating(
-          average,
-        )
+    average > 0
+      ? average < 180
+        ? {
+            title:
+              "Exceptional Reflexes",
+            icon: "⚡",
+          }
+        : average < 220
+          ? {
+              title:
+                "Excellent Reaction",
+              icon: "🔥",
+            }
+          : average < 280
+            ? {
+                title:
+                  "Very Fast",
+                icon: "🚀",
+              }
+            : average < 350
+              ? {
+                  title:
+                    "Fast Reaction",
+                  icon: "🎯",
+                }
+              : average < 450
+                ? {
+                    title:
+                      "Good Start",
+                    icon: "👍",
+                  }
+                : {
+                    title:
+                      "Keep Practicing",
+                    icon: "💪",
+                  }
       : null;
 
   /* --------------------------------
@@ -668,12 +825,14 @@ export default function ReactionClient() {
 
   const shareResult =
     async () => {
-      if (!average) {
+      if (
+        !average
+      ) {
         return;
       }
 
       const text =
-        `My reaction time is ${average}ms on the NEXORA Reaction Time Test. Can you beat me?`;
+        `I scored an average reaction time of ${average}ms on the thenexoratools Reaction Target Test. Can you beat me?`;
 
       try {
         if (
@@ -682,13 +841,15 @@ export default function ReactionClient() {
           await navigator.share(
             {
               title:
-                "NEXORA Reaction Time Test",
+                "Reaction Target Test",
               text,
               url:
                 window.location.href,
             },
           );
-        } else {
+        } else if (
+          navigator.clipboard
+        ) {
           await navigator.clipboard.writeText(
             `${text} ${window.location.href}`,
           );
@@ -701,389 +862,1032 @@ export default function ReactionClient() {
     };
 
   /* --------------------------------
-     PLAY SCREEN
+     RESTART
+  -------------------------------- */
+
+  const restart =
+    () => {
+      clearTrapTimer();
+
+      lockedRef.current =
+        false;
+
+      resultsRef.current =
+        [];
+
+      setResults([]);
+
+      setRound(0);
+
+      setLastReaction(
+        null,
+      );
+
+      setActiveTarget(
+        null,
+      );
+
+      setErrorMessage("");
+
+      setMessage(
+        "Tap to begin",
+      );
+
+      setGameState(
+        "idle",
+      );
+
+      stateRef.current =
+        "idle";
+    };
+
+  /* --------------------------------
+     IDLE SCREEN
   -------------------------------- */
 
   if (
-    state !== "result"
+    gameState ===
+    "idle"
   ) {
     return (
-      <main className="gamePage">
+      <main className="page">
         <style jsx>{`
-          .gamePage {
+          .page {
             min-height: 100svh;
-            background:
-              #070b12;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding:
-              18px;
+            background: #fff;
+            color: #111827;
             font-family:
               Inter,
               -apple-system,
               BlinkMacSystemFont,
               "Segoe UI",
               sans-serif;
-            overflow: hidden;
+            padding: 16px;
           }
 
-          .gameWrap {
+          .container {
             width: 100%;
-            max-width: 900px;
-            min-height:
-              calc(
-                100svh - 36px
-              );
+            max-width: 1180px;
+            margin: 0 auto;
+          }
+
+          .topbar {
+            height: 42px;
             display: flex;
-            flex-direction: column;
-            justify-content:
-              center;
             align-items: center;
+            justify-content: space-between;
           }
 
           .brand {
-            position: absolute;
-            top: 17px;
-            left: 18px;
-            font-size: 14px;
-            font-weight: 950;
-            letter-spacing: -.3px;
-          }
-
-          .brand span {
-            color:
-              #22c55e;
-          }
-
-          .round {
-            position: absolute;
-            top: 17px;
-            right: 18px;
-            color:
-              #64748b;
-            font-size: 11px;
+            font-size: 15px;
             font-weight: 900;
+            letter-spacing: -0.5px;
+            color: #111827;
           }
 
-          .intro {
+          .brandDot {
+            color: #16a34a;
+          }
+
+          .mini {
+            color: #64748b;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+          }
+
+          .hero {
             text-align: center;
-            margin-bottom: 22px;
+            padding:
+              34px 12px 20px;
           }
 
-          .intro h1 {
-            margin: 0;
+          .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #16a34a;
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 8px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+          }
+
+          h1 {
+            margin:
+              13px 0 7px;
             font-size:
               clamp(
-                28px,
-                7vw,
-                48px
+                29px,
+                6vw,
+                54px
               );
-            line-height: 1;
-            letter-spacing:
-              -1.8px;
+            line-height: 0.95;
+            letter-spacing: -2.5px;
+            font-weight: 950;
+            color: #111827;
           }
 
-          .intro h1 span {
-            color:
-              #22c55e;
+          h1 span {
+            color: #16a34a;
           }
 
-          .intro p {
-            margin:
-              9px auto 0;
-            max-width: 520px;
-            color:
-              #64748b;
-            font-size: 12px;
-            line-height: 1.5;
+          .subtitle {
+            max-width: 540px;
+            margin: 0 auto;
+            color: #64748b;
+            font-size: 11px;
+            line-height: 1.55;
           }
 
-          .signal {
+          .startBox {
             width: 100%;
-            max-width: 820px;
-            height:
+            max-width: 1050px;
+            min-height:
               min(
-                62vh,
-                520px
+                58svh,
+                570px
               );
-            min-height: 330px;
+            margin: 16px auto 0;
+            border:
+              1px solid #e5e7eb;
             border-radius: 28px;
-            border: 2px solid
-              #202c3c;
             background:
-              #111827;
+              linear-gradient(
+                145deg,
+                #ffffff,
+                #f8fafc
+              );
+            box-shadow:
+              0 18px 60px
+                rgba(
+                  15,
+                  23,
+                  42,
+                  0.08
+                );
             display: flex;
-            flex-direction: column;
-            justify-content:
-              center;
             align-items: center;
-            text-align: center;
+            justify-content: center;
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
-            touch-action:
-              manipulation;
+            touch-action: manipulation;
             transition:
-              background .12s,
-              border-color .12s,
-              transform .08s;
+              transform 0.15s ease,
+              box-shadow 0.15s ease;
           }
 
-          .signal:active {
+          .startBox:hover {
             transform:
-              scale(.997);
+              translateY(-2px);
+            box-shadow:
+              0 24px 70px
+                rgba(
+                  15,
+                  23,
+                  42,
+                  0.11
+                );
           }
 
-          .signal.waiting {
-            background:
-              #121a28;
-            border-color:
-              #26364c;
+          .startInner {
+            text-align: center;
           }
 
-          .signal.ready {
-            background:
-              #22c55e;
-            border-color:
-              #4ade80;
-            color:
-              #031108;
+          .startIcon {
+            width: 66px;
+            height: 66px;
+            margin: 0 auto 15px;
+            border-radius: 20px;
+            display: grid;
+            place-items: center;
+            background: #f0fdf4;
+            border:
+              1px solid #dcfce7;
+            font-size: 30px;
           }
 
-          .signal.idle {
-            background:
-              linear-gradient(
-                145deg,
-                #111827,
-                #0d1421
-              );
-          }
-
-          .icon {
-            font-size: 48px;
-            line-height: 1;
-            margin-bottom: 14px;
-          }
-
-          .signal h2 {
-            margin: 0;
+          .startTitle {
             font-size:
               clamp(
-                27px,
-                7vw,
-                52px
+                25px,
+                5vw,
+                40px
               );
+            line-height: 1;
             font-weight: 950;
-            letter-spacing:
-              -1.5px;
+            letter-spacing: -1.6px;
+            color: #111827;
           }
 
-          .signal p {
-            margin:
-              9px 0 0;
-            font-size: 12px;
-            color:
-              rgba(
-                255,
-                255,
-                255,
-                .58
-              );
+          .startText {
+            margin-top: 8px;
+            color: #64748b;
+            font-size: 10px;
             font-weight: 700;
           }
 
-          .ready p {
-            color:
-              rgba(
-                3,
-                17,
-                8,
-                .62
-              );
-          }
-
-          .helper {
+          .startHint {
             margin-top: 15px;
-            color:
-              #475569;
-            font-size: 10px;
-            font-weight: 800;
-          }
-
-          .falseStart {
-            position: absolute;
-            bottom: 18px;
-            left: 50%;
-            transform:
-              translateX(-50%);
-            color:
-              #f87171;
-            font-size: 10px;
+            display: inline-block;
+            padding: 9px 14px;
+            border-radius: 999px;
+            background: #111827;
+            color: #fff;
+            font-size: 9px;
             font-weight: 900;
           }
 
-          @media (
-            max-width: 600px
-          ) {
-            .gamePage {
-              padding: 12px;
+          .rules {
+            display: grid;
+            grid-template-columns:
+              repeat(3, 1fr);
+            gap: 8px;
+            max-width: 1050px;
+            margin: 10px auto 0;
+          }
+
+          .rule {
+            border:
+              1px solid #eef0f3;
+            border-radius: 14px;
+            padding: 11px 8px;
+            text-align: center;
+            background: #fff;
+          }
+
+          .ruleIcon {
+            font-size: 15px;
+          }
+
+          .ruleText {
+            margin-top: 4px;
+            color: #475569;
+            font-size: 8px;
+            font-weight: 800;
+          }
+
+          .ruleText strong {
+            color: #111827;
+          }
+
+          .footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 8px;
+            margin:
+              22px 0 4px;
+          }
+
+          @media (max-width: 600px) {
+            .page {
+              padding: 10px;
             }
 
-            .gameWrap {
-              min-height:
-                calc(
-                  100svh - 24px
-                );
+            .hero {
+              padding:
+                27px 8px 13px;
             }
 
-            .intro {
-              margin-bottom: 13px;
+            h1 {
+              font-size: 30px;
             }
 
-            .intro h1 {
-              font-size: 27px;
-            }
-
-            .intro p {
+            .subtitle {
               font-size: 10px;
-              max-width: 350px;
             }
 
-            .signal {
-              min-height: 390px;
-              height:
-                63svh;
-              border-radius: 24px;
+            .startBox {
+              min-height: 60svh;
+              border-radius: 22px;
             }
 
-            .icon {
-              font-size: 39px;
+            .rules {
+              grid-template-columns:
+                repeat(3, 1fr);
             }
 
-            .signal h2 {
-              font-size: 31px;
-            }
-
-            .signal p {
-              font-size: 10px;
+            .rule {
+              padding: 9px 5px;
             }
           }
         `}</style>
 
-        <div className="gameWrap">
-
-          <div className="brand">
-            NEXORA{" "}
-            <span>TOOLS</span>
-          </div>
-
-          <div className="round">
-            {round > 0
-              ? `ROUND ${round}/${TOTAL_ROUNDS}`
-              : "REACTION TEST"}
-          </div>
-
-          {state ===
-            "idle" && (
-            <div className="intro">
-              <h1>
-                Reaction Time{" "}
-                <span>
-                  Test
-                </span>
-              </h1>
-
-              <p>
-                Wait for green.
-                Then react as
-                fast as you can.
-              </p>
+        <div className="container">
+          <header className="topbar">
+            <div className="brand">
+              thenexoratools
+              <span className="brandDot">
+                .
+              </span>
             </div>
-          )}
+
+            <div className="mini">
+              Reaction Target
+            </div>
+          </header>
+
+          <section className="hero">
+            <div className="eyebrow">
+              ⚡ Reflex Challenge
+            </div>
+
+            <h1>
+              Reaction Time{" "}
+              <span>
+                Test
+              </span>
+            </h1>
+
+            <p className="subtitle">
+              Find the red target as fast
+              as possible. Watch out for
+              yellow traps.
+            </p>
+          </section>
 
           <div
-            className={`signal ${
-              state
-            }`}
-            onPointerDown={
-              handleGameAction
+            className="startBox"
+            onPointerDown={() =>
+              startGame()
             }
           >
-            {state ===
-              "idle" && (
-              <>
-                <div className="icon">
-                  ⚡
-                </div>
+            <div className="startInner">
+              <div className="startIcon">
+                ⚡
+              </div>
 
-                <h2>
-                  Tap to Start
-                </h2>
+              <div className="startTitle">
+                Start Challenge
+              </div>
 
-                <p>
-                  5 rounds
-                  •
-                  Accurate
-                  timing
-                </p>
-              </>
-            )}
+              <div className="startText">
+                10 rounds • 20 targets •
+                millisecond timing
+              </div>
 
-            {state ===
-              "waiting" && (
-              <>
-                <div className="icon">
-                  🔴
-                </div>
+              <div className="startHint">
+                TAP OR CLICK TO START
+              </div>
+            </div>
+          </div>
 
-                <h2>
-                  Wait...
-                </h2>
+          <div className="rules">
+            <div className="rule">
+              <div className="ruleIcon">
+                🔴
+              </div>
 
-                <p>
-                  Do not click
-                  yet
-                </p>
-              </>
-            )}
-
-            {state ===
-              "ready" && (
-              <>
-                <div className="icon">
-                  🟢
-                </div>
-
-                <h2>
-                  CLICK!
-                </h2>
-
-                <p>
-                  React now
-                </p>
-              </>
-            )}
-
-            <div className="helper">
-              {state ===
-                "idle"
-                ? "Tap • Click • Space"
-                : state ===
-                    "waiting"
-                  ? "Too early = false start"
-                  : "Tap anywhere"}
+              <div className="ruleText">
+                <strong>
+                  RED
+                </strong>{" "}
+                = tap it
+              </div>
             </div>
 
-            {falseStarts >
-              0 && (
-              <div className="falseStart">
-                False starts:{" "}
-                {falseStarts}
+            <div className="rule">
+              <div className="ruleIcon">
+                🟡
+              </div>
+
+              <div className="ruleText">
+                <strong>
+                  YELLOW
+                </strong>{" "}
+                = OUT
+              </div>
+            </div>
+
+            <div className="rule">
+              <div className="ruleIcon">
+                🟢
+              </div>
+
+              <div className="ruleText">
+                Green = wait
+              </div>
+            </div>
+          </div>
+
+          <div className="footer">
+            Free reaction speed test •
+            thenexoratools
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  /* --------------------------------
+     GAME SCREEN
+  -------------------------------- */
+
+  if (
+    gameState ===
+      "playing" ||
+    gameState ===
+      "failed"
+  ) {
+    return (
+      <main className="gamePage">
+        <style jsx>{`
+          .gamePage {
+            min-height: 100svh;
+            background: #fff;
+            color: #111827;
+            font-family:
+              Inter,
+              -apple-system,
+              BlinkMacSystemFont,
+              "Segoe UI",
+              sans-serif;
+            padding:
+              12px 14px 22px;
+          }
+
+          .gameContainer {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+          }
+
+          .gameHeader {
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+          }
+
+          .brand {
+            font-size: 14px;
+            font-weight: 950;
+            letter-spacing: -0.5px;
+          }
+
+          .brand span {
+            color: #16a34a;
+          }
+
+          .roundInfo {
+            color: #64748b;
+            font-size: 9px;
+            font-weight: 950;
+            letter-spacing: 0.6px;
+          }
+
+          .status {
+            text-align: center;
+            min-height: 62px;
+            padding-top: 10px;
+          }
+
+          .statusMain {
+            font-size:
+              clamp(
+                18px,
+                4vw,
+                28px
+              );
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: -1px;
+          }
+
+          .statusSub {
+            margin-top: 5px;
+            color: #94a3b8;
+            font-size: 9px;
+            font-weight: 800;
+          }
+
+          .board {
+            position: relative;
+            width: 100%;
+            height:
+              min(
+                68svh,
+                700px
+              );
+            min-height: 430px;
+            margin: 4px auto 0;
+            border-radius: 30px;
+            border:
+              1px solid #e5e7eb;
+            background:
+              radial-gradient(
+                circle at center,
+                #ffffff 0%,
+                #f8fafc 100%
+              );
+            box-shadow:
+              0 20px 70px
+                rgba(
+                  15,
+                  23,
+                  42,
+                  0.08
+                );
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+          }
+
+          .grid {
+            position: absolute;
+            inset: 0;
+            padding: 22px;
+            display: grid;
+            grid-template-columns:
+              repeat(5, 1fr);
+            grid-template-rows:
+              repeat(4, 1fr);
+            gap: 16px;
+          }
+
+          .dotSlot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .dot {
+            width: clamp(
+              32px,
+              5vw,
+              52px
+            );
+            height: clamp(
+              32px,
+              5vw,
+              52px
+            );
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background:
+              linear-gradient(
+                145deg,
+                #4ade80,
+                #16a34a
+              );
+            box-shadow:
+              0 7px 18px
+                rgba(
+                  22,
+                  163,
+                  74,
+                  0.18
+                );
+            cursor: pointer;
+            transition:
+              transform 0.08s ease,
+              box-shadow 0.08s ease;
+            -webkit-tap-highlight-color: transparent;
+          }
+
+          .dot:hover {
+            transform:
+              scale(1.08);
+          }
+
+          .dot:active {
+            transform:
+              scale(0.92);
+          }
+
+          .dot.red {
+            background:
+              radial-gradient(
+                circle at 35% 30%,
+                #ff7777,
+                #ef4444 55%,
+                #dc2626
+              );
+            box-shadow:
+              0 0 0 5px
+                rgba(
+                  239,
+                  68,
+                  68,
+                  0.1
+                ),
+              0 10px 30px
+                rgba(
+                  239,
+                  68,
+                  68,
+                  0.34
+                );
+            animation:
+              redPulse 0.8s
+                ease-in-out
+                infinite alternate;
+          }
+
+          .dot.yellow {
+            background:
+              radial-gradient(
+                circle at 35% 30%,
+                #fde68a,
+                #facc15 55%,
+                #eab308
+              );
+            box-shadow:
+              0 0 0 5px
+                rgba(
+                  234,
+                  179,
+                  8,
+                  0.1
+                ),
+              0 10px 30px
+                rgba(
+                  234,
+                  179,
+                  8,
+                  0.32
+                );
+            animation:
+              yellowPulse 0.7s
+                ease-in-out
+                infinite alternate;
+          }
+
+          @keyframes redPulse {
+            from {
+              transform:
+                scale(0.96);
+            }
+
+            to {
+              transform:
+                scale(1.08);
+            }
+          }
+
+          @keyframes yellowPulse {
+            from {
+              transform:
+                scale(0.96);
+            }
+
+            to {
+              transform:
+                scale(1.08);
+            }
+          }
+
+          .failedOverlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background:
+              rgba(
+                255,
+                255,
+                255,
+                0.86
+              );
+            backdrop-filter:
+              blur(4px);
+          }
+
+          .failedCard {
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            border:
+              1px solid #fee2e2;
+            background: #fff;
+            border-radius: 22px;
+            padding: 25px 18px;
+            box-shadow:
+              0 18px 55px
+                rgba(
+                  127,
+                  29,
+                  29,
+                  0.12
+                );
+          }
+
+          .failedIcon {
+            font-size: 38px;
+          }
+
+          .failedTitle {
+            margin-top: 7px;
+            color: #dc2626;
+            font-size: 24px;
+            font-weight: 950;
+            letter-spacing: -1px;
+          }
+
+          .failedText {
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 10px;
+            line-height: 1.5;
+          }
+
+          .restartButton {
+            margin-top: 15px;
+            border: 0;
+            border-radius: 999px;
+            background: #111827;
+            color: #fff;
+            padding:
+              11px 20px;
+            font-size: 10px;
+            font-weight: 950;
+            cursor: pointer;
+          }
+
+          .liveInfo {
+            min-height: 44px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            color: #64748b;
+            font-size: 9px;
+            font-weight: 850;
+          }
+
+          .liveInfo strong {
+            color: #111827;
+          }
+
+          .legend {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 2px;
+            color: #94a3b8;
+            font-size: 8px;
+            font-weight: 800;
+          }
+
+          .legendItem {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+          }
+
+          .legendDot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+          }
+
+          .green {
+            background: #16a34a;
+          }
+
+          .red {
+            background: #ef4444;
+          }
+
+          .yellow {
+            background: #facc15;
+          }
+
+          @media (max-width: 600px) {
+            .gamePage {
+              padding:
+                8px 9px 16px;
+            }
+
+            .gameHeader {
+              min-height: 34px;
+            }
+
+            .brand {
+              font-size: 12px;
+            }
+
+            .roundInfo {
+              font-size: 8px;
+            }
+
+            .status {
+              min-height: 57px;
+            }
+
+            .statusMain {
+              font-size: 19px;
+            }
+
+            .statusSub {
+              font-size: 8px;
+            }
+
+            .board {
+              height: 67svh;
+              min-height: 390px;
+              border-radius: 23px;
+            }
+
+            .grid {
+              padding: 14px;
+              gap: 9px;
+            }
+
+            .dot {
+              width: clamp(
+                27px,
+                8vw,
+                39px
+              );
+              height: clamp(
+                27px,
+                8vw,
+                39px
+              );
+            }
+
+            .liveInfo {
+              gap: 12px;
+              font-size: 8px;
+            }
+          }
+        `}</style>
+
+        <div className="gameContainer">
+          <header className="gameHeader">
+            <div className="brand">
+              thenexoratools
+              <span>
+                .
+              </span>
+            </div>
+
+            <div className="roundInfo">
+              ROUND{" "}
+              {round}
+              /
+              {TOTAL_ROUNDS}
+            </div>
+          </header>
+
+          <div className="status">
+            <div className="statusMain">
+              {gameState ===
+              "failed"
+                ? "Challenge Failed"
+                : message}
+            </div>
+
+            <div className="statusSub">
+              {gameState ===
+              "failed"
+                ? errorMessage
+                : trapEnabled
+                  ? "Red = target • Yellow = trap"
+                  : "Find and tap the red target"}
+            </div>
+          </div>
+
+          <section className="board">
+            <div className="grid">
+              {Array.from(
+                {
+                  length:
+                    TOTAL_DOTS,
+                },
+                (_, index) => {
+                  const isActive =
+                    activeTarget ===
+                    index;
+
+                  const className =
+                    isActive
+                      ? targetType
+                      : "";
+
+                  return (
+                    <div
+                      className="dotSlot"
+                      key={index}
+                    >
+                      <button
+                        type="button"
+                        aria-label={
+                          isActive
+                            ? targetType ===
+                              "red"
+                              ? "Red target"
+                              : "Yellow trap"
+                            : "Green circle"
+                        }
+                        className={`dot ${className}`}
+                        onPointerDown={(
+                          event,
+                        ) =>
+                          handleDotPress(
+                            index,
+                            event,
+                          )
+                        }
+                      />
+                    </div>
+                  );
+                },
+              )}
+            </div>
+
+            {gameState ===
+              "failed" && (
+              <div className="failedOverlay">
+                <div className="failedCard">
+                  <div className="failedIcon">
+                    🟡
+                  </div>
+
+                  <div className="failedTitle">
+                    Wrong Target
+                  </div>
+
+                  <div className="failedText">
+                    You touched the
+                    yellow trap. Your
+                    successful rounds
+                    are still saved below.
+                  </div>
+
+                  <button
+                    type="button"
+                    className="restartButton"
+                    onClick={
+                      restart
+                    }
+                  >
+                    ↻ Try Again
+                  </button>
+                </div>
               </div>
             )}
+          </section>
+
+          <div className="liveInfo">
+            <span>
+              Completed:{" "}
+              <strong>
+                {results.length}
+                /
+                {TOTAL_ROUNDS}
+              </strong>
+            </span>
+
+            {lastReaction !==
+              null && (
+              <span>
+                Last:{" "}
+                <strong>
+                  {lastReaction}ms
+                </strong>
+              </span>
+            )}
+
+            <span>
+              Best:{" "}
+              <strong>
+                {bestRound
+                  ? `${bestRound}ms`
+                  : "—"}
+              </strong>
+            </span>
+          </div>
+
+          <div className="legend">
+            <div className="legendItem">
+              <span className="legendDot green" />
+              Green
+            </div>
+
+            <div className="legendItem">
+              <span className="legendDot red" />
+              Target
+            </div>
+
+            <div className="legendItem">
+              <span className="legendDot yellow" />
+              Trap
+            </div>
           </div>
         </div>
       </main>
@@ -1099,228 +1903,219 @@ export default function ReactionClient() {
       <style jsx>{`
         .resultPage {
           min-height: 100svh;
-          background:
-            radial-gradient(
-              circle at top,
-              rgba(
-                34,
-                197,
-                94,
-                .07
-              ),
-              transparent 32%
-            ),
-            #070b12;
-          color: white;
-          padding:
-            22px 12px 42px;
+          background: #fff;
+          color: #111827;
           font-family:
             Inter,
             -apple-system,
             BlinkMacSystemFont,
             "Segoe UI",
             sans-serif;
+          padding:
+            18px 12px 45px;
         }
 
-        .wrap {
+        .resultWrap {
           width: 100%;
-          max-width: 820px;
-          margin: auto;
+          max-width: 900px;
+          margin: 0 auto;
         }
 
-        .header {
+        .resultHeader {
           display: flex;
           align-items: center;
-          justify-content:
-            space-between;
-          gap: 10px;
-          margin-bottom:
-            17px;
+          justify-content: space-between;
+          min-height: 40px;
         }
 
         .logo {
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 950;
+          letter-spacing: -0.5px;
         }
 
         .logo span {
-          color:
-            #22c55e;
+          color: #16a34a;
         }
 
-        .device {
-          color:
-            #64748b;
-          font-size: 10px;
-          font-weight: 900;
+        .completed {
+          color: #16a34a;
+          background: #f0fdf4;
+          border:
+            1px solid #dcfce7;
+          border-radius: 999px;
+          padding:
+            6px 9px;
+          font-size: 8px;
+          font-weight: 950;
         }
 
-        .hero {
+        .resultHero {
+          margin-top: 16px;
+          border:
+            1px solid #e5e7eb;
+          border-radius: 24px;
+          padding:
+            25px 16px;
+          text-align: center;
           background:
             linear-gradient(
               145deg,
-              #101a29,
-              #0d1421
+              #ffffff,
+              #f8fafc
             );
-          border: 1px solid
-            #223047;
-          border-radius: 20px;
-          padding:
-            23px 16px;
-          text-align: center;
+          box-shadow:
+            0 18px 60px
+              rgba(
+                15,
+                23,
+                42,
+                0.07
+              );
         }
 
-        .complete {
-          color:
-            #64748b;
-          font-size: 9px;
+        .smallLabel {
+          color: #94a3b8;
+          font-size: 8px;
           font-weight: 950;
-          letter-spacing:
-            1px;
+          letter-spacing: 1px;
         }
 
         .score {
-          margin-top: 7px;
-          color:
-            #22c55e;
+          margin-top: 5px;
           font-size:
             clamp(
-              55px,
-              14vw,
-              82px
+              58px,
+              13vw,
+              88px
             );
-          line-height: .9;
+          line-height: 0.9;
           font-weight: 950;
-          letter-spacing:
-            -3px;
+          letter-spacing: -4px;
+          color: #16a34a;
         }
 
-        .ms {
-          color:
-            #64748b;
-          font-size: 11px;
-          font-weight: 900;
-          margin-top: 4px;
+        .unit {
+          margin-top: 3px;
+          color: #64748b;
+          font-size: 9px;
+          font-weight: 950;
+          letter-spacing: 1px;
         }
 
         .rating {
           margin-top: 12px;
-          font-size: 19px;
+          font-size: 20px;
           font-weight: 950;
+          letter-spacing: -0.5px;
         }
 
         .ratingSub {
-          color:
-            #64748b;
-          font-size: 10px;
           margin-top: 4px;
+          color: #64748b;
+          font-size: 9px;
         }
 
-        .actions {
+        .buttons {
           display: flex;
-          justify-content:
-            center;
-          gap: 8px;
+          justify-content: center;
+          gap: 7px;
           flex-wrap: wrap;
           margin-top: 15px;
         }
 
-        button {
+        .button {
           border: 0;
-          cursor: pointer;
           border-radius: 999px;
           padding:
-            11px 19px;
-          font-size: 11px;
+            10px 17px;
+          font-size: 9px;
           font-weight: 950;
+          cursor: pointer;
         }
 
-        .green {
-          background:
-            #22c55e;
-          color:
-            #031108;
+        .primary {
+          background: #111827;
+          color: #fff;
         }
 
-        .dark {
-          background:
-            #1e293b;
-          color: white;
-          border: 1px solid
-            #334155;
+        .secondary {
+          background: #f1f5f9;
+          color: #111827;
+          border:
+            1px solid #e2e8f0;
         }
 
-        .stats {
+        .cards {
           display: grid;
           grid-template-columns:
             repeat(4, 1fr);
-          gap: 8px;
-          margin-top: 9px;
+          gap: 7px;
+          margin-top: 8px;
         }
 
-        .stat {
-          background:
-            #111827;
-          border: 1px solid
-            #202c3e;
+        .card {
+          border:
+            1px solid #eef0f3;
           border-radius: 14px;
+          background: #fff;
           padding:
             12px 5px;
           text-align: center;
         }
 
-        .stat strong {
-          display: block;
-          color:
-            #22c55e;
-          font-size: 20px;
-          line-height: 1;
+        .cardValue {
+          color: #111827;
+          font-size: 17px;
           font-weight: 950;
+          line-height: 1;
         }
 
-        .stat span {
-          display: block;
-          color:
-            #64748b;
-          font-size: 8px;
+        .cardValue.green {
+          color: #16a34a;
+        }
+
+        .cardLabel {
+          margin-top: 5px;
+          color: #94a3b8;
+          font-size: 7px;
           font-weight: 950;
-          margin-top: 6px;
+          letter-spacing: 0.5px;
         }
 
         .panel {
-          margin-top: 9px;
-          background:
-            #111827;
-          border: 1px solid
-            #202c3e;
+          margin-top: 8px;
+          border:
+            1px solid #eef0f3;
           border-radius: 16px;
+          background: #fff;
           padding: 15px;
         }
 
-        .title {
-          font-size: 13px;
+        .panelTitle {
+          font-size: 12px;
           font-weight: 950;
         }
 
         .roundRow {
           display: grid;
           grid-template-columns:
-            54px 1fr 48px;
+            50px 1fr 48px;
           align-items: center;
           gap: 8px;
           margin-top: 10px;
         }
 
         .roundName {
-          font-size: 10px;
+          color: #475569;
+          font-size: 8px;
           font-weight: 900;
         }
 
         .barBg {
-          height: 8px;
-          background:
-            #080e18;
+          height: 7px;
           border-radius: 999px;
+          background: #f1f5f9;
           overflow: hidden;
         }
 
@@ -1328,13 +2123,18 @@ export default function ReactionClient() {
           height: 100%;
           border-radius: inherit;
           background:
-            #22c55e;
+            linear-gradient(
+              90deg,
+              #22c55e,
+              #16a34a
+            );
         }
 
         .roundTime {
           text-align: right;
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 950;
+          color: #111827;
         }
 
         .analysis {
@@ -1345,166 +2145,140 @@ export default function ReactionClient() {
           margin-top: 12px;
         }
 
-        .analysisItem {
-          background:
-            #0b1220;
-          border: 1px solid
-            #1e2a3d;
-          border-radius: 11px;
-          padding: 10px 5px;
+        .analysisCard {
+          background: #f8fafc;
+          border:
+            1px solid #eef0f3;
+          border-radius: 12px;
+          padding:
+            10px 5px;
           text-align: center;
         }
 
-        .analysisItem strong {
-          display: block;
-          color:
-            #e2e8f0;
+        .analysisValue {
           font-size: 14px;
+          font-weight: 950;
         }
 
-        .analysisItem span {
-          display: block;
-          color:
-            #64748b;
-          font-size: 8px;
-          font-weight: 900;
+        .analysisLabel {
           margin-top: 3px;
+          color: #94a3b8;
+          font-size: 7px;
+          font-weight: 950;
         }
 
         .pb {
-          margin-top: 9px;
-          padding:
-            11px;
-          border-radius: 12px;
-          background:
-            rgba(
-              34,
-              197,
-              94,
-              .07
-            );
-          border: 1px solid
-            rgba(
-              34,
-              197,
-              94,
-              .18
-            );
+          margin-top: 8px;
+          border:
+            1px solid #dcfce7;
+          background: #f0fdf4;
+          color: #15803d;
+          border-radius: 13px;
+          padding: 10px;
           text-align: center;
-          color:
-            #86efac;
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 900;
         }
 
         .info {
-          margin-top: 9px;
-          background:
-            #111827;
-          border: 1px solid
-            #202c3e;
+          margin-top: 8px;
+          border:
+            1px solid #eef0f3;
           border-radius: 16px;
-          padding: 16px;
+          padding: 15px;
+          background: #fff;
         }
 
         .info h2 {
           margin:
-            0 0 7px;
-          font-size: 16px;
+            0 0 6px;
+          font-size: 15px;
+          font-weight: 950;
         }
 
         .info h3 {
           margin:
             15px 0 5px;
-          font-size: 12px;
+          font-size: 11px;
+          font-weight: 950;
+        }
+
+        .info p,
+        .info li {
+          color: #64748b;
+          font-size: 9px;
+          line-height: 1.7;
         }
 
         .info p {
           margin: 0;
-          color:
-            #64748b;
-          font-size: 10px;
-          line-height: 1.65;
         }
 
         .info ul {
           margin:
             5px 0 0;
-          padding-left:
-            17px;
-        }
-
-        .info li {
-          color:
-            #64748b;
-          font-size: 10px;
-          line-height: 1.7;
+          padding-left: 16px;
         }
 
         .footer {
+          margin-top: 20px;
           text-align: center;
-          margin-top: 17px;
-          color:
-            #334155;
-          font-size: 8px;
+          color: #94a3b8;
+          font-size: 7px;
         }
 
-        @media (
-          max-width: 600px
-        ) {
+        @media (max-width: 600px) {
           .resultPage {
             padding:
-              16px 10px 35px;
+              12px 9px 35px;
           }
 
-          .stats {
+          .cards {
             grid-template-columns:
               repeat(2, 1fr);
           }
 
           .analysis {
             grid-template-columns:
-              repeat(2, 1fr);
+              repeat(3, 1fr);
           }
 
-          .hero {
+          .resultHero {
             padding:
-              20px 13px;
+              22px 13px;
           }
 
           .roundRow {
             grid-template-columns:
-              48px 1fr 43px;
+              45px 1fr 45px;
           }
         }
       `}</style>
 
-      <div className="wrap">
-
-        <header className="header">
+      <div className="resultWrap">
+        <header className="resultHeader">
           <div className="logo">
-            NEXORA{" "}
-            <span>TOOLS</span>
+            thenexoratools
+            <span>
+              .
+            </span>
           </div>
 
-          <div className="device">
-            📱 {device}
+          <div className="completed">
+            ✓ COMPLETED
           </div>
         </header>
 
-        {/* MAIN RESULT */}
-
-        <section className="hero">
-
-          <div className="complete">
-            TEST COMPLETE
+        <section className="resultHero">
+          <div className="smallLabel">
+            AVERAGE REACTION TIME
           </div>
 
           <div className="score">
             {average}
           </div>
 
-          <div className="ms">
+          <div className="unit">
             MILLISECONDS
           </div>
 
@@ -1516,133 +2290,114 @@ export default function ReactionClient() {
               </div>
 
               <div className="ratingSub">
-                Average reaction
-                time across 5
-                rounds
+                Based on your
+                successful 10-round
+                challenge
               </div>
             </>
           )}
 
-          <div className="actions">
+          <div className="buttons">
             <button
-              className="green"
-              onClick={() =>
-                window.location.reload()
+              type="button"
+              className="button primary"
+              onClick={
+                restart
               }
             >
               ↻ Try Again
             </button>
 
             <button
-              className="dark"
+              type="button"
+              className="button secondary"
               onClick={
                 shareResult
               }
             >
-              📤 Share Result
+              ↗ Share Result
             </button>
           </div>
         </section>
 
-        {/* STATS */}
-
-        <section className="stats">
-
-          <div className="stat">
-            <strong>
+        <section className="cards">
+          <div className="card">
+            <div className="cardValue green">
               {average}ms
-            </strong>
+            </div>
 
-            <span>
+            <div className="cardLabel">
               AVERAGE
-            </span>
+            </div>
           </div>
 
-          <div className="stat">
-            <strong>
+          <div className="card">
+            <div className="cardValue">
               {bestRound}ms
-            </strong>
+            </div>
 
-            <span>
-              BEST ROUND
-            </span>
+            <div className="cardLabel">
+              BEST
+            </div>
           </div>
 
-          <div className="stat">
-            <strong>
-              {median}ms
-            </strong>
+          <div className="card">
+            <div className="cardValue">
+              {slowestRound}ms
+            </div>
 
-            <span>
-              MEDIAN
-            </span>
+            <div className="cardLabel">
+              SLOWEST
+            </div>
           </div>
 
-          <div className="stat">
-            <strong>
-              {personalBest ??
+          <div className="card">
+            <div className="cardValue">
+              {bestScore ??
                 average}ms
-            </strong>
+            </div>
 
-            <span>
-              ALL-TIME BEST
-            </span>
+            <div className="cardLabel">
+              PERSONAL BEST
+            </div>
           </div>
-
         </section>
 
-        {/* ROUND RESULTS */}
-
         <section className="panel">
-
-          <div className="title">
-            📊 Round Results
+          <div className="panelTitle">
+            Round-by-Round Results
           </div>
 
           {results.map(
             (item) => {
+              const maxTime =
+                Math.max(
+                  slowestRound,
+                  1,
+                );
+
               const width =
-                Math.min(
-                  100,
-                  Math.max(
-                    10,
+                Math.max(
+                  8,
+                  Math.min(
+                    100,
                     (item.time /
-                      Math.max(
-                        worstRound,
-                        1,
-                      )) *
+                      maxTime) *
                       100,
                   ),
                 );
-
-              let barColor =
-                "#22c55e";
-
-              if (
-                item.time >=
-                400
-              ) {
-                barColor =
-                  "#ef4444";
-              } else if (
-                item.time >=
-                300
-              ) {
-                barColor =
-                  "#f59e0b";
-              }
 
               return (
                 <div
                   className="roundRow"
                   key={
-                    item.number
+                    item.round
                   }
                 >
                   <div className="roundName">
                     Round{" "}
                     {
-                      item.number
+                      item.round
                     }
                   </div>
 
@@ -1652,8 +2407,6 @@ export default function ReactionClient() {
                       style={{
                         width:
                           `${width}%`,
-                        background:
-                          barColor,
                       }}
                     />
                   </div>
@@ -1669,117 +2422,125 @@ export default function ReactionClient() {
           )}
 
           <div className="analysis">
-
-            <div className="analysisItem">
-              <strong>
+            <div className="analysisCard">
+              <div className="analysisValue">
                 {consistency.toFixed(
                   0,
                 )}%
-              </strong>
+              </div>
 
-              <span>
+              <div className="analysisLabel">
                 CONSISTENCY
-              </span>
+              </div>
             </div>
 
-            <div className="analysisItem">
-              <strong>
-                {worstRound}ms
-              </strong>
+            <div className="analysisCard">
+              <div className="analysisValue">
+                {results.length}
+                /10
+              </div>
 
-              <span>
-                SLOWEST
-              </span>
+              <div className="analysisLabel">
+                ROUNDS
+              </div>
             </div>
 
-            <div className="analysisItem">
-              <strong>
-                {falseStarts}
-              </strong>
+            <div className="analysisCard">
+              <div className="analysisValue">
+                {bestRound}ms
+              </div>
 
-              <span>
-                FALSE STARTS
-              </span>
+              <div className="analysisLabel">
+                FASTEST
+              </div>
             </div>
-
           </div>
-
         </section>
 
-        {/* PB */}
-
         <div className="pb">
-          🏆 Personal best is saved
+          🏆 Your personal best is saved
           automatically on this device.
         </div>
 
-        {/* INFORMATION */}
-
         <section className="info">
-
           <h2>
             Reaction Time Test
           </h2>
 
           <p>
-            This test measures how quickly
-            you respond after the screen
-            changes to green. Complete five
-            rounds for a more useful average.
+            This reaction speed challenge
+            measures how quickly you can
+            identify and touch the red target.
+            Twenty circles are displayed on
+            the board, while the target changes
+            position from round to round.
           </p>
+
+          <h3>
+            How to play
+          </h3>
+
+          <ul>
+            <li>
+              Wait for the red target.
+            </li>
+
+            <li>
+              Touch or click the red circle
+              as quickly as possible.
+            </li>
+
+            <li>
+              Green circles are inactive.
+            </li>
+
+            <li>
+              Yellow circles are traps.
+            </li>
+
+            <li>
+              Touching yellow ends the
+              challenge.
+            </li>
+
+            <li>
+              Complete 10 successful rounds
+              to get your final score.
+            </li>
+          </ul>
 
           <h3>
             What is a good reaction time?
           </h3>
 
           <p>
-            Reaction speed varies by person,
-            device and input method. Lower
-            milliseconds mean a faster
-            reaction. Results around 200–300ms
-            are common for many casual users,
-            while substantially lower scores
-            are very fast.
+            Reaction time varies depending
+            on the person, device, display,
+            browser and input method. Lower
+            milliseconds indicate a faster
+            response. For the most consistent
+            results, use the same device and
+            input method when comparing scores.
           </p>
 
           <h3>
-            How to get a better score
+            Improve your reaction speed
           </h3>
 
-          <ul>
-            <li>
-              Keep your hand relaxed.
-            </li>
-
-            <li>
-              Focus on the center of the
-              screen.
-            </li>
-
-            <li>
-              Use a responsive mouse or
-              touchscreen.
-            </li>
-
-            <li>
-              Avoid clicking before green.
-            </li>
-
-            <li>
-              Take several tests and compare
-              your consistency.
-            </li>
-          </ul>
-
+          <p>
+            Stay focused on the game area,
+            keep your hand relaxed and avoid
+            predicting the target. Repeated
+            attempts can help you understand
+            your own reaction speed and
+            consistency.
+          </p>
         </section>
 
         <footer className="footer">
-          ©{" "}
-          {new Date().getFullYear()}{" "}
-          NEXORA Tools • Free
-          Reaction Time Test
+          Free Reaction Time Test •
+          thenexoratools
         </footer>
-
       </div>
     </main>
   );
