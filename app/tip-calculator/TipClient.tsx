@@ -17,30 +17,56 @@ export default function TipClient() {
   const paidNum = Number(paid) || 0;
 
   const calculations = useMemo(() => {
-    const tip = Math.max(0, paidNum - billNum);
-    const tipRate = billNum > 0 ? (tip / billNum) * 100 : 0;
+    // Tip hamesha Bill x % se niklega, taaki % kabhi galat na dikhe
+    // Agar Paid bhara hai to Tip = Paid - Bill, aur % us hisab se
+    let tip = 0;
+    let tipRate = tipPercent;
+
+    if (billNum > 0 && paidNum > 0) {
+      tip = Math.max(0, paidNum - billNum);
+      tipRate = (tip / billNum) * 100;
+    } else if (billNum > 0) {
+      tip = (billNum * tipPercent) / 100;
+      tipRate = tipPercent;
+    }
+
     const total = billNum + tip;
     const change = Math.max(0, paidNum - total);
+    const billPerPerson = people > 0 ? billNum / people : 0;
 
     return {
       tip,
       tipRate,
       total,
       change,
+      billPerPerson,
       perPerson: people > 0 ? total / people : 0,
       tipPerPerson: people > 0 ? tip / people : 0,
     };
-  }, [billNum, paidNum, people]);
+  }, [billNum, paidNum, people, tipPercent]);
 
   const money = (value: number) =>
     `${currency}${value.toFixed(2)}`;
 
   const handleBill = (value: string) => {
-    setBill(value.replace(/^0+(?=\d)/, ""));
+    const clean = value.replace(/^0+(?=\d)/, "");
+    setBill(clean);
+    // Bill badalne pe purana % hi rahe, Paid apne aap us hisab se badle
+    const b = Number(clean) || 0;
+    if (b > 0) {
+      setPaid((b + (b * tipPercent) / 100).toFixed(2));
+    }
   };
 
   const handlePaid = (value: string) => {
-    setPaid(value.replace(/^0+(?=\d)/, ""));
+    const clean = value.replace(/^0+(?=\d)/, "");
+    setPaid(clean);
+    // Paid haath se badla to % apne aap sahi ho jaye - 20% dabane pe 16.7% nahi dikhega
+    const p = Number(clean) || 0;
+    if (billNum > 0 && p >= billNum) {
+      const realRate = ((p - billNum) / billNum) * 100;
+      setTipPercent(Math.round(realRate * 10) / 10);
+    }
   };
 
   const setPresetTip = (percent: number) => {
@@ -60,6 +86,7 @@ export default function TipClient() {
 
         {/* HEADER */}
         <header className="header">
+          <div className="brand">thenexoratools</div>
           <div className="badge">
             <span>✦</span> Smart Tip Calculator
           </div>
@@ -141,7 +168,7 @@ export default function TipClient() {
             <div className="tip-section">
               <div className="tip-title">
                 <span>Quick tip</span>
-                <b>{tipPercent}%</b>
+                <b>{calculations.tipRate % 1 === 0 ? calculations.tipRate.toFixed(0) : calculations.tipRate.toFixed(1)}%</b>
               </div>
 
               <div className="tips">
@@ -243,7 +270,7 @@ export default function TipClient() {
               <div>
                 <span>Per person</span>
                 <small>
-                  {people} {people === 1 ? "person" : "people"}
+                  {people} {people === 1 ? "person" : "people"} • Bill {money(calculations.billPerPerson)} + Tip {money(calculations.tipPerPerson)}
                 </small>
               </div>
 
@@ -253,14 +280,14 @@ export default function TipClient() {
             </div>
 
             <div className="mini-note">
-              Tip per person: {money(calculations.tipPerPerson)}
+              Har ek ko dena hai: Bill {money(calculations.billPerPerson)} + Tip {money(calculations.tipPerPerson)} = {money(calculations.perPerson)}
             </div>
           </section>
         </div>
 
         {/* FOOTER */}
         <footer>
-          Free • No sign-up • Instant calculation
+          Free • No sign-up • Instant calculation • thenexoratools
         </footer>
       </div>
 
@@ -289,6 +316,14 @@ export default function TipClient() {
         .header {
           text-align: center;
           margin-bottom: 14px;
+        }
+
+        .brand {
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.5px;
+          color: #171b28;
+          margin-bottom: 6px;
         }
 
         .badge {
