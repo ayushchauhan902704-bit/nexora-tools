@@ -4,7 +4,8 @@ export const runtime = "nodejs";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const MAX_IMAGE_BASE64_LENGTH = 15 * 1024 * 1024;
+// Gemini inline image input should stay within a reasonable request size.
+const MAX_IMAGE_BASE64_LENGTH = 9 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -12,8 +13,88 @@ const ALLOWED_MIME_TYPES = [
   "image/webp",
 ];
 
+const TRANSCRIPTION_PROMPT = `
+You are a multilingual handwriting recognition and document transcription system.
+
+Your task is to TRANSCRIBE the uploaded handwritten document into editable digital text.
+
+The handwritten content can be in ANY language or combination of languages that you can recognize.
+
+LANGUAGE AND SCRIPT RULES:
+
+1. English handwriting must remain English.
+2. Hindi handwriting written in Devanagari must remain Hindi / Devanagari.
+3. Hinglish written using Latin letters must remain Hinglish.
+4. Hindi + English mixed handwriting must remain mixed Hindi + English.
+5. Do not translate any language into another language.
+6. Do not convert Hindi into English.
+7. Do not convert English into Hindi.
+8. Do not convert Hinglish into Hindi.
+9. Do not convert Hinglish into English.
+10. Preserve other recognizable languages and scripts in their original form.
+11. Preserve Unicode characters when applicable.
+
+TRANSCRIPTION RULES:
+
+- Transcribe what is actually visible.
+- Preserve the original wording.
+- Do not correct spelling.
+- Do not correct grammar.
+- Do not rewrite sentences.
+- Do not improve the writing.
+- Do not summarize.
+- Do not explain the content.
+- Do not add information.
+- Do not invent missing words.
+- Preserve names exactly as visible.
+- Preserve places exactly as visible.
+- Preserve numbers exactly as visible.
+- Preserve dates exactly as visible.
+- Preserve mathematical symbols when recognizable.
+- Preserve punctuation.
+- Preserve repeated words.
+- Preserve informal language and slang.
+- Preserve abbreviations.
+
+STRUCTURE RULES:
+
+- Read the ENTIRE image carefully.
+- Preserve meaningful line breaks.
+- Preserve paragraphs.
+- Preserve headings.
+- Preserve numbered lists.
+- Preserve bullet-style lists when clearly visible.
+- Preserve the original reading order.
+- If a table is visible, preserve rows and columns as closely as possible using text.
+- Do not merge the entire page into one paragraph.
+- Do not create Markdown unless the original document clearly represents a list or heading.
+- Do not add a title if the handwritten document does not contain one.
+
+IMPORTANT FOR HANDWRITING:
+
+- Pay close attention to small handwritten text.
+- Inspect every visible line before producing the answer.
+- Do not stop after reading only the easiest or largest text.
+- Use the surrounding handwriting only to understand letter shapes, not to invent words.
+- If a word is genuinely unreadable, use [unclear].
+- Do not replace unclear handwriting with a likely word.
+
+This is TRANSCRIPTION, NOT translation.
+This is TRANSCRIPTION, NOT proofreading.
+This is TRANSCRIPTION, NOT rewriting.
+
+Return ONLY the transcription.
+Do not describe the image.
+Do not explain your answer.
+Do not add introductory text.
+`;
+
 export async function POST(request: NextRequest) {
   try {
+    // --------------------------------------------------
+    // 1. Check API key
+    // --------------------------------------------------
+
     if (!GEMINI_API_KEY) {
       return NextResponse.json(
         {
@@ -23,6 +104,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // --------------------------------------------------
+    // 2. Read request
+    // --------------------------------------------------
 
     let body: any;
 
@@ -48,6 +133,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // --------------------------------------------------
+    // 3. Validate image size
+    // --------------------------------------------------
+
     if (image.length > MAX_IMAGE_BASE64_LENGTH) {
       return NextResponse.json(
         {
@@ -57,6 +146,10 @@ export async function POST(request: NextRequest) {
         { status: 413 }
       );
     }
+
+    // --------------------------------------------------
+    // 4. Validate data URL
+    // --------------------------------------------------
 
     if (!image.startsWith("data:image/")) {
       return NextResponse.json(
@@ -96,6 +189,10 @@ export async function POST(request: NextRequest) {
 
     const mimeType = mimeMatch[1].toLowerCase();
 
+    // --------------------------------------------------
+    // 5. Validate MIME type
+    // --------------------------------------------------
+
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
         {
@@ -116,80 +213,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = `
-You are a high-quality multilingual handwriting transcription system.
-
-Your task is to transcribe the handwritten content in the supplied image into editable digital text.
-
-LANGUAGE RULES:
-
-- English handwriting must remain English.
-- Hindi handwriting written in Devanagari must remain Hindi/Devanagari.
-- Hinglish written using Latin letters must remain Hinglish.
-- Hindi and English mixed handwriting must remain mixed.
-- Preserve other recognizable languages and scripts in their original form.
-- Do not translate anything.
-- Do not convert Hindi into English.
-- Do not convert English into Hindi.
-- Do not convert Hinglish into Hindi or English.
-
-TRANSCRIPTION RULES:
-
-- Transcribe what is actually visible.
-- Preserve the original wording.
-- Do not correct spelling.
-- Do not correct grammar.
-- Do not rewrite sentences.
-- Do not improve the writing.
-- Do not summarize.
-- Do not explain the content.
-- Do not add information.
-- Do not invent missing words.
-- Preserve names exactly as visible.
-- Preserve places exactly as visible.
-- Preserve numbers exactly as visible.
-- Preserve dates exactly as visible.
-- Preserve punctuation.
-- Preserve symbols.
-- Preserve repeated words.
-- Preserve informal language and abbreviations.
-
-STRUCTURE RULES:
-
-- Read the ENTIRE image.
-- Preserve meaningful line breaks.
-- Preserve paragraphs.
-- Preserve headings.
-- Preserve numbered lists.
-- Preserve bullet-style lists when clearly visible.
-- Preserve the original reading order.
-- If a table is visible, preserve its rows and columns as closely as possible using text.
-- Do not merge the entire page into one paragraph.
-- Do not create Markdown unless the original document clearly represents a heading or list.
-- Do not add a title if the handwritten document does not contain one.
-
-UNCLEAR HANDWRITING:
-
-If a small portion is genuinely impossible to read, write:
-
-[unclear]
-
-Do not invent a word.
-
-IMPORTANT:
-
-This is transcription, NOT translation.
-This is transcription, NOT proofreading.
-This is transcription, NOT rewriting.
-
-Return ONLY the transcription.
-Do not describe the image.
-Do not explain your answer.
-Do not add introductory text.
-`;
+    // --------------------------------------------------
+    // 6. Gemini endpoint
+    // --------------------------------------------------
 
     const endpoint =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent";
+
+    // --------------------------------------------------
+    // 7. Timeout
+    // --------------------------------------------------
 
     const controller = new AbortController();
 
@@ -202,18 +235,22 @@ Do not add introductory text.
     try {
       response = await fetch(endpoint, {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": GEMINI_API_KEY,
         },
+
         body: JSON.stringify({
           contents: [
             {
               role: "user",
+
               parts: [
                 {
-                  text: prompt,
+                  text: TRANSCRIPTION_PROMPT,
                 },
+
                 {
                   inline_data: {
                     mime_type: mimeType,
@@ -223,12 +260,14 @@ Do not add introductory text.
               ],
             },
           ],
+
+          // Do not send custom temperature/topP values here.
+          // This keeps the request compatible with Gemini 3.5 Flash-Lite.
           generationConfig: {
-            temperature: 0,
-            topP: 0.1,
             maxOutputTokens: 8192,
           },
         }),
+
         signal: controller.signal,
       });
     } catch (error: any) {
@@ -257,6 +296,10 @@ Do not add introductory text.
 
     clearTimeout(timeout);
 
+    // --------------------------------------------------
+    // 8. Read Gemini response
+    // --------------------------------------------------
+
     let data: any;
 
     try {
@@ -276,17 +319,26 @@ Do not add introductory text.
       );
     }
 
+    // --------------------------------------------------
+    // 9. Handle Gemini API errors
+    // --------------------------------------------------
+
     if (!response.ok) {
       console.error("Gemini API error:", {
         status: response.status,
         data,
       });
 
+      const apiMessage =
+        data?.error?.message ||
+        "The Gemini API could not process this image.";
+
       if (response.status === 400) {
         return NextResponse.json(
           {
             error:
               "Gemini rejected the image request. Please try a clear JPG, PNG or WebP image.",
+            details: apiMessage,
           },
           { status: 400 }
         );
@@ -302,6 +354,17 @@ Do not add introductory text.
         );
       }
 
+      if (response.status === 404) {
+        return NextResponse.json(
+          {
+            error:
+              "The selected Gemini model is unavailable for this API key or project.",
+            details: apiMessage,
+          },
+          { status: 502 }
+        );
+      }
+
       if (response.status === 429) {
         return NextResponse.json(
           {
@@ -312,33 +375,55 @@ Do not add introductory text.
         );
       }
 
+      if (response.status >= 500) {
+        return NextResponse.json(
+          {
+            error:
+              "The handwriting service is temporarily unavailable. Please try again.",
+          },
+          { status: 502 }
+        );
+      }
+
       return NextResponse.json(
         {
-          error:
-            data?.error?.message ||
-            "The Gemini API could not process this image.",
+          error: apiMessage,
         },
         { status: response.status }
       );
     }
 
+    // --------------------------------------------------
+    // 10. Extract candidates
+    // --------------------------------------------------
+
     const candidates = data?.candidates;
 
     if (!Array.isArray(candidates) || candidates.length === 0) {
-      console.error("Gemini returned no candidates:", data);
+      console.error(
+        "Gemini returned no candidates:",
+        data
+      );
 
       return NextResponse.json(
         {
           error:
             "Gemini could not generate a transcription from this image.",
         },
-        { status: 502 }
+        { status: 422 }
       );
     }
 
     const candidate = candidates[0];
 
-    if (candidate?.finishReason === "SAFETY") {
+    // --------------------------------------------------
+    // 11. Handle blocked response
+    // --------------------------------------------------
+
+    if (
+      candidate?.finishReason === "SAFETY" ||
+      candidate?.finishReason === "BLOCKLIST"
+    ) {
       return NextResponse.json(
         {
           error:
@@ -347,6 +432,10 @@ Do not add introductory text.
         { status: 422 }
       );
     }
+
+    // --------------------------------------------------
+    // 12. Extract text
+    // --------------------------------------------------
 
     const parts = candidate?.content?.parts;
 
@@ -366,21 +455,31 @@ Do not add introductory text.
     }
 
     const result = parts
-      .map((part: any) =>
-        typeof part?.text === "string" ? part.text : ""
-      )
+      .map((part: any) => {
+        return typeof part?.text === "string"
+          ? part.text
+          : "";
+      })
       .join("")
       .trim();
+
+    // --------------------------------------------------
+    // 13. Empty result
+    // --------------------------------------------------
 
     if (!result) {
       return NextResponse.json(
         {
           error:
-            "No readable handwriting was detected. Please try a sharper, well-lit image.",
+            "No readable handwriting was detected. Please try the image again.",
         },
         { status: 422 }
       );
     }
+
+    // --------------------------------------------------
+    // 14. Success
+    // --------------------------------------------------
 
     return NextResponse.json(
       {
