@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 export default function SalaryCounterClient() {
-  const [amount, setAmount] = useState(50000);
+  const [amount, setAmount] = useState(0);
   const [fromUnit, setFromUnit] = useState("month");
   const [hoursPerDay, setHoursPerDay] = useState(8);
   const [daysPerWeek, setDaysPerWeek] = useState(5);
@@ -44,14 +44,17 @@ export default function SalaryCounterClient() {
     (now.getTime() - startOfDay.getTime()) / 1000
   );
 
-  const earnedToday = secondsToday * perSecond;
+  const hasSalary = amount > 0;
+  const isLive = hasSalary && started;
+
+  const earnedToday = isLive ? secondsToday * perSecond : 0;
 
   const daysPassed = Math.max(
     1,
     now.getDate() - 1 + now.getHours() / 24
   );
 
-  const earnedMonth = (perMonth / 30) * daysPassed;
+  const earnedMonth = isLive ? (perMonth / 30) * daysPassed : 0;
 
   const fmt = (n: number, decimals = 0) =>
     currency +
@@ -140,6 +143,18 @@ export default function SalaryCounterClient() {
             marginBottom: "18px",
           }}
         >
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 900,
+              letterSpacing: "0.5px",
+              color: "#111827",
+              marginBottom: "6px",
+            }}
+          >
+            thenexoratools
+          </div>
+
           <div
             style={{
               display: "inline-flex",
@@ -241,7 +256,7 @@ export default function SalaryCounterClient() {
               }}
             >
               <span style={{ color: "#51e1d0" }}>●</span>
-              LIVE NOW
+              {isLive ? "LIVE NOW" : "WAITING FOR SALARY"}
             </div>
 
             <div
@@ -276,7 +291,7 @@ export default function SalaryCounterClient() {
                 fontSize: "11px",
               }}
             >
-              + {fmt(perSecond, 3)} every second
+              {isLive ? `+ ${fmt(perSecond, 3)} every second` : "Write your salary to start"}
             </div>
 
             <div
@@ -351,21 +366,23 @@ export default function SalaryCounterClient() {
 
             {!started && (
               <button
-                onClick={() => setStarted(true)}
+                onClick={() => hasSalary && setStarted(true)}
+                disabled={!hasSalary}
                 style={{
                   marginTop: "14px",
                   border: "none",
                   borderRadius: "999px",
                   padding: "10px 19px",
-                  background: "#51e1d0",
-                  color: "#071311",
+                  background: hasSalary ? "#51e1d0" : "#2a364a",
+                  color: hasSalary ? "#071311" : "#8b95a8",
                   fontSize: "10px",
                   fontWeight: 900,
-                  cursor: "pointer",
-                  boxShadow: "0 8px 25px rgba(81,225,208,0.22)",
+                  cursor: hasSalary ? "pointer" : "not-allowed",
+                  boxShadow: hasSalary ? "0 8px 25px rgba(81,225,208,0.22)" : "none",
+                  opacity: hasSalary ? 1 : 0.7,
                 }}
               >
-                ▶ START LIVE COUNTER
+                {hasSalary ? "▶ START LIVE COUNTER" : "WRITE YOUR SALARY FIRST"}
               </button>
             )}
 
@@ -450,7 +467,8 @@ export default function SalaryCounterClient() {
 
             <input
               type="number"
-              value={amount}
+              value={amount || ""}
+              placeholder="Write your salary"
               onChange={(e) =>
                 setAmount(Number(e.target.value) || 0)
               }
