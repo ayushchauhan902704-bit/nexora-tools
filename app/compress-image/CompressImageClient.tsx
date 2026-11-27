@@ -6,16 +6,15 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const MIN_KB = 10;
 const MAX_KB = 1000;
 
-/*
- * Decimal KB - jaisa form me hota hai:
- * 10 KB = 10,000 bytes
- * 20 KB = 20,000 bytes
- */
+// Decimal KB - jaisa form me hota hai: 10 KB = 10,000 bytes
 function formatSize(bytes: number) {
   if (bytes >= 1_000_000) {
     return `${(bytes / 1_000_000).toFixed(2)} MB`;
   }
-  return `${(bytes / 1000).toFixed(1)} KB`;
+  if (bytes >= 100_000) {
+    return `${(bytes / 1000).toFixed(1)} KB`;
+  }
+  return `${(bytes / 1000).toFixed(2)} KB`;
 }
 
 function getBaseName(filename: string) {
@@ -106,87 +105,83 @@ export default function CompressImageClient() {
       canvas.toBlob(
         (blob) => resolve(blob),
         "image/jpeg",
-        Math.max(0.01, Math.min(0.95, quality))
+        Math.max(0.01, Math.min(0.98, quality))
       );
     });
   };
 
-  /*
-   * EXACT KB LOGIC:
-   * User 10 KB maange -> hum 9,800 bytes ko target banate hain
-   * Taaki final file kabhi 10,000 se upar na jaye, par 9,800 ke paas rahe
-   */
+  // Ek scale pe best quality dhundho - jo target se neeche ho aur sabse badi ho
+  const findBestAtScale = async (
+    img: HTMLImageElement,
+    scale: number,
+    targetBytes: number
+  ): Promise<Blob | null> => {
+    const lowest = await createJpeg(img, scale, 0.01);
+    if (!lowest) return null;
+    if (lowest.size > targetBytes) return null;
+
+    let best: Blob | null = lowest;
+    let low = 0.01;
+    let high = 0.98;
+
+    for (let i = 0; i < 10; i++) {
+      const quality = (low + high) / 2;
+      const blob = await createJpeg(img, scale, quality);
+      if (!blob) continue;
+      if (blob.size <= targetBytes) {
+        if (blob.size > best.size) best = blob;
+        low = quality;
+      } else {
+        high = quality;
+      }
+    }
+    return best;
+  };
+
+  // MAIN ENGINE - EXACT KB
   const findBestBlob = async (
     img: HTMLImageElement,
     targetBytes: number
   ): Promise<Blob | null> => {
-    const safeTargetBytes = Math.floor(targetBytes * 0.98);
+    const exactTarget = Math.floor(targetBytes);
+    let bestOverall: Blob | null = null;
 
     const scales = [
-      1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.42, 0.36, 0.30, 0.25, 0.20,
-      0.16, 0.13, 0.10, 0.08, 0.06, 0.05, 0.04, 0.03, 0.025, 0.02, 0.015, 0.01,
+      1, 0.8, 0.6, 0.5, 0.4, 0.3, 0.22, 0.16, 0.12, 0.09, 0.06, 0.04, 0.025, 0.015,
     ];
 
-    let bestBlob: Blob | null = null;
-
     for (const scale of scales) {
-      let low = 0.01;
-      let high = 0.95;
-      let bestAtScale: Blob | null = null;
-
-      for (let i = 0; i < 11; i++) {
-        const quality = (low + high) / 2;
-        const blob = await createJpeg(img, scale, quality);
-        if (!blob) continue;
-        if (blob.size <= safeTargetBytes) {
-          // Sirf tabhi rakho jab ye pichli wali se BADI ho
-          if (!bestAtScale || blob.size > bestAtScale.size) {
-            bestAtScale = blob;
-          }
-          low = quality;
-        } else {
-          high = quality;
+      const blob = await findBestAtScale(img, scale, exactTarget);
+      if (blob) {
+        if (!bestOverall || blob.size > bestOverall.size) {
+          bestOverall = blob;
         }
-      }
-
-      // FIX: Lowest quality wali ko tabhi rakho jab best se BADI ho, warna mat mitao
-      const lowest = await createJpeg(img, scale, 0.01);
-      if (lowest && lowest.size <= safeTargetBytes) {
-        if (!bestAtScale || lowest.size > bestAtScale.size) {
-          bestAtScale = lowest;
-        }
-      }
-
-      if (bestAtScale) {
-        if (!bestBlob || bestAtScale.size > bestBlob.size) {
-          bestBlob = bestAtScale;
-        }
-        // Safe target ke 98% paas aa gaye to ruk jao - isse zyada bada karne ki zaroorat nahi
-        if (bestBlob.size >= safeTargetBytes * 0.98) {
+        // Target ke 98% paas aa gaye to ruk jao
+        if (bestOverall.size >= exactTarget * 0.98) {
           break;
         }
       }
     }
 
-    // Emergency search - agar abhi tak nahi bana
-    if (!bestBlob) {
-      let scale = 0.08;
-      for (let i = 0; i < 20; i++) {
+    // Emergency - agar abhi tak nahi bana to aur chhota karke try karo
+    if (!bestOverall) {
+      let scale = 0.05;
+      for (let i = 0; i < 15; i++) {
         const blob = await createJpeg(img, scale, 0.01);
         if (!blob) break;
-        if (blob.size <= safeTargetBytes) {
-          bestBlob = blob;
+        if (blob.size <= exactTarget) {
+          bestOverall = blob;
           break;
         }
-        const ratio = Math.sqrt(safeTargetBytes / blob.size);
-        scale *= Math.max(0.35, Math.min(0.85, ratio));
+        const ratio = Math.sqrt(exactTarget / blob.size);
+        scale *= Math.max(0.4, Math.min(0.85, ratio));
         scale = Math.max(0.01, scale);
       }
     }
 
-    // CRITICAL: Over-target Blob kabhi return mat karo
-    if (bestBlob && bestBlob.size <= safeTargetBytes) {
-      return bestBlob;
+    // FINAL HARD CHECK - upar wala kabhi return mat karo
+    if (bestOverall && bestOverall.size <= exactTarget) {
+      return bestOverall;
     }
     return null;
   };
@@ -219,10 +214,8 @@ export default function CompressImageClient() {
       if (!blob) {
         throw new Error(`Unable to create an image under ${finalKB} KB.`);
       }
-
-      // FINAL VERIFICATION - 10 KB maanga to 10,000 se upar hua to error
       if (blob.size > targetBytes) {
-        throw new Error("The generated file did not pass the size verification.");
+        throw new Error("The generated file exceeded the selected size limit.");
       }
 
       compressedBlobRef.current = blob;
@@ -245,24 +238,23 @@ export default function CompressImageClient() {
   const download = () => {
     const blob = compressedBlobRef.current;
     if (!blob || !file) return;
-
-    // Download se pehle dobara check - jo dikha wahi download hoga
     if (blob.size !== newSize) {
       setError("Download verification failed. Please compress the image again.");
       return;
     }
-
+    if (blob.size > target * 1000) {
+      setError("The file is larger than the selected target size.");
+      return;
+    }
     const outputFile = new File(
       [blob],
       `NEXORA-${target}KB-${getBaseName(file.name)}.jpg`,
       { type: "image/jpeg", lastModified: Date.now() }
     );
-
     if (outputFile.size !== blob.size) {
       setError("The downloaded file could not be verified.");
       return;
     }
-
     const downloadUrl = URL.createObjectURL(outputFile);
     const link = document.createElement("a");
     link.href = downloadUrl;
@@ -296,6 +288,7 @@ export default function CompressImageClient() {
       : 0;
 
   const isWithinTarget = newSize > 0 && newSize <= target * 1000;
+  const exactOutputText = newSize > 0 ? `${newSize.toLocaleString()} bytes` : "";
 
   return (
     <div className="page">
@@ -371,7 +364,6 @@ export default function CompressImageClient() {
               />
               <span>KB</span>
             </div>
-
             <div className="presets" aria-label="Target size presets">
               {[10, 15, 20, 30, 50, 80, 100, 200, 500].map((size) => (
                 <button
@@ -418,6 +410,9 @@ export default function CompressImageClient() {
             <div className={isWithinTarget ? "size-result success" : "size-result warning"}>
               {formatSize(origSize)} → {formatSize(newSize)}
             </div>
+            <div className="exact-size">
+              Actual output: <strong>{formatSize(newSize)}</strong> ({exactOutputText})
+            </div>
             <p className="result-message">
               {isWithinTarget
                 ? `${savedPercent}% smaller • Within your ${target} KB target`
@@ -427,11 +422,16 @@ export default function CompressImageClient() {
               <div className="image-panel">
                 <span>BEFORE</span>
                 <img src={preview} alt="Original image" />
+                <small>Original: {formatSize(origSize)}</small>
               </div>
               <div className="image-panel after">
                 <span>AFTER</span>
-                <img src={compressedUrl} alt="Compressed image" />
+                <img src={compressedUrl} alt="Compressed image preview" />
+                <small>Output: <strong>{formatSize(newSize)}</strong></small>
               </div>
+            </div>
+            <div className="verified">
+              ✓ Verified file size: {newSize.toLocaleString()} bytes
             </div>
             <button type="button" className="download-btn" onClick={download}>
               Download Compressed Image
@@ -482,12 +482,13 @@ export default function CompressImageClient() {
           </section>
           <section>
             <h2>Frequently Asked Questions</h2>
-            <details><summary>Can I compress an image to 20 KB?</summary><p>Yes. Enter 20 KB as the target size and click Compress Image. The tool tries to produce a result slightly below the requested size while preserving as much quality as possible.</p></details>
+            <details><summary>Can I compress an image to 10 KB?</summary><p>Yes. Enter 10 KB as the target size. The compressor automatically adjusts image dimensions and JPEG quality to create a file at or below the selected limit while trying to stay as close to the target as possible.</p></details>
+            <details><summary>Can I compress an image to 20 KB?</summary><p>Yes. Enter 20 KB as the target size and click Compress Image. The tool searches for the closest possible result that does not exceed the requested limit.</p></details>
             <details><summary>Can I choose a custom image size?</summary><p>Yes. You can enter any target from 10 KB to 1000 KB.</p></details>
             <details><summary>Which image formats are supported?</summary><p>JPG, JPEG, PNG, and WebP images are supported. The compressed output is provided as a JPEG file.</p></details>
             <details><summary>Is my image uploaded to a server?</summary><p>No. Compression is performed in your browser. The image is not intentionally uploaded to a NEXORA processing server.</p></details>
             <details><summary>Does the compressor work on mobile?</summary><p>Yes. The tool is designed to work on modern mobile and desktop browsers.</p></details>
-            <details><summary>Will the image quality remain the same?</summary><p>Compression can reduce image quality because a smaller file generally requires some quality or dimension reduction. NEXORA tries to keep the output as large and clear as possible while staying close to the selected target.</p></details>
+            <details><summary>Will the image quality remain the same?</summary><p>Compression can reduce image quality because a smaller file generally requires some quality or dimension reduction. NEXORA tries to keep the output as large and clear as possible while staying within the selected target.</p></details>
           </section>
           <section className="related">
             <h2>Related Tools</h2>
@@ -555,16 +556,21 @@ export default function CompressImageClient() {
         .privacy-note { margin: 8px 0 0; color: #94a3b8; text-align: center; font-size: 9px; line-height: 1.4; }
         .result-card { margin-top: 15px; }
         .result-title { text-align: center; font-size: 13px; font-weight: 900; }
-        .size-result { margin-top: 3px; text-align: center; font-size: 17px; font-weight: 900; }
+        .size-result { margin-top: 3px; text-align: center; font-size: 19px; font-weight: 900; }
         .size-result.success { color: #2563eb; }
         .size-result.warning { color: #dc2626; }
-        .result-message { margin: 3px 0 11px; text-align: center; color: #64748b; font-size: 10px; font-weight: 700; }
+        .exact-size { margin-top: 3px; text-align: center; color: #64748b; font-size: 10px; }
+        .exact-size strong { color: #0f172a; }
+        .result-message { margin: 4px 0 11px; text-align: center; color: #64748b; font-size: 10px; font-weight: 700; }
         .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .image-panel { padding: 7px; border-radius: 9px; background: #f8fafc; text-align: center; }
         .image-panel.after { background: #ecfdf5; border: 1px solid #bbf7d0; }
         .image-panel span { display: block; margin-bottom: 5px; color: #64748b; font-size: 9px; font-weight: 900; }
         .image-panel.after span { color: #047857; }
-        .image-panel img { width: 100%; height: 125px; object-fit: contain; border-radius: 6px; background: #ffffff; }
+        .image-panel img { width: 100%; height: 125px; object-fit: contain; border-radius: 6px; background: #ffffff; display: block; }
+        .image-panel small { display: block; margin-top: 6px; color: #64748b; font-size: 9px; font-weight: 700; }
+        .image-panel.after small { color: #047857; }
+        .verified { margin-top: 9px; padding: 7px 9px; border-radius: 8px; background: #f0fdf4; color: #15803d; text-align: center; font-size: 9px; font-weight: 800; border: 1px solid #bbf7d0; }
         .download-btn { width: 100%; margin-top: 9px; padding: 11px; background: #0f172a; color: #ffffff; font-size: 12px; }
         .content-gap { height: 40px; }
         .seo-content { color: #334155; font-size: 12px; line-height: 1.75; }
