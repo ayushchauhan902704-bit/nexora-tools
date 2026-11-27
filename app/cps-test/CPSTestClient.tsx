@@ -1,19 +1,14 @@
 "use client";
-
-import {
-  PointerEvent as ReactPointerEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type Status = "idle" | "running" | "done";
 type Mode = "time" | "target";
-
 const DURATIONS = [1, 5, 10, 30, 60];
-const PB_KEY = "nexora_cps_pb_v7";
-const HISTORY_KEY = "nexora_cps_history_v7";
+const PB_KEY = "nexora_cps_pb_v8";
+const HISTORY_KEY = "nexora_cps_history_v8";
+
+declare global { interface Window { gtag?: (...args: any[]) => void; } }
+function trackEvent(name: string, params?: Record<string, any>) { try { window.gtag?.("event", name, params || {}); } catch {} }
 
 export default function CPSTestClient() {
   const [mode, setMode] = useState<Mode>("time");
@@ -33,7 +28,7 @@ export default function CPSTestClient() {
   const [intervalMs, setIntervalMs] = useState(0);
   const [sound, setSound] = useState(false);
   const [vibrateOn, setVibrateOn] = useState(true);
-  const [inputType, setInputType] = useState("Mouse / Touch");
+  const [inputType, setInputType] = useState("Touch / Mouse");
   const [combo, setCombo] = useState(0);
 
   const statusRef = useRef<Status>("idle");
@@ -53,30 +48,45 @@ export default function CPSTestClient() {
 
   useEffect(() => { vibrateRef.current = vibrateOn; }, [vibrateOn]);
 
+  useEffect(() => {
+    try {
+      const savedPB = localStorage.getItem(PB_KEY);
+      if (savedPB) {
+        const parsed = JSON.parse(savedPB);
+        if (parsed && typeof parsed === "object") {
+          setBestByTime(parsed);
+          const values = Object.values(parsed).filter((v): v is number => typeof v === "number");
+          if (values.length) setBest(Math.max(...values));
+        }
+      }
+      const savedHistory = localStorage.getItem(HISTORY_KEY);
+      if (savedHistory) {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed)) setHistory(parsed.filter((v): v is number => typeof v === "number").slice(0, 10));
+      }
+    } catch {}
+    return () => { stopTimers(); try { audioRef.current?.close(); } catch {} };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const stopTimers = useCallback(() => {
     if (animationRef.current !== null) { cancelAnimationFrame(animationRef.current); animationRef.current = null; }
     if (graphRef.current !== null) { window.clearInterval(graphRef.current); graphRef.current = null; }
   }, []);
 
-  useEffect(() => {
-    try {
-      const pb = localStorage.getItem(PB_KEY);
-      if (pb) { const parsed = JSON.parse(pb); if (parsed && typeof parsed === "object") { setBestByTime(parsed); const values = Object.values(parsed).filter((v): v is number => typeof v === "number"); if (values.length) setBest(Math.max(...values)); } }
-      const h = localStorage.getItem(HISTORY_KEY);
-      if (h) { const parsed = JSON.parse(h); if (Array.isArray(parsed)) setHistory(parsed.filter((v): v is number => typeof v === "number").slice(0, 10)); }
-    } catch {}
-    return () => { stopTimers(); try { audioRef.current?.close(); } catch {} };
-  }, [stopTimers]);
-
   const clickSound = useCallback(() => {
     if (!sound) return;
     try {
       if (!audioRef.current) audioRef.current = new AudioContext();
-      const ctx = audioRef.current; if (ctx.state === "suspended") void ctx.resume();
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.frequency.value = 520; o.type = "sine";
-      g.gain.setValueAtTime(0.035, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
-      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.04);
+      const ctx = audioRef.current;
+      if (ctx.state === "suspended") void ctx.resume();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.frequency.value = 520; oscillator.type = "sine";
+      gain.gain.setValueAtTime(0.025, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+      oscillator.connect(gain); gain.connect(ctx.destination);
+      oscillator.start(); oscillator.stop(ctx.currentTime + 0.04);
     } catch {}
   }, [sound]);
 
@@ -85,67 +95,59 @@ export default function CPSTestClient() {
     try { navigator.vibrate?.(pattern); } catch {}
   }, []);
 
-  // ✅ FINAL FIX - Inline style + Web Animation, styled-jsx pe depend nahi
   const spawnRipple = useCallback((clientX: number, clientY: number) => {
-    const box = boxRef.current;
-    if (!box) return;
+    const box = boxRef.current; if (!box) return;
     const rect = box.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-
-    const dot = document.createElement("div");
-    dot.style.position = "absolute";
-    dot.style.left = `${x - 35}px`;
-    dot.style.top = `${y - 35}px`;
-    dot.style.width = "70px";
-    dot.style.height = "70px";
-    dot.style.borderRadius = "50%";
-    dot.style.background = "rgba(22,163,74,0.35)";
-    dot.style.border = "4px solid #16a34a";
-    dot.style.pointerEvents = "none";
-    dot.style.zIndex = "99";
-    box.appendChild(dot);
-    dot.animate(
-      [{ transform: "scale(0.3)", opacity: 1 }, { transform: "scale(1.6)", opacity: 0 }],
-      { duration: 550, easing: "ease-out" }
-    );
-
+    const x = clientX - rect.left; const y = clientY - rect.top;
+    const ripple = document.createElement("div");
+    ripple.style.position = "absolute"; ripple.style.left = `${x - 34}px`; ripple.style.top = `${y - 34}px`;
+    ripple.style.width = "68px"; ripple.style.height = "68px"; ripple.style.borderRadius = "50%";
+    ripple.style.background = "rgba(22,163,74,0.18)"; ripple.style.border = "3px solid #16a34a";
+    ripple.style.pointerEvents = "none"; ripple.style.zIndex = "10";
+    box.appendChild(ripple);
+    ripple.animate([{ transform: "scale(0.35)", opacity: "1" }, { transform: "scale(1.65)", opacity: "0" }], { duration: 480, easing: "ease-out" });
     const plus = document.createElement("div");
-    plus.textContent = "+1";
-    plus.style.position = "absolute";
-    plus.style.left = `${x - 12}px`;
-    plus.style.top = `${y - 40}px`;
-    plus.style.color = "#16a34a";
-    plus.style.fontSize = "24px";
-    plus.style.fontWeight = "800";
-    plus.style.fontFamily = "inherit";
-    plus.style.pointerEvents = "none";
-    plus.style.zIndex = "100";
+    plus.textContent = "+1"; plus.style.position = "absolute"; plus.style.left = `${x - 10}px`; plus.style.top = `${y - 35}px`;
+    plus.style.color = "#16a34a"; plus.style.fontSize = "20px"; plus.style.fontWeight = "800"; plus.style.pointerEvents = "none"; plus.style.zIndex = "11";
     box.appendChild(plus);
-    plus.animate(
-      [{ transform: "translateY(0px)", opacity: 1 }, { transform: "translateY(-50px)", opacity: 0 }],
-      { duration: 550, easing: "ease-out" }
-    );
-
-    setTimeout(() => { dot.remove(); plus.remove(); }, 600);
+    plus.animate([{ transform: "translateY(0)", opacity: "1" }, { transform: "translateY(-42px)", opacity: "0" }], { duration: 480, easing: "ease-out" });
+    window.setTimeout(() => { ripple.remove(); plus.remove(); }, 520);
   }, []);
 
+  // ✅ FIX - O(n) Sliding Window, pehle O(n²) tha - ab lag nahi marega
   const calcStats = useCallback((times: number[]) => {
-    if (times.length < 2) return { peak: times.length, consistency: 100, interval: 0 };
-    let peakValue = 0;
-    for (let i = 0; i < times.length; i++) { let c = 0; for (let j = i; j < times.length; j++) { if (times[j] - times[i] <= 1000) c++; else break; } peakValue = Math.max(peakValue, c); }
-    const gaps: number[] = []; for (let i = 1; i < times.length; i++) gaps.push(times[i] - times[i - 1]);
-    const avg = gaps.reduce((s, v) => s + v, 0) / gaps.length;
-    const vari = gaps.reduce((s, g) => s + Math.pow(g - avg, 2), 0) / gaps.length;
-    const dev = Math.sqrt(vari);
-    return { peak: peakValue, consistency: Math.max(0, Math.min(100, 100 - (dev / Math.max(avg, 1)) * 100)), interval: avg };
+    if (times.length === 0) return { peak: 0, consistency: 0, interval: 0 };
+    if (times.length === 1) return { peak: 1, consistency: 100, interval: 0 };
+    let peakValue = 0; let left = 0;
+    for (let right = 0; right < times.length; right++) {
+      while (times[right] - times[left] > 1000) left++;
+      peakValue = Math.max(peakValue, right - left + 1);
+    }
+    const gaps: number[] = [];
+    for (let i = 1; i < times.length; i++) gaps.push(times[i] - times[i - 1]);
+    const average = gaps.reduce((s, v) => s + v, 0) / gaps.length;
+    const variance = gaps.reduce((s, g) => s + Math.pow(g - average, 2), 0) / gaps.length;
+    const deviation = Math.sqrt(variance);
+    const consistencyScore = Math.max(0, Math.min(100, 100 - (deviation / Math.max(average, 1)) * 100));
+    return { peak: peakValue, consistency: consistencyScore, interval: average };
   }, []);
 
   const saveResult = useCallback((score: number) => {
     const rounded = Number(score.toFixed(2));
     const key = modeRef.current === "time" ? `${durationRef.current}s` : "100clicks";
-    setBestByTime((old) => { const next = { ...old, [key]: Math.max(old[key] || 0, rounded) }; try { localStorage.setItem(PB_KEY, JSON.stringify(next)); } catch {}; setBest(Math.max(0, ...Object.values(next))); return next; });
-    setHistory((old) => { const next = [rounded, ...old].slice(0, 10); try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)); } catch {}; return next; });
+    setBestByTime((old) => {
+      const next = { ...old, [key]: Math.max(old[key] || 0, rounded) };
+      try { localStorage.setItem(PB_KEY, JSON.stringify(next)); } catch {}
+      const values = Object.values(next).filter((v): v is number => typeof v === "number");
+      setBest(values.length ? Math.max(...values) : 0);
+      return next;
+    });
+    setHistory((old) => {
+      const next = [rounded, ...old].slice(0, 10);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+    trackEvent("cps_test_completed", { mode: modeRef.current, duration: modeRef.current === "time" ? durationRef.current : "100_clicks", cps: rounded });
   }, []);
 
   const finishTest = useCallback(() => {
@@ -154,11 +156,12 @@ export default function CPSTestClient() {
     const elapsed = (window.performance.now() - startRef.current) / 1000;
     const finalCPS = modeRef.current === "time" ? clicksRef.current / Math.max(durationRef.current, 0.01) : clicksRef.current / Math.max(elapsed, 0.01);
     const stats = calcStats(clickTimesRef.current);
-    setCps(finalCPS); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval); setElapsedFinal(elapsed); setTimeLeft(0);
-    setStatus("done"); statusRef.current = "done"; saveResult(finalCPS);
-    // Khatam hone pe zor wali lambi vibration
-    try { if (vibrateRef.current) navigator.vibrate?.([80, 40, 80, 40, 150]); } catch {}
-  }, [calcStats, saveResult, stopTimers]);
+    setCps(finalCPS); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval);
+    setElapsedFinal(elapsed); setTimeLeft(0);
+    setStatus("done"); statusRef.current = "done";
+    saveResult(finalCPS); doVibrate([70, 35, 70]);
+    trackEvent("cps_test_finish", { cps: Number(finalCPS.toFixed(2)), clicks: clicksRef.current, mode: modeRef.current });
+  }, [calcStats, doVibrate, saveResult, stopTimers]);
 
   useEffect(() => { finishRef.current = finishTest; }, [finishTest]);
 
@@ -166,74 +169,85 @@ export default function CPSTestClient() {
     if (statusRef.current !== "running" || startRef.current === null) return;
     const elapsed = (window.performance.now() - startRef.current) / 1000;
     const remaining = Math.max(0, durationRef.current - elapsed);
-    setTimeLeft(remaining); setCps(elapsed > 0 ? clicksRef.current / elapsed : 0);
+    setTimeLeft(remaining);
+    setCps(elapsed > 0 ? clicksRef.current / elapsed : 0);
     if (modeRef.current === "time" && remaining <= 0) { finishRef.current(); return; }
     if (modeRef.current === "target" && clicksRef.current >= 100) { finishRef.current(); return; }
     animationRef.current = requestAnimationFrame(updateTimer);
   }, []);
 
   const startTest = useCallback(() => {
-    stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = window.performance.now(); statusRef.current = "running";
-    setStatus("running"); setClicks(0); setCps(0); setPeak(0); setConsistency(0); setIntervalMs(0); setGraph([]); setTimeLeft(durationRef.current); setCombo(0); comboRef.current = 0;
-    doVibrate(40);
-    if (boxRef.current) boxRef.current.querySelectorAll("[data-ripple]").forEach(n => n.remove());
+    stopTimers();
+    clicksRef.current = 0; clickTimesRef.current = [];
+    startRef.current = window.performance.now(); statusRef.current = "running";
+    setStatus("running"); setClicks(0); setCps(0); setPeak(0); setConsistency(0); setIntervalMs(0); setGraph([]); setCombo(0);
+    comboRef.current = 0;
+    setTimeLeft(modeRef.current === "time" ? durationRef.current : 0);
+    setInputType("Touch / Mouse"); doVibrate(35);
+    trackEvent("cps_test_started", { mode: modeRef.current, duration: modeRef.current === "time" ? durationRef.current : "100_clicks" });
     graphRef.current = window.setInterval(() => {
       if (statusRef.current !== "running" || startRef.current === null) return;
       const elapsed = (window.performance.now() - startRef.current) / 1000;
-      setGraph((old) => [...old.slice(-44), elapsed > 0 ? clicksRef.current / elapsed : 0]);
+      const current = elapsed > 0 ? clicksRef.current / elapsed : 0;
+      setGraph((old) => [...old.slice(-39), current]);
     }, 150);
     animationRef.current = requestAnimationFrame(updateTimer);
-  }, [stopTimers, updateTimer, doVibrate]);
+  }, [doVibrate, stopTimers, updateTimer]);
 
   const resetTest = useCallback(() => {
     stopTimers(); clicksRef.current = 0; clickTimesRef.current = []; startRef.current = null; statusRef.current = "idle";
-    setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setPeak(0); setConsistency(0); setIntervalMs(0); setElapsedFinal(0); setTimeLeft(durationRef.current); setCombo(0); comboRef.current = 0;
+    setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setPeak(0); setConsistency(0); setIntervalMs(0); setElapsedFinal(0);
+    setTimeLeft(modeRef.current === "time" ? durationRef.current : 0); setCombo(0); comboRef.current = 0;
   }, [stopTimers]);
 
-  const changeDuration = useCallback((s: number) => {
-    if (statusRef.current === "running") return; stopTimers(); durationRef.current = s; startRef.current = null; statusRef.current = "idle";
-    setDuration(s); setCustomTime(s); setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setTimeLeft(s);
+  const changeDuration = useCallback((seconds: number) => {
+    if (statusRef.current === "running") return;
+    stopTimers(); durationRef.current = seconds; startRef.current = null; statusRef.current = "idle";
+    setDuration(seconds); setCustomTime(seconds); setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setTimeLeft(seconds); setPeak(0); setConsistency(0); setIntervalMs(0);
   }, [stopTimers]);
 
-  const changeMode = useCallback((m: Mode) => { if (statusRef.current === "running") return; modeRef.current = m; setMode(m); resetTest(); }, [resetTest]);
+  const changeMode = useCallback((newMode: Mode) => {
+    if (statusRef.current === "running") return;
+    modeRef.current = newMode; setMode(newMode); stopTimers();
+    clicksRef.current = 0; clickTimesRef.current = []; startRef.current = null; statusRef.current = "idle";
+    setStatus("idle"); setClicks(0); setCps(0); setGraph([]); setPeak(0); setConsistency(0); setIntervalMs(0); setElapsedFinal(0); setCombo(0); comboRef.current = 0;
+    setTimeLeft(newMode === "time" ? durationRef.current : 0);
+  }, [stopTimers]);
 
-  // ✅ Box sirf RUNNING me count karega, idle/done me nahi
   const handleBoxClick = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (statusRef.current !== "running") {
-      // Idle/Done me box pe click karne pe bhi gol dikhe, par count na ho
-      spawnRipple(e.clientX, e.clientY);
-      return;
-    }
-    spawnRipple(e.clientX, e.clientY);
-    doVibrate(30); // Zor wali vibration
+    // ✅ FIX - Right click se count nahi hoga
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (statusRef.current !== "running") { spawnRipple(e.clientX, e.clientY); return; }
+    spawnRipple(e.clientX, e.clientY); doVibrate(20);
     if (e.pointerType === "mouse") setInputType("Mouse");
     else if (e.pointerType === "touch") setInputType("Touch");
     else setInputType("Pen");
-
     const now = window.performance.now();
-    if (now - lastClickRef.current < 400) { comboRef.current += 1; setCombo(comboRef.current); } else { comboRef.current = 1; setCombo(1); }
-    lastClickRef.current = now;
-
-    clicksRef.current += 1; clickTimesRef.current.push(now); setClicks(clicksRef.current); clickSound();
-    const stats = calcStats(clickTimesRef.current); setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval);
+    if (now - lastClickRef.current < 400) comboRef.current += 1; else comboRef.current = 1;
+    lastClickRef.current = now; setCombo(comboRef.current);
+    clicksRef.current += 1; clickTimesRef.current.push(now); setClicks(clicksRef.current);
+    clickSound();
+    const stats = calcStats(clickTimesRef.current);
+    setPeak(stats.peak); setConsistency(stats.consistency); setIntervalMs(stats.interval);
     if (modeRef.current === "target" && clicksRef.current >= 100) finishRef.current();
   };
 
   const shareResult = async () => {
-    const text = `I scored ${cps.toFixed(2)} CPS on thenexoratools.com CPS Test. Peak ${peak.toFixed(1)} CPS with ${consistency.toFixed(0)}% consistency.`;
+    const text = `I scored ${cps.toFixed(2)} CPS on the NEXORA CPS Test. Peak ${peak.toFixed(1)} CPS with ${consistency.toFixed(0)}% consistency.`;
+    trackEvent("cps_result_shared", { cps: Number(cps.toFixed(2)) });
     try {
       if (navigator.share) await navigator.share({ title: "CPS Test Result", text, url: window.location.href });
-      else { await navigator.clipboard.writeText(`${text} ${window.location.href}`); window.alert("Result copied!"); }
+      else { await navigator.clipboard.writeText(`${text} ${window.location.href}`); window.alert("Your result has been copied."); }
     } catch {}
   };
 
   const getPerformance = (score: number) => {
     if (score < 4) return { icon: "🐢", title: "Getting Started", desc: "Keep practicing and focus on a relaxed, consistent clicking rhythm." };
-    if (score < 6) return { icon: "👍", title: "Good Speed", desc: "A solid clicking speed. Keep practicing for more consistency." };
-    if (score < 8) return { icon: "🔥", title: "Fast Clicker", desc: "Great clicking speed with strong performance." };
-    if (score < 10) return { icon: "⚡", title: "Very Fast", desc: "Excellent speed. Your clicking performance is well above the basic range." };
+    if (score < 6) return { icon: "👍", title: "Good Speed", desc: "A solid clicking speed. Keep practicing to improve your consistency." };
+    if (score < 8) return { icon: "🔥", title: "Fast Clicker", desc: "Great clicking speed with strong overall performance." };
+    if (score < 10) return { icon: "⚡", title: "Very Fast", desc: "Excellent clicking speed. Your result is well above the basic range." };
     if (score < 15) return { icon: "👑", title: "Extremely Fast", desc: "A very high CPS result. Try another round and compare your consistency." };
-    return { icon: "🚨", title: "Unusually High Speed", desc: "This CPS is unusually high for ordinary clicking. Hardware, clicking technique or automation may affect the result." };
+    return { icon: "🚨", title: "Unusually High Speed", desc: "This result is unusually high for ordinary clicking. Hardware, clicking technique, browser behavior or automated input can affect results." };
   };
 
   const resultInfo = status === "done" ? getPerformance(cps) : null;
@@ -243,152 +257,166 @@ export default function CPSTestClient() {
   return (
     <main className="page">
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-        .page { min-height: 100vh; background: #ffffff; color: #0f172a; padding: 16px 14px 50px; font-family: 'Plus Jakarta Sans', Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .wrap { width: 100%; max-width: 900px; margin: auto; }
-        .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
-        .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: #0f172a; }
+        .page { min-height: 100vh; background: #ffffff; color: #0f172a; padding: 12px 12px 36px; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        .wrap { width: 100%; max-width: 850px; margin: auto; }
+        .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+        .logo { font-size: 14px; font-weight: 800; letter-spacing: -0.4px; }
         .logo span { color: #16a34a; }
-        .topBest { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 12px; font-size: 11px; font-weight: 700; color: #334155; }
+        .topBest { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 6px 10px; font-size: 9px; font-weight: 800; color: #64748b; }
         .topBest b { color: #16a34a; }
-        .hero { text-align: center; margin-bottom: 18px; }
-        .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 11px; font-weight: 800; margin-bottom: 10px; }
-        h1 { margin: 0; font-size: clamp(30px, 6vw, 44px); line-height: 1.05; letter-spacing: -1.2px; font-weight: 800; }
+        .hero { text-align: center; margin-bottom: 12px; }
+        .tag { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 8px; font-weight: 800; margin-bottom: 6px; }
+        h1 { margin: 0; font-size: clamp(25px, 6vw, 38px); line-height: 1.05; letter-spacing: -1px; font-weight: 850; }
         h1 span { color: #16a34a; }
-        .sub { color: #64748b; max-width: 620px; margin: 10px auto 0; font-size: 13px; line-height: 1.6; font-weight: 500; }
-        .modeRow { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
-        .modeBtn, .duration { border: 1px solid #e2e8f0; background: #fff; color: #64748b; border-radius: 999px; font-weight: 700; cursor: pointer; }
-        .modeBtn { padding: 10px 20px; font-size: 13px; }
+        .sub { color: #64748b; max-width: 600px; margin: 7px auto 0; font-size: 10px; line-height: 1.55; }
+        .modeRow { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
+        .modeBtn, .duration { border: 1px solid #e2e8f0; background: #fff; color: #64748b; border-radius: 999px; font-weight: 800; cursor: pointer; }
+        .modeBtn { padding: 7px 12px; font-size: 9px; }
         .modeBtn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
-        .durations { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-        .duration { padding: 9px 18px; font-size: 12px; }
+        .durations { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+        .duration { padding: 6px 12px; font-size: 9px; }
         .duration.active { background: #16a34a; border-color: #16a34a; color: #fff; }
-        .duration:disabled { opacity: .5; }
-        .custom { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 13px; margin-bottom: 12px; text-align: center; }
-        .custom label { font-size: 11px; font-weight: 800; color: #475569; letter-spacing: .5px; }
-        .custom input { width: 100%; margin-top: 8px; accent-color: #16a34a; }
-        .startWrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; }
-        .startBtn { width: 100%; max-width: 420px; border: 0; border-radius: 999px; padding: 16px 20px; font-size: 17px; font-weight: 800; cursor: pointer; background: #16a34a; color: #fff; box-shadow: 0 8px 24px rgba(22,163,74,0.35); }
-        .startBtn:active { transform: scale(0.98); }
-        .startBtn:disabled { opacity: .55; cursor: not-allowed; }
-        .startHint { font-size: 11px; color: #94a3b8; font-weight: 600; }
-        .clickArea { position: relative; min-height: 460px; width: 100%; border: 2px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 10px 40px rgba(15,23,42,0.06); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .duration:disabled { opacity: 0.5; }
+        .custom { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px 11px; margin-bottom: 8px; text-align: center; }
+        .custom label { font-size: 8px; font-weight: 850; color: #475569; letter-spacing: 0.4px; }
+        .custom p { font-size: 9px !important; line-height: 1.4; }
+        .custom input { width: 100%; margin-top: 5px; accent-color: #16a34a; }
+        .startWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0 0 8px; }
+        .startBtn { width: 100%; max-width: 300px; border: 0; border-radius: 999px; padding: 11px 16px; font-size: 12px; font-weight: 850; cursor: pointer; background: #16a34a; color: #fff; box-shadow: 0 6px 18px rgba(22,163,74,0.22); }
+        .startBtn:active { transform: scale(0.985); }
+        .startBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .startHint { font-size: 8px; color: #94a3b8; font-weight: 600; }
+        .clickArea { position: relative; min-height: 560px; width: 100%; border: 2px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 8px 30px rgba(15,23,42,0.055); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .clickArea.running { border-color: #16a34a; background: #f0fdf4; }
-        .clickArea.done { border-color: #16a34a; background: #f0fdf4; opacity: .7; }
-        .clickArea.idle { opacity: .85; }
-        .timer { background: #0f172a; color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 800; position: relative; z-index: 2; }
-        .number { font-size: clamp(80px, 18vw, 130px); line-height: .9; font-weight: 800; letter-spacing: -5px; margin-top: 10px; color: #0f172a; position: relative; z-index: 2; }
-        .instruction { margin-top: 12px; font-size: 18px; font-weight: 800; color: #0f172a; position: relative; z-index: 2; }
-        .hint { margin-top: 6px; color: #64748b; font-size: 12px; font-weight: 500; position: relative; z-index: 2; }
-        .comboBadge { margin-top: 10px; background: #f97316; color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; position: relative; z-index: 2; animation: pop .2s ease; }
-        @keyframes pop { from { transform: scale(.7); } to { transform: scale(1); } }
-        .progress { width: 82%; height: 8px; margin-top: 20px; background: #e2e8f0; border-radius: 999px; overflow: hidden; position: relative; z-index: 2; }
-        .progressFill { height: 100%; background: #16a34a; border-radius: inherit; transition: width .08s linear; }
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
-        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 5px; text-align: center; }
-        .value { display: block; color: #16a34a; font-size: 22px; line-height: 1; font-weight: 800; }
-        .label { display: block; margin-top: 6px; color: #94a3b8; font-size: 10px; font-weight: 800; letter-spacing: .5px; }
-        .panel { margin-top: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; box-shadow: 0 4px 20px rgba(15,23,42,0.04); }
-        .panelTitle { font-size: 13px; font-weight: 800; }
-        .graph { height: 75px; margin-top: 10px; display: flex; align-items: flex-end; gap: 2px; overflow: hidden; }
-        .bar { flex: 1; min-width: 3px; max-width: 11px; border-radius: 4px 4px 0 0; }
-        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
-        .metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 5px; text-align: center; }
-        .metric strong { display: block; font-size: 15px; color: #0f172a; }
-        .metric span { display: block; margin-top: 3px; color: #94a3b8; font-size: 9px; font-weight: 800; }
-        .resultOverlay { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; padding: 12px; pointer-events: none; }
-        .result { pointer-events: auto; width: 100%; max-width: 900px; background: #fff; border: 2px solid #16a34a; border-radius: 22px; padding: 20px; text-align: center; box-shadow: 0 -10px 40px rgba(0,0,0,0.18); animation: slideUp .45s cubic-bezier(.2,.9,.3,1.2) both; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .resultScore { color: #16a34a; font-size: 48px; line-height: 1; font-weight: 800; letter-spacing: -1px; }
-        .resultSmall { color: #94a3b8; font-size: 10px; font-weight: 800; margin-top: 5px; letter-spacing: .5px; }
-        .rank { font-size: 21px; font-weight: 800; margin-top: 12px; }
-        .rankDesc { color: #64748b; font-size: 13px; margin-top: 5px; line-height: 1.5; }
-        .world { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 11px; margin-top: 12px; font-size: 13px; font-weight: 700; color: #15803d; }
-        .buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-        button.action { border: 0; border-radius: 999px; padding: 12px 22px; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .clickArea.done { border-color: #16a34a; background: #f0fdf4; }
+        .clickArea.idle { opacity: 0.88; }
+        .timer { background: #0f172a; color: #fff; border-radius: 999px; padding: 5px 10px; font-size: 9px; font-weight: 850; position: relative; z-index: 2; }
+        .number { font-size: clamp(90px, 22vw, 150px); line-height: 0.85; font-weight: 850; letter-spacing: -7px; margin-top: 12px; color: #0f172a; position: relative; z-index: 2; }
+        .instruction { margin-top: 13px; font-size: 15px; font-weight: 850; color: #0f172a; position: relative; z-index: 2; }
+        .hint { margin-top: 5px; color: #64748b; font-size: 9px; font-weight: 600; position: relative; z-index: 2; }
+        .comboBadge { margin-top: 8px; background: #f97316; color: #fff; padding: 5px 10px; border-radius: 999px; font-size: 9px; font-weight: 850; position: relative; z-index: 2; }
+        .progress { width: 72%; height: 6px; margin-top: 18px; background: #e2e8f0; border-radius: 999px; overflow: hidden; position: relative; z-index: 2; }
+        .progressFill { height: 100%; background: #16a34a; border-radius: inherit; transition: width 0.08s linear; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 9px 4px; text-align: center; }
+        .value { display: block; color: #16a34a; font-size: 17px; line-height: 1; font-weight: 850; }
+        .label { display: block; margin-top: 4px; color: #94a3b8; font-size: 7px; font-weight: 850; letter-spacing: 0.35px; }
+        .panel { margin-top: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; box-shadow: 0 3px 15px rgba(15,23,42,0.035); }
+        .panelTitle { font-size: 9px; font-weight: 850; }
+        .graph { height: 60px; margin-top: 7px; display: flex; align-items: flex-end; gap: 2px; overflow: hidden; }
+        .bar { flex: 1; min-width: 3px; max-width: 9px; border-radius: 3px 3px 0 0; }
+        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 8px; }
+        .metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 7px 3px; text-align: center; }
+        .metric strong { display: block; font-size: 12px; color: #0f172a; }
+        .metric span { display: block; margin-top: 2px; color: #94a3b8; font-size: 7px; font-weight: 850; }
+        .resultSpacer { height: auto; margin-top: 8px; }
+        .result { width: 100%; max-width: 650px; margin: 0 auto; background: #fff; border: 1px solid #bbf7d0; border-radius: 16px; padding: 13px; text-align: center; box-shadow: 0 6px 25px rgba(15,23,42,0.07); animation: resultIn 0.35s ease both; }
+        @keyframes resultIn { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .resultScore { color: #16a34a; font-size: 36px; line-height: 1; font-weight: 850; }
+        .resultSmall { color: #94a3b8; font-size: 7px; font-weight: 850; margin-top: 4px; letter-spacing: 0.4px; }
+        .rank { font-size: 15px; font-weight: 850; margin-top: 8px; }
+        .rankDesc { color: #64748b; font-size: 9px; margin: 4px auto 0; line-height: 1.45; max-width: 520px; }
+        .resultStats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 8px; }
+        .resultStat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 6px; }
+        .resultStat strong { display: block; font-size: 10px; }
+        .resultStat span { display: block; color: #94a3b8; font-size: 6px; font-weight: 850; margin-top: 2px; }
+        .buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+        button.action { border: 0; border-radius: 999px; padding: 8px 14px; font-size: 9px; font-weight: 850; cursor: pointer; }
         .green { background: #16a34a; color: #fff; }
         .gray { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; }
-        .toggles { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-        .toggleBtn { background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; padding: 8px 14px; font-size: 11px; font-weight: 700; color: #64748b; cursor: pointer; }
+        .toggles { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+        .toggleBtn { background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; padding: 6px 10px; font-size: 8px; font-weight: 750; color: #64748b; cursor: pointer; }
         .toggleBtn.on { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
         .history { text-align: center; }
-        .historyTitle { color: #94a3b8; font-size: 10px; font-weight: 800; }
-        .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
-        .chip { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; border-radius: 999px; padding: 7px 11px; font-size: 10px; font-weight: 700; }
-        .content { margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; }
-        .content h2 { margin: 0 0 8px; font-size: 18px; font-weight: 800; }
-        .content h3 { margin: 16px 0 5px; font-size: 14px; font-weight: 800; }
-        .content p, .content li { color: #64748b; font-size: 12px; line-height: 1.7; }
+        .historyTitle { color: #94a3b8; font-size: 7px; font-weight: 850; }
+        .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .chip { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; border-radius: 999px; padding: 5px 8px; font-size: 7px; font-weight: 750; }
+        .content { margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 13px; padding: 13px; }
+        .content h2 { margin: 0 0 6px; font-size: 15px; font-weight: 850; }
+        .content h3 { margin: 13px 0 4px; font-size: 11px; font-weight: 850; }
+        .content p, .content li { color: #64748b; font-size: 9px; line-height: 1.6; }
         .content p { margin: 0; }
-        .content ul { margin: 6px 0 0; padding-left: 18px; }
-        .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 10px; }
-        @media (max-width: 620px) { .stats, .metrics { grid-template-columns: repeat(2, 1fr); } .clickArea { min-height: 420px; border-radius: 20px; } .instruction { font-size: 15px; } .modeRow { flex-direction: column; } .modeBtn { width: 100%; } .result { border-radius: 20px; } }
+        .content ul { margin: 5px 0 0; padding-left: 16px; }
+        .faq { margin-top: 13px; }
+        .faqItem { border-top: 1px solid #e2e8f0; padding: 8px 0; }
+        .faqItem:first-child { border-top: 0; }
+        .faqItem strong { display: block; font-size: 9px; color: #0f172a; }
+        .faqItem p { margin-top: 3px; }
+        .related { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+        .related a { text-decoration: none; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 9px; border-radius: 999px; font-size: 7px; font-weight: 800; }
+        .footer { text-align: center; margin-top: 13px; color: #94a3b8; font-size: 7px; }
+        @media (max-width: 620px) {
+          .page { padding: 9px 9px 28px; }
+          .modeBtn { flex: 1; }
+          .clickArea { min-height: 540px; border-radius: 20px; }
+          .number { font-size: 100px; }
+          .instruction { font-size: 13px; }
+          .stats { grid-template-columns: repeat(2, 1fr); }
+          .metrics { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 380px) { .clickArea { min-height: 500px; } .number { font-size: 88px; } .instruction { font-size: 12px; } }
       `}</style>
-
       <div className="wrap">
         <header className="top">
           <div className="logo">thenexoratools<span>.com</span></div>
-          <div className="topBest">🏆 Best <b>{best.toFixed(2)}</b></div>
+          <div className="topBest">Best <b>{best.toFixed(2)} CPS</b></div>
         </header>
-
         <section className="hero">
-          <div className="tag">⚡ FREE • FAST • NO SIGN UP</div>
+          <div className="tag">FREE • FAST • NO SIGN UP</div>
           <h1>CPS Test — <span>Clicks Per Second</span></h1>
-          <p className="sub">Test your clicking speed with accurate timing, 1–60 second challenges, a 100-click challenge, peak CPS, consistency and personal best tracking.</p>
+          <p className="sub">Test your clicking speed with accurate timing, custom challenges, peak CPS, consistency and personal best tracking.</p>
         </section>
-
         <div className="modeRow">
-          <button className={`modeBtn ${mode === "time" ? "active" : ""}`} onClick={() => changeMode("time")}>⏱️ Time Mode</button>
-          <button className={`modeBtn ${mode === "target" ? "active" : ""}`} onClick={() => changeMode("target")}>🎯 100 Clicks Challenge</button>
+          <button className={`modeBtn ${mode === "time" ? "active" : ""}`} onClick={() => changeMode("time")}>⏱ Time Test</button>
+          <button className={`modeBtn ${mode === "target" ? "active" : ""}`} onClick={() => changeMode("target")}>🎯 100 Click Test</button>
         </div>
-
         {mode === "time" && (
           <>
             <div className="durations">
-              {DURATIONS.map((s) => (<button key={s} className={`duration ${duration === s ? "active" : ""}`} onClick={() => changeDuration(s)} disabled={status === "running"}>{s}s</button>))}
+              {DURATIONS.map((s) => (
+                <button key={s} className={`duration ${duration === s ? "active" : ""}`} onClick={() => changeDuration(s)} disabled={status === "running"}>{s}s</button>
+              ))}
             </div>
             <div className="custom">
-              <label>⚙️ CUSTOM TIME: {customTime} SECONDS</label>
+              <label>CUSTOM TIME: {customTime}s</label>
               <input type="range" min={1} max={60} value={customTime} disabled={status === "running"} onChange={(e) => { const v = Number(e.target.value); setCustomTime(v); changeDuration(v); }} />
             </div>
           </>
         )}
-
         {mode === "target" && (
-          <div className="custom">
-            <label>🎯 TARGET: 100 CLICKS</label>
-            <p style={{ fontSize: 11, color: "#64748b", margin: "6px 0 0" }}>Click 100 times as quickly as possible. Your total time and CPS will be shown when you finish.</p>
-          </div>
+          <div className="custom"><label>TARGET: 100 CLICKS</label><p style={{ color: "#64748b", margin: "5px 0 0" }}>Complete 100 clicks as quickly as possible.</p></div>
         )}
-
-        {/* ✅ START BUTTON - BOX KE UPAR */}
         <div className="startWrap">
-          {status === "idle" && <button className="startBtn" onClick={startTest}>▶ START TEST</button>}
-          {status === "running" && <button className="startBtn" disabled>⚡ TEST RUNNING...</button>}
-          {status === "done" && <button className="startBtn" onClick={startTest}>↻ START AGAIN</button>}
-          <div className="startHint">{status === "idle" ? "Press START, then tap the box as fast as you can" : status === "running" ? "Now tap the white box below" : "Press START AGAIN to play again"}</div>
+          {status === "idle" && <button className="startBtn" onClick={startTest}>▶ Start Test</button>}
+          {status === "running" && <button className="startBtn" disabled>● Test Running</button>}
+          {status === "done" && <button className="startBtn" onClick={startTest}>↻ Start Again</button>}
+          <div className="startHint">{status === "idle" ? "Press Start, then click the large area below" : status === "running" ? "Click or tap as fast as you can" : "Start again for another attempt"}</div>
         </div>
-
-        <div ref={boxRef} className={`clickArea ${status}`} onPointerDown={handleBoxClick} role="button" tabIndex={0} aria-label="CPS clicking test area">
-          <div className="timer">{status === "running" ? (mode === "time" ? `${timeLeft.toFixed(1)}s` : `${clicks}/100 Clicks`) : status === "done" ? "DONE" : mode === "time" ? `${duration}s` : "100 Clicks"}</div>
+        <div ref={boxRef} className={`clickArea ${status}`} onPointerDown={handleBoxClick} onContextMenu={(e) => e.preventDefault()} role="button" tabIndex={0} aria-label="CPS Test clicking area">
+          <div className="timer">{status === "running" ? (mode === "time" ? `${timeLeft.toFixed(1)}s` : `${clicks}/100`) : status === "done" ? "DONE" : mode === "time" ? `${duration}s` : "100 Clicks"}</div>
           <div className="number">{clicks}</div>
           <div className="instruction">{status === "idle" && "👆 PRESS START ABOVE"}{status === "running" && "⚡ CLICK AS FAST AS YOU CAN"}{status === "done" && `${cps.toFixed(2)} CPS`}</div>
-          <div className="hint">{status === "idle" && "Box will count only after you press START"}{status === "running" && `Current ${cps.toFixed(2)} CPS • ${inputType}`}{status === "done" && "Press START AGAIN above to play again"}</div>
-          {status === "running" && combo >= 5 && <div className="comboBadge">🔥 COMBO x{combo}</div>}
+          <div className="hint">{status === "idle" && "Your clicks are counted only after Start"}{status === "running" && `${cps.toFixed(2)} CPS • ${inputType}`}{status === "done" && "Your result is ready"}</div>
+          {status === "running" && combo >= 5 && <div className="comboBadge">🔥 Combo ×{combo}</div>}
           <div className="progress"><div className="progressFill" style={{ width: `${progress}%` }} /></div>
         </div>
-
         <div className="stats">
           <div className="stat"><span className="value">{clicks}</span><span className="label">CLICKS</span></div>
           <div className="stat"><span className="value">{cps.toFixed(2)}</span><span className="label">CPS</span></div>
           <div className="stat"><span className="value">{currentPB.toFixed(2)}</span><span className="label">{mode === "time" ? `${duration}s BEST` : "100 CLICK BEST"}</span></div>
           <div className="stat"><span className="value">{mode === "time" ? `${timeLeft.toFixed(1)}s` : status === "done" ? `${elapsedFinal.toFixed(2)}s` : `${100 - clicks}`}</span><span className="label">{mode === "time" ? "LEFT" : status === "done" ? "TOTAL TIME" : "REMAINING"}</span></div>
         </div>
-
         {graph.length > 2 && (
           <section className="panel">
             <div className="panelTitle">📈 Live Performance</div>
-            <div className="graph">{graph.map((v, i) => { const h = Math.min(100, Math.max(4, (v / 15) * 100)); let bg = "#38bdf8"; if (v >= 10) bg = "#ef4444"; else if (v >= 7) bg = "#a855f7"; else if (v >= 5) bg = "#22c55e"; return <div key={i} className="bar" style={{ height: `${h}%`, background: bg }} />; })}</div>
+            <div className="graph">
+              {graph.map((value, index) => {
+                const height = Math.min(100, Math.max(4, (value / 15) * 100));
+                let background = "#38bdf8";
+                if (value >= 10) background = "#ef4444"; else if (value >= 7) background = "#a855f7"; else if (value >= 5) background = "#22c55e";
+                return <div key={index} className="bar" style={{ height: `${height}%`, background }} />;
+              })}
+            </div>
             <div className="metrics">
               <div className="metric"><strong>{peak.toFixed(1)}</strong><span>PEAK CPS</span></div>
               <div className="metric"><strong>{cps.toFixed(2)}</strong><span>AVG CPS</span></div>
@@ -397,56 +425,75 @@ export default function CPSTestClient() {
             </div>
           </section>
         )}
-
         {status === "done" && resultInfo && (
-          <div className="resultOverlay">
+          <div className="resultSpacer">
             <section className="result">
               <div className="resultScore">{cps.toFixed(2)}</div>
-              <div className="resultSmall">CLICKS PER SECOND {mode === "target" && ` • FINISHED IN ${elapsedFinal.toFixed(2)}s`}</div>
+              <div className="resultSmall">CLICKS PER SECOND{mode === "target" ? ` • 100 CLICKS IN ${elapsedFinal.toFixed(2)}s` : ` • ${duration}s TEST`}</div>
               <div className="rank">{resultInfo.icon} {resultInfo.title}</div>
               <p className="rankDesc">{resultInfo.desc}</p>
-              <div className="world">📊 Peak {peak.toFixed(1)} CPS • {consistency.toFixed(0)}% consistency • {inputType}</div>
+              <div className="resultStats">
+                <div className="resultStat"><strong>{peak.toFixed(1)}</strong><span>PEAK CPS</span></div>
+                <div className="resultStat"><strong>{consistency.toFixed(0)}%</strong><span>CONSISTENCY</span></div>
+                <div className="resultStat"><strong>{inputType}</strong><span>INPUT</span></div>
+              </div>
               <div className="buttons">
                 <button className="action green" onClick={startTest}>↻ Play Again</button>
-                <button className="action gray" onClick={shareResult}>📤 Share Result</button>
+                <button className="action gray" onClick={shareResult}>↗ Share Result</button>
               </div>
             </section>
           </div>
         )}
-
         {status !== "done" && (
           <div className="buttons">
-            <button className="action green" onClick={resetTest}>↻ Restart</button>
-            <button className="action gray" onClick={shareResult}>📤 Share</button>
+            <button className="action green" onClick={resetTest}>↻ Reset</button>
+            <button className="action gray" onClick={shareResult}>↗ Share</button>
           </div>
         )}
-
         <div className="toggles">
-          <button className={`toggleBtn ${sound ? "on" : ""}`} onClick={() => setSound((v) => !v)}>{sound ? "🔊 Sound ON" : "🔇 Sound OFF"}</button>
-          <button className={`toggleBtn ${vibrateOn ? "on" : ""}`} onClick={() => setVibrateOn((v) => !v)}>{vibrateOn ? "📳 Vibration ON" : "📳 Vibration OFF"}</button>
+          <button className={`toggleBtn ${sound ? "on" : ""}`} onClick={() => setSound((v) => !v)}>{sound ? "🔊 Sound On" : "🔇 Sound Off"}</button>
+          <button className={`toggleBtn ${vibrateOn ? "on" : ""}`} onClick={() => setVibrateOn((v) => !v)}>{vibrateOn ? "📳 Vibration On" : "📳 Vibration Off"}</button>
         </div>
-
         {history.length > 0 && (
           <section className="panel history">
             <div className="historyTitle">LAST 10 SCORES</div>
-            <div className="chips">{history.map((s, i) => (<span className="chip" key={`${s}-${i}`}>{s.toFixed(2)} CPS</span>))}</div>
+            <div className="chips">{history.map((score, index) => (<span className="chip" key={`${score}-${index}`}>{score.toFixed(2)} CPS</span>))}</div>
           </section>
         )}
-
         <section className="content">
-          <h2>CPS Test – Clicks Per Second Test</h2>
-          <p>CPS Test measures how many times you can click in one second. Choose a timed test from 1 to 60 seconds or try the 100 Clicks Challenge. Your result is calculated from your clicks and test duration.</p>
-          <h3>What is CPS?</h3>
-          <p>CPS means Clicks Per Second. For example, if you make 30 clicks during a 5-second test, your average speed is 6 CPS.</p>
-          <h3>How to improve your clicking speed</h3>
-          <ul><li>Keep your hand relaxed.</li><li>Practice short sessions regularly.</li><li>Focus on a consistent clicking rhythm.</li><li>Use a mouse or device that responds reliably to your input.</li><li>Avoid excessive force while clicking.</li></ul>
-          <h3>CPS Test modes</h3>
-          <p>Time Mode lets you choose 1, 5, 10, 30 or 60 seconds, with an additional custom timer from 1–60 seconds. The 100 Clicks Challenge measures how quickly you can complete 100 clicks.</p>
-          <h3>Is a very high CPS always accurate?</h3>
-          <p>Not necessarily. Clicking technique, device hardware, browser behavior and automated input can affect results. This test reports the measured result rather than claiming to identify a specific clicking method.</p>
+          <h2>CPS Test — Clicks Per Second Test</h2>
+          <p>This free CPS Test measures how many clicks you can make per second. Use it as a click speed test, clicking speed test or mouse CPS test on desktop, Android, iPhone and tablet devices.</p>
+          <h3>How to Use the CPS Test</h3>
+          <ol style={{ margin: "5px 0 0", paddingLeft: "18px" }}><li>Choose a test duration.</li><li>Press Start Test.</li><li>Click or tap the large testing area as quickly as possible.</li><li>View your CPS, peak speed and consistency.</li></ol>
+          <h3>What Does CPS Mean?</h3>
+          <p>CPS means Clicks Per Second. If you make 30 clicks during a 5-second test, your average clicking speed is 6 CPS.</p>
+          <h3>CPS Test Modes</h3>
+          <p>Choose from 1, 5, 10, 30 or 60 seconds, or use the custom timer from 1–60 seconds. The 100 Click Test measures how quickly you can complete 100 clicks.</p>
+          <h3>How to Improve Your Clicking Speed</h3>
+          <ul><li>Keep your hand relaxed.</li><li>Practice short sessions regularly.</li><li>Focus on a steady clicking rhythm.</li><li>Use a responsive mouse or touchscreen.</li><li>Avoid excessive force while clicking.</li></ul>
+          <h3>Is the CPS Score Accurate?</h3>
+          <p>The test measures the clicks received by your browser during the selected challenge. Your device, browser, hardware, clicking technique and input method can affect the result.</p>
+          <h3>Mobile CPS Test</h3>
+          <p>You can use the test on compatible mobile browsers with touch input. Desktop users can use a mouse, while supported tablets and other devices can use touch or pointer input.</p>
+          <div className="faq">
+            <h3>Frequently Asked Questions</h3>
+            <div className="faqItem"><strong>Is this CPS Test free?</strong><p>Yes. The CPS Test is free to use and does not require registration.</p></div>
+            <div className="faqItem"><strong>What is a good CPS score?</strong><p>There is no universal perfect score. CPS depends on the input device, clicking technique and test conditions.</p></div>
+            <div className="faqItem"><strong>Can I take a 1-second CPS test?</strong><p>Yes. Select the 1-second option for a quick CPS speed test.</p></div>
+            <div className="faqItem"><strong>Can I take a 5-second CPS test?</strong><p>Yes. The 5-second CPS test is available as one of the standard test durations.</p></div>
+            <div className="faqItem"><strong>What is the 100 Click Test?</strong><p>It measures how quickly you can complete 100 clicks and calculates your CPS from the completion time.</p></div>
+            <div className="faqItem"><strong>Does the CPS Test work on mobile?</strong><p>Yes. Touch input is supported on compatible Android, iPhone and tablet browsers.</p></div>
+            <div className="faqItem"><strong>Does this test require an account?</strong><p>No account or sign-up is required to run the test.</p></div>
+          </div>
+          <h3>Related Free Tools</h3>
+          <div className="related">
+            <a href="/age-calculator">Age Calculator</a>
+            <a href="/percentage-calculator">Percentage Calculator</a>
+            <a href="/bmi-calculator">BMI Calculator</a>
+            <a href="/discount-calculator">Discount Calculator</a>
+          </div>
         </section>
-
-        <footer className="footer">© {new Date().getFullYear()} thenexoratools.com</footer>
+        <footer className="footer">© {new Date().getFullYear()} thenexoratools.com • Free Online Tools</footer>
       </div>
     </main>
   );
