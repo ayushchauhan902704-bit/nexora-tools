@@ -1,210 +1,1261 @@
 "use client";
-import { useState, useRef } from "react";
+
+import { useEffect, useRef, useState } from "react";
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const MIN_KB = 10;
+const MAX_KB = 1000;
+
+function formatSize(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function getBaseName(filename: string) {
+  return filename.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-_]/g, "-");
+}
 
 export default function CompressImageClient() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [compressedUrl, setCompressedUrl] = useState("");
   const [target, setTarget] = useState(20);
-  const [customKB, setCustomKB] = useState("");
+  const [customKB, setCustomKB] = useState("20");
+
   const [origSize, setOrigSize] = useState(0);
   const [newSize, setNewSize] = useState(0);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const onFile = (f: File | undefined) => {
-    if (!f) return;
-    if (!f.type.startsWith("image/")) { setError("Please upload only JPG, PNG or WebP image."); return; }
-    setError(""); setFile(f); setOrigSize(f.size); setCompressedUrl(""); setNewSize(0);
-    setPreview(URL.createObjectURL(f));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef("");
+  const compressedUrlRef = useRef("");
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      if (compressedUrlRef.current) URL.revokeObjectURL(compressedUrlRef.current);
+    };
+  }, []);
+
+  const clearResultUrl = () => {
+    if (compressedUrlRef.current) {
+      URL.revokeObjectURL(compressedUrlRef.current);
+      compressedUrlRef.current = "";
+    }
+
+    setCompressedUrl("");
+    setNewSize(0);
+  };
+
+  const onFile = (selectedFile?: File) => {
+    if (!selectedFile) return;
+
+    clearResultUrl();
+    setError("");
+
+    if (!selectedFile.type.startsWith("image/")) {
+      setError("Please upload a JPG, PNG, or WebP image.");
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setError("This image is too large. Please choose an image up to 25 MB.");
+      return;
+    }
+
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+
+    const url = URL.createObjectURL(selectedFile);
+    previewUrlRef.current = url;
+
+    setFile(selectedFile);
+    setOrigSize(selectedFile.size);
+    setPreview(url);
   };
 
   const getTargetKB = () => {
-    let v = parseInt(customKB);
-    if (isNaN(v)) v = target;
-    if (v < 10) v = 10;
-    if (v > 1000) v = 1000;
-    return v;
+    let value = Number.parseInt(customKB, 10);
+
+    if (!Number.isFinite(value)) {
+      value = target;
+    }
+
+    return Math.min(MAX_KB, Math.max(MIN_KB, value));
   };
 
-  // EXACT COMPRESS - Size + Quality dono kam karega
-  const makeBlob = (img: HTMLImageElement, scale: number, quality: number): Promise<Blob | null> => {
+  const createJpeg = (
+    img: HTMLImageElement,
+    scale: number,
+    quality: number
+  ): Promise<Blob | null> => {
     return new Promise((resolve) => {
       const canvas = document.createElement("canvas");
-      let w = Math.max(80, Math.round(img.width * scale));
-      let h = Math.max(80, Math.round(img.height * scale));
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      canvas.toBlob((b) => resolve(b), "image/jpeg", quality);
+
+      const width = Math.max(64, Math.round(img.naturalWidth * scale));
+      const height = Math.max(64, Math.round(img.naturalHeight * scale));
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d", {
+        alpha: false,
+      });
+
+      if (!ctx) {
+        resolve(null);
+        return;
+      }
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        "image/jpeg",
+        Math.max(0.05, Math.min(0.95, quality))
+      );
     });
   };
 
+  const findBestBlob = async (
+    img: HTMLImageElement,
+    targetBytes: number
+  ): Promise<Blob | null> => {
+    const scales = [
+      1,
+      0.92,
+      0.84,
+      0.76,
+      0.68,
+      0.60,
+      0.52,
+      0.44,
+      0.36,
+      0.28,
+      0.20,
+      0.14,
+    ];
+
+    let bestUnderTarget: Blob | null = null;
+    let smallestOverTarget: Blob | null = null;
+
+    for (const scale of scales) {
+      let low = 0.05;
+      let high = 0.95;
+
+      for (let i = 0; i < 8; i++) {
+        const quality = (low + high) / 2;
+        const blob = await createJpeg(img, scale, quality);
+
+        if (!blob) continue;
+
+        if (blob.size <= targetBytes) {
+          if (
+            !bestUnderTarget ||
+            blob.size > bestUnderTarget.size
+          ) {
+            bestUnderTarget = blob;
+          }
+
+          low = quality;
+        } else {
+          if (
+            !smallestOverTarget ||
+            blob.size < smallestOverTarget.size
+          ) {
+            smallestOverTarget = blob;
+          }
+
+          high = quality;
+        }
+      }
+
+      const finalBlob = await createJpeg(img, scale, low);
+
+      if (finalBlob) {
+        if (finalBlob.size <= targetBytes) {
+          if (
+            !bestUnderTarget ||
+            finalBlob.size > bestUnderTarget.size
+          ) {
+            bestUnderTarget = finalBlob;
+          }
+        } else if (
+          !smallestOverTarget ||
+          finalBlob.size < smallestOverTarget.size
+        ) {
+          smallestOverTarget = finalBlob;
+        }
+      }
+
+      if (
+        bestUnderTarget &&
+        bestUnderTarget.size >= targetBytes * 0.9
+      ) {
+        break;
+      }
+    }
+
+    return bestUnderTarget || smallestOverTarget;
+  };
+
   const compress = async () => {
-    if (!file) { setError("Please upload a photo first."); return; }
+    if (!file || !preview) {
+      setError("Please upload an image first.");
+      return;
+    }
+
     const finalKB = getTargetKB();
-    setTarget(finalKB); setCustomKB(String(finalKB));
-    setLoading(true); setError("");
+
+    setTarget(finalKB);
+    setCustomKB(String(finalKB));
+    setLoading(true);
+    setError("");
+    clearResultUrl();
+
     try {
       const img = new Image();
+
       img.src = preview;
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () =>
+          reject(new Error("Unable to read this image."));
+      });
+
+      if (!img.naturalWidth || !img.naturalHeight) {
+        throw new Error("Invalid image dimensions.");
+      }
 
       const targetBytes = finalKB * 1024;
-      let bestBlob: Blob | null = null;
-      let bestDiff = Infinity;
 
-      // Pehle normal size pe try karo, phir chhota karte jao jab tak exact na aaye
-      const scales = [1, 0.85, 0.7, 0.55, 0.4, 0.28, 0.18, 0.12];
-      const qualities = [0.92, 0.8, 0.65, 0.5, 0.35, 0.2, 0.12];
+      const blob = await findBestBlob(img, targetBytes);
 
-      outer: for (const scale of scales) {
-        for (const q of qualities) {
-          const blob = await makeBlob(img, scale, q);
-          if (!blob) continue;
-          const diff = Math.abs(blob.size - targetBytes);
-          // Jo sabse close hai usko yaad rakho
-          if (diff < bestDiff) { bestDiff = diff; bestBlob = blob; }
-          // Agar target se thoda neeche aa gaya aur 90% se upar hai to wahi best hai - EXACT
-          if (blob.size <= targetBytes && blob.size >= targetBytes * 0.85) {
-            bestBlob = blob; break outer;
-          }
-          // Agar is scale pe bhi bahut bada hai to quality aur kam karne ka fayda nahi, scale chhota karo
-          if (blob.size > targetBytes && q === 0.12) break;
-          if (blob.size < targetBytes * 0.6) break; // Bahut chhota ho gaya, agla scale try mat karo
-        }
-        if (bestBlob && bestBlob.size <= targetBytes && bestBlob.size >= targetBytes * 0.85) break;
+      if (!blob) {
+        throw new Error("Compression failed.");
       }
 
-      if (bestBlob) {
-        setCompressedUrl(URL.createObjectURL(bestBlob));
-        setNewSize(bestBlob.size);
+      const resultUrl = URL.createObjectURL(blob);
+
+      compressedUrlRef.current = resultUrl;
+
+      setCompressedUrl(resultUrl);
+      setNewSize(blob.size);
+
+      if (blob.size > targetBytes) {
+        setError(
+          `The smallest available result was ${formatSize(
+            blob.size
+          )}. Try a larger target size for better quality.`
+        );
       }
-    } catch { setError("Something went wrong. Please try another photo."); }
-    setLoading(false);
+    } catch {
+      setError(
+        "We could not process this image. Please try another JPG, PNG, or WebP file."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const download = () => {
-    if (!compressedUrl) return;
-    const a = document.createElement("a");
-    a.href = compressedUrl; a.download = `nexora-${target}kb.jpg`; a.click();
+    if (!compressedUrl || !file) return;
+
+    const link = document.createElement("a");
+
+    link.href = compressedUrl;
+    link.download = `${getBaseName(file.name)}-${target}kb.jpg`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
-  const formatSize = (b: number) => b >= 1024 * 1024 ? (b / (1024 * 1024)).toFixed(2) + " MB" : (b / 1024).toFixed(1) + " KB";
-  const savedPercent = origSize && newSize ? Math.round((1 - newSize / origSize) * 100) : 0;
-  const isExact = newSize > 0 && newSize <= target * 1024;
+  const clearAll = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = "";
+    }
+
+    clearResultUrl();
+
+    setFile(null);
+    setPreview("");
+    setError("");
+    setOrigSize(0);
+    setTarget(20);
+    setCustomKB("20");
+
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
+
+  const savedPercent =
+    origSize && newSize
+      ? Math.max(0, Math.round((1 - newSize / origSize) * 100))
+      : 0;
+
+  const isWithinTarget =
+    newSize > 0 && newSize <= target * 1024;
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", background: "#ffffff", color: "#0f172a", minHeight: "100vh", colorScheme: "light" }}>
-      <header style={{ background: "#fff", borderBottom: "1px solid #eef2f7", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <a href="/" style={{ fontSize: 24, fontWeight: 900, color: "#2563eb", textDecoration: "none" }}>NEXORA</a>
-          <nav style={{ display: "flex", gap: 20, fontSize: 14, fontWeight: 600 }}>
-            <a href="/" style={{ color: "#0f172a", textDecoration: "none" }}>Home</a>
-            <a href="/" style={{ color: "#0f172a", textDecoration: "none" }}>All Tools</a>
+    <div className="page">
+      <header className="topbar">
+        <div className="nav">
+          <a href="/" className="logo">
+            NEXORA
+          </a>
+
+          <nav className="navlinks" aria-label="Main navigation">
+            <a href="/">Home</a>
+            <a href="/#tools">All Tools</a>
           </nav>
         </div>
       </header>
 
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "30px 18px 10px" }}>
-        <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <span style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: "0.5px" }}>✦ FREE • NO WATERMARK • 100% PRIVATE</span>
-          <h1 style={{ fontSize: 44, margin: "16px 0 8px", lineHeight: 1.1, letterSpacing: "-1px", fontWeight: 900, background: "linear-gradient(90deg, #2563eb, #7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Image Compressor</h1>
-          <p style={{ color: "#64748b", fontSize: 17, margin: 0, lineHeight: 1.6 }}>Reduce image to any size you want.<br/>For UPSC, Passport, SSC, College Form.</p>
-        </div>
-
-        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 18, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
-          <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 10px", textAlign: "center" }}>Upload Your Photo Here</p>
-          <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-          <div onClick={() => inputRef.current?.click()} style={{ border: "1.5px dashed #cbd5e1", borderRadius: 14, padding: preview ? 10 : 18, textAlign: "center", cursor: "pointer", background: "#fff" }}>
-            {preview ? <img src={preview} alt="Preview" style={{ maxWidth: "100%", maxHeight: 150, borderRadius: 10, objectFit: "contain" }} /> : <><div style={{ fontSize: 28 }}>📷</div><p style={{ fontWeight: 700, margin: "6px 0 2px", fontSize: 15 }}>Tap to Upload Photo</p><p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>JPG, PNG, WebP • 100% Private</p></>}
+      <main className="container">
+        <section className="hero">
+          <div className="badge">
+            FREE • NO WATERMARK • BROWSER-BASED
           </div>
 
-          {file && <p style={{ fontSize: 13, color: "#64748b", textAlign: "center", margin: "10px 0 0" }}>Original: <b style={{ color: "#0f172a" }}>{formatSize(origSize)}</b> • {file.name}</p>}
+          <h1>Image Compressor</h1>
 
-          <div style={{ background: "#f8fafc", border: "1px solid #eef2f7", borderRadius: 12, padding: "10px 12px", marginTop: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input
-                type="number" min={10} max={1000} value={customKB}
-                onChange={(e) => { setCustomKB(e.target.value); const v = parseInt(e.target.value); if (!isNaN(v)) setTarget(Math.min(1000, Math.max(10, v))); }}
-                placeholder="Kitne KB ka chahiye? Type kro"
-                style={{ flex: 1, padding: "11px 12px", borderRadius: 10, border: "1.5px solid #2563eb", fontSize: 14, fontWeight: 600, outline: "none", background: "#fff", color: "#0f172a" }}
+          <p>
+            Compress JPG, PNG, and WebP images to your required file size.
+          </p>
+        </section>
+
+        <section className="tool-card" aria-label="Image compressor">
+          <div className="upload-label">
+            Upload an image
+          </div>
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            hidden
+            onChange={(event) =>
+              onFile(event.target.files?.[0])
+            }
+          />
+
+          <button
+            type="button"
+            className={`upload-box ${preview ? "has-preview" : ""}`}
+            onClick={() => inputRef.current?.click()}
+            aria-label="Choose an image"
+          >
+            {preview ? (
+              <img
+                src={preview}
+                alt="Selected image preview"
+                className="preview"
               />
-              <span style={{ fontWeight: 800, fontSize: 14, flexShrink: 0 }}>KB</span>
+            ) : (
+              <>
+                <div className="upload-icon">+</div>
+
+                <strong>Choose Image</strong>
+
+                <span>
+                  JPG, PNG or WebP • Up to 25 MB
+                </span>
+              </>
+            )}
+          </button>
+
+          {file && (
+            <div className="file-info">
+              <span>
+                Original: <strong>{formatSize(origSize)}</strong>
+              </span>
+
+              <span className="file-name">
+                {file.name}
+              </span>
             </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2, whiteSpace: "nowrap", scrollbarWidth: "none" }}>
-              {[10, 15, 20, 30, 40, 50, 80, 100, 200, 500].map(s => (
-                <button key={s} onClick={() => { setTarget(s); setCustomKB(String(s)); }} style={{ padding: "6px 10px", borderRadius: 999, border: target === s ? "1.5px solid #f97316" : "1px solid #e2e8f0", background: target === s ? "#fff7ed" : "#fff", color: target === s ? "#ea580c" : "#0f172a", fontWeight: 700, cursor: "pointer", fontSize: 12, flexShrink: 0 }}>{s}KB</button>
-              ))}
+          )}
+
+          <div className="target-box">
+            <label htmlFor="target-size">
+              Target file size
+            </label>
+
+            <div className="input-row">
+              <input
+                id="target-size"
+                type="number"
+                min={MIN_KB}
+                max={MAX_KB}
+                inputMode="numeric"
+                value={customKB}
+                onChange={(event) => {
+                  const value = event.target.value;
+
+                  setCustomKB(value);
+
+                  const number = Number.parseInt(value, 10);
+
+                  if (Number.isFinite(number)) {
+                    setTarget(
+                      Math.min(
+                        MAX_KB,
+                        Math.max(MIN_KB, number)
+                      )
+                    );
+                  }
+                }}
+                placeholder="20"
+              />
+
+              <span>KB</span>
+            </div>
+
+            <div className="presets" aria-label="Target size presets">
+              {[10, 15, 20, 30, 50, 80, 100, 200, 500].map(
+                (size) => (
+                  <button
+                    type="button"
+                    key={size}
+                    className={
+                      target === size
+                        ? "preset active"
+                        : "preset"
+                    }
+                    onClick={() => {
+                      setTarget(size);
+                      setCustomKB(String(size));
+                    }}
+                  >
+                    {size} KB
+                  </button>
+                )
+              )}
             </div>
           </div>
 
-          {error && <p style={{ background: "#fef2f2", color: "#dc2626", padding: "10px 12px", borderRadius: 10, fontSize: 14, margin: "14px 0 0", textAlign: "center" }}>{error}</p>}
+          {error && (
+            <div className="error" role="alert">
+              {error}
+            </div>
+          )}
 
-          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-            <button onClick={compress} disabled={loading} style={{ flex: 1, padding: 15, background: "#f97316", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{loading ? "Compressing... Exact Size Bana Raha Hu" : "Compress Image →"}</button>
-            <button onClick={() => { setFile(null); setPreview(""); setCompressedUrl(""); setError(""); setCustomKB(""); setTarget(20); }} style={{ padding: "15px 20px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, cursor: "pointer", fontWeight: 700 }}>Clear</button>
+          <div className="actions">
+            <button
+              type="button"
+              className="compress-btn"
+              onClick={compress}
+              disabled={loading || !file}
+            >
+              {loading
+                ? "Compressing..."
+                : "Compress Image"}
+            </button>
+
+            <button
+              type="button"
+              className="clear-btn"
+              onClick={clearAll}
+            >
+              Clear
+            </button>
           </div>
-        </div>
+
+          <p className="privacy-note">
+            Your image is processed in your browser. It is not
+            uploaded to our server.
+          </p>
+        </section>
 
         {compressedUrl && (
-          <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 18, marginTop: 20, boxShadow: "0 8px 30px rgba(0,0,0,0.05)" }}>
-            <p style={{ textAlign: "center", fontWeight: 800, fontSize: 16, margin: "0 0 4px" }}>✅ Ho Gaya!</p>
-            <p style={{ textAlign: "center", fontSize: 18, fontWeight: 900, margin: "0 0 6px", color: isExact ? "#2563eb" : "#dc2626" }}>{formatSize(origSize)} → {formatSize(newSize)}</p>
-            <p style={{ textAlign: "center", fontSize: 13, color: isExact ? "#16a34a" : "#dc2626", margin: "0 0 14px", fontWeight: 700 }}>{isExact ? `Perfect! ${target}KB ke andar aa gaya • ${savedPercent}% Size Kam Hua` : `Target ${target}KB tha, ${formatSize(newSize)} hua`}</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 10, textAlign: "center" }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: "#64748b", margin: "0 0 8px" }}>BEFORE • {formatSize(origSize)}</p>
-                <img src={preview} alt="Before" style={{ width: "100%", height: 140, objectFit: "contain", borderRadius: 8, background: "#fff" }} />
+          <section className="result-card">
+            <div className="result-title">
+              Compression Complete
+            </div>
+
+            <div
+              className={
+                isWithinTarget
+                  ? "size-result success"
+                  : "size-result warning"
+              }
+            >
+              {formatSize(origSize)} → {formatSize(newSize)}
+            </div>
+
+            <p className="result-message">
+              {isWithinTarget
+                ? `${savedPercent}% smaller • Within your ${target} KB target`
+                : `Target was ${target} KB • Result: ${formatSize(
+                    newSize
+                  )}`}
+            </p>
+
+            <div className="comparison">
+              <div className="image-panel">
+                <span>BEFORE</span>
+
+                <img
+                  src={preview}
+                  alt="Original image"
+                />
               </div>
-              <div style={{ background: "#ecfdf5", borderRadius: 12, padding: 10, textAlign: "center", border: "1px solid #bbf7d0" }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: "#047857", margin: "0 0 8px" }}>AFTER • {formatSize(newSize)}</p>
-                <img src={compressedUrl} alt="After" style={{ width: "100%", height: 140, objectFit: "contain", borderRadius: 8, background: "#fff" }} />
+
+              <div className="image-panel after">
+                <span>AFTER</span>
+
+                <img
+                  src={compressedUrl}
+                  alt="Compressed image"
+                />
               </div>
             </div>
-            <button onClick={download} style={{ width: "100%", padding: 15, background: "#0f172a", color: "#fff", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 14 }}>Download {target}KB Photo ↓</button>
-          </div>
+
+            <button
+              type="button"
+              className="download-btn"
+              onClick={download}
+            >
+              Download Compressed Image
+            </button>
+          </section>
         )}
 
-        <div style={{ height: 70 }}></div>
+        <div className="content-gap" />
 
-        <div style={{ background: "#fefce8", border: "2px solid #facc15", borderRadius: 16, padding: 18 }}>
-          <b>💡 Earning Tip - Earn Money With This Tool!</b>
-          <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.7 }}>Gaon / Mohalle me bahut logo ko form ke liye 20KB photo chahiye hota hai. Cyber cafe 20-30 Rs leta hai. Tu WhatsApp pe ₹20 per photo compress karke de. Roz 20 photo = ₹400. Koi paisa nahi lagna, sirf ye free tool.</p>
-        </div>
+        <article className="seo-content">
+          <section>
+            <h2>Free Image Compressor</h2>
 
-        <div style={{ height: 30 }}></div>
+            <p>
+              NEXORA Image Compressor helps you reduce JPG, PNG,
+              and WebP image sizes quickly without installing
+              software. Enter your required target size, such as
+              20 KB, 50 KB, 100 KB, or 200 KB, and download the
+              compressed image.
+            </p>
 
-        <div style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 18, padding: 22 }}>
-          <h2 style={{ fontSize: 21 }}>What is Image Compressor?</h2>
-          <p style={{ color: "#475569", lineHeight: 1.8 }}>An <b>image compressor</b> reduces your photo size without losing much quality. If your photo is 2MB and form asks for <b>20KB photo</b>, this tool will make it 20KB in 2 seconds. It works for <b>UPSC photo compressor 20KB, Passport photo 20KB, SSC, College form</b>.</p>
-          <h2 style={{ fontSize: 21, marginTop: 26 }}>How to Use?</h2>
-          <p style={{ color: "#475569", lineHeight: 1.8 }}><b>Step 1:</b> Upload photo.<br/><b>Step 2:</b> Type kitni KB chahiye - jaise 15, 20, 37.<br/><b>Step 3:</b> Compress and Download.</p>
-          <h2 style={{ fontSize: 21, marginTop: 26 }}>Frequently Asked Questions</h2>
-          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>How to compress image to 20KB?</summary><p style={{ color: "#475569" }}>Upload photo, 20 type karo, Compress dabao, download karo.</p></details>
-          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Kya main 15KB ya 37KB bhi kar sakta hu?</summary><p style={{ color: "#475569" }}>Haan, 10KB se 1000KB tak kuch bhi type kar sakte ho.</p></details>
-          <details style={{ border: "1px solid #eef2f7", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}><summary style={{ fontWeight: 700, cursor: "pointer" }}>Is my photo safe?</summary><p style={{ color: "#475569" }}>Yes. Photo browser me hi compress hoti hai, server pe nahi jati.</p></details>
-          <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-            <a href="/ai-text-humanizer" style={{ flex: 1, textAlign: "center", padding: 14, background: "#0f172a", color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 700 }}>Try Next Tool → AI Text Humanizer</a>
-          </div>
-        </div>
+            <p>
+              This is useful when an online application, exam
+              form, passport form, college application, website,
+              or document upload has a strict image-size limit.
+            </p>
+          </section>
 
-        <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", margin: "30px 0 10px", lineHeight: 1.6 }}>By <b style={{ color: "#0f172a" }}>Ayush Chauhan</b> • Tool: Nexora<br/>Last Updated: 5 Nov 2026 • 100% Free & Private</p>
+          <section>
+            <h2>How to Compress an Image</h2>
+
+            <ol>
+              <li>Choose your JPG, PNG, or WebP image.</li>
+              <li>Enter the required target size in KB.</li>
+              <li>Click <strong>Compress Image</strong>.</li>
+              <li>Preview the result and download it.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>Why Use NEXORA?</h2>
+
+            <ul>
+              <li>Free to use with no account required.</li>
+              <li>Works directly in your browser.</li>
+              <li>Supports JPG, PNG, and WebP images.</li>
+              <li>Custom target sizes from 10 KB to 1000 KB.</li>
+              <li>No watermark added to the output.</li>
+              <li>Works on phones, tablets, and desktop devices.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Image Compressor for Forms</h2>
+
+            <p>
+              Many online forms specify an image-size limit.
+              Instead of manually changing image dimensions or
+              repeatedly trying different quality settings, you
+              can enter the required size directly and let the
+              browser create a smaller JPEG version.
+            </p>
+
+            <p>
+              The tool is suitable for common image-compression
+              tasks such as reducing a photo for an application
+              form, document upload, profile image, website upload,
+              or other file-size-restricted submission.
+            </p>
+          </section>
+
+          <section>
+            <h2>Frequently Asked Questions</h2>
+
+            <details>
+              <summary>
+                Can I compress an image to 20 KB?
+              </summary>
+
+              <p>
+                Yes. Enter 20 KB as the target size and click
+                Compress Image. The tool tries to produce the
+                largest available image that stays within the
+                requested limit.
+              </p>
+            </details>
+
+            <details>
+              <summary>
+                Can I choose a custom image size?
+              </summary>
+
+              <p>
+                Yes. You can enter any target from 10 KB to
+                1000 KB.
+              </p>
+            </details>
+
+            <details>
+              <summary>
+                Which image formats are supported?
+              </summary>
+
+              <p>
+                JPG, JPEG, PNG, and WebP images are supported.
+                The compressed output is provided as a JPEG file.
+              </p>
+            </details>
+
+            <details>
+              <summary>
+                Is my image uploaded to a server?
+              </summary>
+
+              <p>
+                No. Compression is performed in your browser.
+                The image is not intentionally uploaded to a
+                NEXORA processing server.
+              </p>
+            </details>
+
+            <details>
+              <summary>
+                Does the compressor work on mobile?
+              </summary>
+
+              <p>
+                Yes. The tool is designed to work on modern
+                mobile and desktop browsers.
+              </p>
+            </details>
+
+            <details>
+              <summary>
+                Will the image quality remain the same?
+              </summary>
+
+              <p>
+                Compression can reduce image quality because a
+                smaller file generally requires some quality or
+                dimension reduction. NEXORA tries to keep the
+                output as large and clear as possible while
+                meeting the selected target.
+              </p>
+            </details>
+          </section>
+
+          <section className="related">
+            <h2>Related Tools</h2>
+
+            <div className="related-grid">
+              <a href="/image-dpi-changer">
+                Image DPI Changer
+              </a>
+
+              <a href="/passport-size-photo-maker">
+                Passport Photo Maker
+              </a>
+
+              <a href="/image-resizer">
+                Image Resizer
+              </a>
+
+              <a href="/background-remover">
+                Background Remover
+              </a>
+            </div>
+          </section>
+        </article>
+
+        <p className="updated">
+          NEXORA • Free online tools • Last updated: November 27, 2026
+        </p>
       </main>
 
-      <div style={{ background: "#f8fafc", borderTop: "1px solid #eef2f7", padding: "16px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
-        <div style={{ display: "inline-block", animation: "nexoraLoop 18s linear infinite", fontSize: 14, fontWeight: 700, color: "#2563eb" }}>
-          <span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ AI Text Humanizer</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span><span style={{ padding: "0 18px" }}>✦ Compress Image to 20KB</span><span style={{ padding: "0 18px" }}>✦ Passport Photo Maker</span><span style={{ padding: "0 18px" }}>✦ AI Text Humanizer</span><span style={{ padding: "0 18px" }}>✦ Background Remover</span>
-        </div>
-        <style>{`@keyframes nexoraLoop { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
-      </div>
+      <footer className="footer">
+        <strong>NEXORA</strong>
 
-      <footer style={{ background: "#0f172a", color: "#cbd5e1", padding: "20px 16px", textAlign: "center", fontSize: 13 }}>
-        <b style={{ color: "#fff", fontSize: 16 }}>NEXORA</b>
-        <p style={{ margin: "6px 0 0" }}>Free Tools. Simple Solutions. • <a href="/about" style={{ color: "#cbd5e1" }}>About</a> • <a href="/privacy-policy" style={{ color: "#cbd5e1" }}>Privacy</a> • <a href="/contact" style={{ color: "#cbd5e1" }}>Contact</a></p>
+        <div>
+          <a href="/about">About</a>
+          <a href="/privacy-policy">Privacy</a>
+          <a href="/contact">Contact</a>
+        </div>
+
+        <p>
+          Free tools designed to be simple, fast, and useful.
+        </p>
       </footer>
+
+      <style jsx>{`
+        * {
+          box-sizing: border-box;
+        }
+
+        .page {
+          min-height: 100vh;
+          background: #ffffff;
+          color: #0f172a;
+          font-family:
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+        }
+
+        .topbar {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: rgba(255, 255, 255, 0.96);
+          border-bottom: 1px solid #eef2f7;
+          backdrop-filter: blur(8px);
+        }
+
+        .nav {
+          width: min(100%, 1000px);
+          margin: 0 auto;
+          padding: 11px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .logo {
+          color: #2563eb;
+          text-decoration: none;
+          font-size: 20px;
+          font-weight: 900;
+          letter-spacing: -0.5px;
+        }
+
+        .navlinks {
+          display: flex;
+          gap: 17px;
+        }
+
+        .navlinks a {
+          color: #334155;
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .container {
+          width: min(100%, 760px);
+          margin: 0 auto;
+          padding: 24px 16px 0;
+        }
+
+        .hero {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+
+        .badge {
+          display: inline-block;
+          padding: 5px 10px;
+          border: 1px solid #bfdbfe;
+          border-radius: 999px;
+          background: #eff6ff;
+          color: #2563eb;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.3px;
+        }
+
+        h1 {
+          margin: 11px 0 5px;
+          font-size: clamp(30px, 7vw, 40px);
+          line-height: 1.08;
+          letter-spacing: -1.2px;
+          font-weight: 900;
+          background: linear-gradient(
+            90deg,
+            #2563eb,
+            #7c3aed
+          );
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+          max-width: 540px;
+          margin: 0 auto;
+          color: #64748b;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .tool-card,
+        .result-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 15px;
+          box-shadow: 0 7px 26px rgba(15, 23, 42, 0.05);
+        }
+
+        .upload-label {
+          margin-bottom: 7px;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .upload-box {
+          width: 100%;
+          min-height: 145px;
+          border: 1.5px dashed #cbd5e1;
+          border-radius: 12px;
+          background: #ffffff;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          color: #0f172a;
+          padding: 10px;
+        }
+
+        .upload-box:hover {
+          border-color: #93c5fd;
+          background: #f8fbff;
+        }
+
+        .upload-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #eff6ff;
+          color: #2563eb;
+          display: grid;
+          place-items: center;
+          font-size: 23px;
+          font-weight: 500;
+          margin-bottom: 3px;
+        }
+
+        .upload-box strong {
+          font-size: 13px;
+        }
+
+        .upload-box span {
+          color: #94a3b8;
+          font-size: 10px;
+        }
+
+        .upload-box.has-preview {
+          min-height: 120px;
+        }
+
+        .preview {
+          max-width: 100%;
+          max-height: 120px;
+          border-radius: 8px;
+          object-fit: contain;
+        }
+
+        .file-info {
+          margin-top: 7px;
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          color: #64748b;
+          font-size: 10px;
+        }
+
+        .file-name {
+          max-width: 55%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .target-box {
+          margin-top: 12px;
+          padding: 10px;
+          border: 1px solid #eef2f7;
+          border-radius: 11px;
+          background: #f8fafc;
+        }
+
+        .target-box label {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .input-row {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .input-row input {
+          width: 100%;
+          min-width: 0;
+          padding: 9px 10px;
+          border: 1px solid #2563eb;
+          border-radius: 8px;
+          outline: none;
+          background: #ffffff;
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .input-row span {
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .presets {
+          display: flex;
+          gap: 5px;
+          overflow-x: auto;
+          padding-top: 8px;
+          scrollbar-width: none;
+        }
+
+        .presets::-webkit-scrollbar {
+          display: none;
+        }
+
+        .preset {
+          flex: 0 0 auto;
+          padding: 5px 8px;
+          border: 1px solid #e2e8f0;
+          border-radius: 999px;
+          background: #ffffff;
+          color: #334155;
+          font-size: 10px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .preset.active {
+          border-color: #f97316;
+          background: #fff7ed;
+          color: #ea580c;
+        }
+
+        .error {
+          margin-top: 10px;
+          padding: 9px 10px;
+          border-radius: 9px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #b91c1c;
+          text-align: center;
+          font-size: 11px;
+          line-height: 1.45;
+        }
+
+        .actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+        }
+
+        .compress-btn,
+        .clear-btn,
+        .download-btn {
+          border: 0;
+          border-radius: 9px;
+          cursor: pointer;
+          font-weight: 800;
+        }
+
+        .compress-btn {
+          flex: 1;
+          padding: 11px;
+          background: #f97316;
+          color: #ffffff;
+          font-size: 13px;
+        }
+
+        .compress-btn:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
+        .clear-btn {
+          padding: 11px 15px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #334155;
+          font-size: 12px;
+        }
+
+        .privacy-note {
+          margin: 8px 0 0;
+          color: #94a3b8;
+          text-align: center;
+          font-size: 9px;
+          line-height: 1.4;
+        }
+
+        .result-card {
+          margin-top: 15px;
+        }
+
+        .result-title {
+          text-align: center;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .size-result {
+          margin-top: 3px;
+          text-align: center;
+          font-size: 17px;
+          font-weight: 900;
+        }
+
+        .size-result.success {
+          color: #2563eb;
+        }
+
+        .size-result.warning {
+          color: #dc2626;
+        }
+
+        .result-message {
+          margin: 3px 0 11px;
+          text-align: center;
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 700;
+        }
+
+        .comparison {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+
+        .image-panel {
+          padding: 7px;
+          border-radius: 9px;
+          background: #f8fafc;
+          text-align: center;
+        }
+
+        .image-panel.after {
+          background: #ecfdf5;
+          border: 1px solid #bbf7d0;
+        }
+
+        .image-panel span {
+          display: block;
+          margin-bottom: 5px;
+          color: #64748b;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        .image-panel.after span {
+          color: #047857;
+        }
+
+        .image-panel img {
+          width: 100%;
+          height: 125px;
+          object-fit: contain;
+          border-radius: 6px;
+          background: #ffffff;
+        }
+
+        .download-btn {
+          width: 100%;
+          margin-top: 9px;
+          padding: 11px;
+          background: #0f172a;
+          color: #ffffff;
+          font-size: 12px;
+        }
+
+        .content-gap {
+          height: 40px;
+        }
+
+        .seo-content {
+          color: #334155;
+          font-size: 12px;
+          line-height: 1.75;
+        }
+
+        .seo-content section {
+          margin-bottom: 28px;
+        }
+
+        .seo-content h2 {
+          margin: 0 0 7px;
+          color: #0f172a;
+          font-size: 19px;
+          line-height: 1.25;
+          letter-spacing: -0.3px;
+        }
+
+        .seo-content p {
+          margin: 0 0 9px;
+        }
+
+        .seo-content ol,
+        .seo-content ul {
+          margin: 6px 0 0;
+          padding-left: 21px;
+        }
+
+        .seo-content li {
+          margin: 3px 0;
+        }
+
+        .seo-content details {
+          margin-top: 7px;
+          padding: 9px 11px;
+          border: 1px solid #e2e8f0;
+          border-radius: 9px;
+          background: #ffffff;
+        }
+
+        .seo-content summary {
+          cursor: pointer;
+          color: #0f172a;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .seo-content details p {
+          margin: 7px 0 0;
+          color: #64748b;
+          font-size: 11px;
+          line-height: 1.65;
+        }
+
+        .related-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 7px;
+        }
+
+        .related-grid a {
+          padding: 9px 10px;
+          border: 1px solid #e2e8f0;
+          border-radius: 9px;
+          color: #2563eb;
+          text-decoration: none;
+          background: #f8fafc;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        .updated {
+          margin: 38px 0 15px;
+          text-align: center;
+          color: #94a3b8;
+          font-size: 9px;
+        }
+
+        .footer {
+          padding: 18px 15px;
+          background: #0f172a;
+          color: #94a3b8;
+          text-align: center;
+          font-size: 10px;
+        }
+
+        .footer strong {
+          color: #ffffff;
+          font-size: 14px;
+        }
+
+        .footer div {
+          display: flex;
+          justify-content: center;
+          gap: 13px;
+          margin-top: 7px;
+        }
+
+        .footer a {
+          color: #cbd5e1;
+          text-decoration: none;
+        }
+
+        .footer p {
+          margin: 6px 0 0;
+        }
+
+        @media (max-width: 520px) {
+          .container {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
+          .nav {
+            padding-left: 13px;
+            padding-right: 13px;
+          }
+
+          .tool-card,
+          .result-card {
+            padding: 12px;
+            border-radius: 14px;
+          }
+
+          .comparison {
+            gap: 6px;
+          }
+
+          .image-panel img {
+            height: 105px;
+          }
+
+          .content-gap {
+            height: 40px;
+          }
+
+          .seo-content h2 {
+            font-size: 18px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
