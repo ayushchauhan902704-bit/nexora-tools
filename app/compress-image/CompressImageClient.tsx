@@ -6,12 +6,20 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const MIN_KB = 10;
 const MAX_KB = 1000;
 
+/*
+ * We use decimal KB for the user's requested
+ * file size:
+ *
+ * 10 KB = 10,000 bytes
+ * 20 KB = 20,000 bytes
+ * 50 KB = 50,000 bytes
+ */
 function formatSize(bytes: number) {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes >= 1_000_000) {
+    return `${(bytes / 1_000_000).toFixed(2)} MB`;
   }
 
-  return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1000).toFixed(1)} KB`;
 }
 
 function getBaseName(filename: string) {
@@ -23,606 +31,795 @@ function getBaseName(filename: string) {
 export default function CompressImageClient() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
-  const [compressedUrl, setCompressedUrl] = useState("");
+  const [compressedUrl, setCompressedUrl] =
+    useState("");
 
   const [target, setTarget] = useState(20);
-  const [customKB, setCustomKB] = useState("20");
+  const [customKB, setCustomKB] =
+    useState("20");
 
-  const [origSize, setOrigSize] = useState(0);
-  const [newSize, setNewSize] = useState(0);
+  const [origSize, setOrigSize] =
+    useState(0);
+  const [newSize, setNewSize] =
+    useState(0);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(false);
+  const [error, setError] =
+    useState("");
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef =
+    useRef<HTMLInputElement>(null);
 
-  const previewUrlRef = useRef("");
-  const compressedUrlRef = useRef("");
-  const compressedBlobRef = useRef<Blob | null>(null);
+  const previewUrlRef =
+    useRef("");
+
+  const compressedUrlRef =
+    useRef("");
+
+  /*
+   * THIS is the most important ref.
+   *
+   * The Blob stored here is exactly the
+   * Blob whose size is displayed and
+   * exactly the Blob that gets downloaded.
+   */
+  const compressedBlobRef =
+    useRef<Blob | null>(null);
 
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
+        URL.revokeObjectURL(
+          previewUrlRef.current
+        );
       }
 
       if (compressedUrlRef.current) {
-        URL.revokeObjectURL(compressedUrlRef.current);
+        URL.revokeObjectURL(
+          compressedUrlRef.current
+        );
       }
 
-      compressedBlobRef.current = null;
+      compressedBlobRef.current =
+        null;
     };
   }, []);
 
-  /*
-   * Clears the previous compressed result.
-   *
-   * IMPORTANT:
-   * The actual compressed Blob is also cleared,
-   * so an old result can never be downloaded
-   * after a new image is selected.
-   */
   const clearResultUrl = () => {
     if (compressedUrlRef.current) {
-      URL.revokeObjectURL(compressedUrlRef.current);
+      URL.revokeObjectURL(
+        compressedUrlRef.current
+      );
+
       compressedUrlRef.current = "";
     }
 
-    compressedBlobRef.current = null;
+    compressedBlobRef.current =
+      null;
 
     setCompressedUrl("");
     setNewSize(0);
   };
 
-  const onFile = (selectedFile?: File) => {
-    if (!selectedFile) return;
+  const onFile = (
+    selectedFile?: File
+  ) => {
+    if (!selectedFile) {
+      return;
+    }
 
     clearResultUrl();
     setError("");
 
-    if (!selectedFile.type.startsWith("image/")) {
+    if (
+      !selectedFile.type.startsWith(
+        "image/"
+      )
+    ) {
       setError(
         "Please upload a JPG, PNG, or WebP image."
       );
       return;
     }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
+    if (
+      selectedFile.size >
+      MAX_FILE_SIZE
+    ) {
       setError(
         "This image is too large. Please choose an image up to 25 MB."
       );
       return;
     }
 
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(
-        previewUrlRef.current
-      );
-    }
-
-    const url =
-      URL.createObjectURL(selectedFile);
-
-    previewUrlRef.current = url;
-
-    setFile(selectedFile);
-    setOrigSize(selectedFile.size);
-    setPreview(url);
-  };
-
-  const getTargetKB = () => {
-    let value = Number.parseInt(
-      customKB,
-      10
-    );
-
-    if (!Number.isFinite(value)) {
-      value = target;
-    }
-
-    return Math.min(
-      MAX_KB,
-      Math.max(MIN_KB, value)
-    );
-  };
-
-  /*
-   * Creates a JPEG Blob.
-   *
-   * The returned Blob is the actual file that
-   * will later be downloaded.
-   */
-  const createJpeg = (
-    img: HTMLImageElement,
-    scale: number,
-    quality: number
-  ): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      const canvas =
-        document.createElement("canvas");
-
-      const width = Math.max(
-        32,
-        Math.round(
-          img.naturalWidth * scale
-        )
-      );
-
-      const height = Math.max(
-        32,
-        Math.round(
-          img.naturalHeight * scale
-        )
-      );
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx =
-        canvas.getContext("2d", {
-          alpha: false,
-        });
-
-      if (!ctx) {
-        resolve(null);
-        return;
-      }
-
-      /*
-       * JPEG does not support transparency.
-       * White background is used for transparent
-       * PNG/WebP images.
-       */
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(
-        0,
-        0,
-        width,
-        height
-      );
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        width,
-        height
-      );
-
-      canvas.toBlob(
-        (blob) => {
-          resolve(blob);
-        },
-        "image/jpeg",
-        Math.max(
-          0.01,
-          Math.min(0.95, quality)
-        )
-      );
-    });
-  };
-
-  /*
-   * Finds the largest JPEG that is safely
-   * below the requested target.
-   *
-   * Example:
-   *
-   * Requested = 10 KB
-   * Safe target = 9 KB
-   *
-   * This gives the downloaded file a margin
-   * below the user's requested limit.
-   */
-  const findBestBlob = async (
-    img: HTMLImageElement,
-    targetBytes: number
-  ): Promise<Blob | null> => {
-    const safeTargetBytes =
-      Math.max(
-        4 * 1024,
-        Math.floor(
-          targetBytes * 0.9
-        )
-      );
-
-    /*
-     * Multiple dimensions are tested because
-     * extremely small file-size targets cannot
-     * always be reached through JPEG quality
-     * alone.
-     */
-    const scales = [
-      1,
-      0.9,
-      0.8,
-      0.7,
-      0.6,
-      0.5,
-      0.42,
-      0.36,
-      0.30,
-      0.25,
-      0.20,
-      0.16,
-      0.13,
-      0.10,
-      0.08,
-      0.06,
-      0.05,
-      0.04,
-      0.03,
-      0.025,
-      0.02,
-      0.015,
-    ];
-
-    let bestUnderTarget: Blob | null =
-      null;
-
-    /*
-     * For every scale, binary-search JPEG
-     * quality to find the largest file that
-     * stays under the safe target.
-     */
-    for (const scale of scales) {
-      let low = 0.01;
-      let high = 0.95;
-
-      let bestAtThisScale: Blob | null =
-        null;
-
-      for (let i = 0; i < 10; i++) {
-        const quality =
-          (low + high) / 2;
-
-        const blob =
-          await createJpeg(
-            img,
-            scale,
-            quality
-          );
-
-        if (!blob) {
-          continue;
-        }
-
-        if (
-          blob.size <=
-          safeTargetBytes
-        ) {
-          bestAtThisScale = blob;
-          low = quality;
-        } else {
-          high = quality;
-        }
-      }
-
-      /*
-       * Make one exact lowest-quality
-       * attempt for this scale.
-       */
-      const lowestQualityBlob =
-        await createJpeg(
-          img,
-          scale,
-          0.01
-        );
-
-      if (
-        lowestQualityBlob &&
-        lowestQualityBlob.size <=
-          safeTargetBytes
-      ) {
-        bestAtThisScale =
-          lowestQualityBlob;
-      }
-
-      if (bestAtThisScale) {
-        if (
-          !bestUnderTarget ||
-          bestAtThisScale.size >
-            bestUnderTarget.size
-        ) {
-          bestUnderTarget =
-            bestAtThisScale;
-        }
-
-        /*
-         * Once we are extremely close to
-         * the safe target, there is little
-         * benefit in making the image smaller.
-         */
-        if (
-          bestUnderTarget.size >=
-          safeTargetBytes * 0.98
-        ) {
-          break;
-        }
-      }
-    }
-
-    /*
-     * Emergency adaptive search.
-     *
-     * This handles unusual images that are
-     * difficult to reduce to very small
-     * targets such as 10 KB.
-     */
-    if (!bestUnderTarget) {
-      let scale = 0.08;
-
-      for (let i = 0; i < 15; i++) {
-        const blob =
-          await createJpeg(
-            img,
-            scale,
-            0.01
-          );
-
-        if (!blob) {
-          break;
-        }
-
-        if (
-          blob.size <=
-          safeTargetBytes
-        ) {
-          bestUnderTarget =
-            blob;
-          break;
-        }
-
-        const ratio =
-          Math.sqrt(
-            safeTargetBytes /
-              blob.size
-          );
-
-        scale *= Math.max(
-          0.4,
-          Math.min(
-            0.85,
-            ratio
-          )
-        );
-
-        scale = Math.max(
-          0.01,
-          scale
-        );
-      }
-    }
-
-    /*
-     * Never intentionally return an
-     * over-target Blob.
-     */
-    return bestUnderTarget;
-  };
-
-  const compress = async () => {
-    if (!file || !preview) {
-      setError(
-        "Please upload an image first."
-      );
-      return;
-    }
-
-    const finalKB =
-      getTargetKB();
-
-    setTarget(finalKB);
-    setCustomKB(
-      String(finalKB)
-    );
-
-    setLoading(true);
-    setError("");
-
-    clearResultUrl();
-
-    try {
-      const img =
-        new Image();
-
-      img.src = preview;
-
-      await new Promise<void>(
-        (resolve, reject) => {
-          img.onload = () =>
-            resolve();
-
-          img.onerror = () =>
-            reject(
-              new Error(
-                "Unable to read this image."
-              )
-            );
-        }
-      );
-
-      if (
-        !img.naturalWidth ||
-        !img.naturalHeight
-      ) {
-        throw new Error(
-          "Invalid image dimensions."
-        );
-      }
-
-      const targetBytes =
-        finalKB * 1024;
-
-      /*
-       * This is the EXACT Blob that will
-       * be displayed and downloaded.
-       */
-      const blob =
-        await findBestBlob(
-          img,
-          targetBytes
-        );
-
-      if (!blob) {
-        throw new Error(
-          "Unable to create a result within the requested size."
-        );
-      }
-
-      /*
-       * Store the exact Blob.
-       * The download function uses this
-       * exact same object.
-       */
-      compressedBlobRef.current =
-        blob;
-
-      const resultUrl =
-        URL.createObjectURL(
-          blob
-        );
-
-      compressedUrlRef.current =
-        resultUrl;
-
-      setCompressedUrl(
-        resultUrl
-      );
-
-      /*
-       * IMPORTANT:
-       *
-       * blob.size is the exact number
-       * of bytes in the downloadable Blob.
-       *
-       * The result UI therefore displays
-       * the same file that Download uses.
-       */
-      setNewSize(
-        blob.size
-      );
-
-      /*
-       * This should normally never happen
-       * because findBestBlob only returns
-       * a Blob under the safe target.
-       */
-      if (
-        blob.size >
-        targetBytes
-      ) {
-        setError(
-          `The image could not be reduced to ${finalKB} KB.`
-        );
-      }
-    } catch {
-      setError(
-        "We could not process this image. Please try another JPG, PNG, or WebP file."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /*
-   * Downloads the EXACT Blob stored in
-   * compressedBlobRef.
-   *
-   * It does NOT re-compress the image.
-   * It does NOT use the preview image.
-   * It does NOT create another JPEG.
-   */
-  const download = () => {
-    const blob =
-      compressedBlobRef.current;
-
-    if (!blob || !file) {
-      return;
-    }
-
-    /*
-     * Create a new temporary URL for the
-     * exact same Blob.
-     */
-    const downloadUrl =
-      URL.createObjectURL(
-        blob
-      );
-
-    const link =
-      document.createElement(
-        "a"
-      );
-
-    link.href =
-      downloadUrl;
-
-    link.download =
-      `${getBaseName(file.name)}-${target}kb.jpg`;
-
-    /*
-     * Force download instead of
-     * navigating to the image.
-     */
-    link.style.display = "none";
-
-    document.body.appendChild(
-      link
-    );
-
-    link.click();
-
-    link.remove();
-
-    /*
-     * Give mobile browsers enough time
-     * to start the download before
-     * releasing the temporary URL.
-     */
-    setTimeout(() => {
-      URL.revokeObjectURL(
-        downloadUrl
-      );
-    }, 3000);
-  };
-
-  const clearAll = () => {
     if (
       previewUrlRef.current
     ) {
       URL.revokeObjectURL(
         previewUrlRef.current
       );
-
-      previewUrlRef.current =
-        "";
     }
 
-    clearResultUrl();
+    const url =
+      URL.createObjectURL(
+        selectedFile
+      );
 
-    compressedBlobRef.current =
-      null;
+    previewUrlRef.current =
+      url;
 
-    setFile(null);
-    setPreview("");
-    setError("");
-    setOrigSize(0);
-
-    setTarget(20);
-    setCustomKB("20");
-
-    if (inputRef.current) {
-      inputRef.current.value =
-        "";
-    }
+    setFile(selectedFile);
+    setOrigSize(
+      selectedFile.size
+    );
+    setPreview(url);
   };
 
+  const getTargetKB = () => {
+    let value =
+      Number.parseInt(
+        customKB,
+        10
+      );
+
+    if (
+      !Number.isFinite(value)
+    ) {
+      value = target;
+    }
+
+    return Math.min(
+      MAX_KB,
+      Math.max(
+        MIN_KB,
+        value
+      )
+    );
+  };
+
+  /*
+   * Create the actual JPEG Blob.
+   *
+   * IMPORTANT:
+   * This Blob is the real output file.
+   */
+  const createJpeg = (
+    img: HTMLImageElement,
+    scale: number,
+    quality: number
+  ): Promise<Blob | null> => {
+    return new Promise(
+      (resolve) => {
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+
+        const width =
+          Math.max(
+            32,
+            Math.round(
+              img.naturalWidth *
+                scale
+            )
+          );
+
+        const height =
+          Math.max(
+            32,
+            Math.round(
+              img.naturalHeight *
+                scale
+            )
+          );
+
+        canvas.width =
+          width;
+        canvas.height =
+          height;
+
+        const ctx =
+          canvas.getContext(
+            "2d",
+            {
+              alpha: false,
+            }
+          );
+
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+
+        /*
+         * JPEG has no transparency.
+         * Use white background.
+         */
+        ctx.fillStyle =
+          "#ffffff";
+
+        ctx.fillRect(
+          0,
+          0,
+          width,
+          height
+        );
+
+        ctx.imageSmoothingEnabled =
+          true;
+
+        ctx.imageSmoothingQuality =
+          "high";
+
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          width,
+          height
+        );
+
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob);
+          },
+          "image/jpeg",
+          Math.max(
+            0.01,
+            Math.min(
+              0.95,
+              quality
+            )
+          )
+        );
+      }
+    );
+  };
+
+  /*
+   * Find the largest JPEG that is BELOW
+   * the internal safe target.
+   *
+   * Example:
+   *
+   * User asks 10 KB
+   * Requested bytes = 10,000
+   * Safe bytes      = 9,000
+   *
+   * Therefore the final Blob should be
+   * approximately 8–9 KB.
+   */
+  const findBestBlob =
+    async (
+      img: HTMLImageElement,
+      targetBytes: number
+    ): Promise<Blob | null> => {
+      const safeTargetBytes =
+        Math.floor(
+          targetBytes * 0.9
+        );
+
+      /*
+       * We test many dimensions.
+       * Very small targets require
+       * aggressive dimension reduction.
+       */
+      const scales = [
+        1,
+        0.9,
+        0.8,
+        0.7,
+        0.6,
+        0.5,
+        0.42,
+        0.36,
+        0.30,
+        0.25,
+        0.20,
+        0.16,
+        0.13,
+        0.10,
+        0.08,
+        0.06,
+        0.05,
+        0.04,
+        0.03,
+        0.025,
+        0.02,
+        0.015,
+        0.01,
+      ];
+
+      let bestBlob:
+        Blob | null = null;
+
+      /*
+       * Search each scale for the highest
+       * JPEG quality that stays under target.
+       */
+      for (
+        const scale of scales
+      ) {
+        let low = 0.01;
+        let high = 0.95;
+
+        let bestAtScale:
+          Blob | null = null;
+
+        for (
+          let i = 0;
+          i < 11;
+          i++
+        ) {
+          const quality =
+            (low + high) /
+            2;
+
+          const blob =
+            await createJpeg(
+              img,
+              scale,
+              quality
+            );
+
+          if (!blob) {
+            continue;
+          }
+
+          if (
+            blob.size <=
+            safeTargetBytes
+          ) {
+            bestAtScale =
+              blob;
+
+            low =
+              quality;
+          } else {
+            high =
+              quality;
+          }
+        }
+
+        /*
+         * Make sure the lowest quality
+         * option is tested too.
+         */
+        const lowest =
+          await createJpeg(
+            img,
+            scale,
+            0.01
+          );
+
+        if (
+          lowest &&
+          lowest.size <=
+            safeTargetBytes
+        ) {
+          bestAtScale =
+            lowest;
+        }
+
+        if (bestAtScale) {
+          if (
+            !bestBlob ||
+            bestAtScale.size >
+              bestBlob.size
+          ) {
+            bestBlob =
+              bestAtScale;
+          }
+
+          /*
+           * If we are within 2% of our
+           * safe target, stop.
+           */
+          if (
+            bestBlob.size >=
+            safeTargetBytes *
+              0.98
+          ) {
+            break;
+          }
+        }
+      }
+
+      /*
+       * Final emergency search.
+       *
+       * This is intentionally separate
+       * so a difficult 10 KB image
+       * cannot return a 19/20/26 KB
+       * result.
+       */
+      if (!bestBlob) {
+        let scale =
+          0.08;
+
+        for (
+          let i = 0;
+          i < 20;
+          i++
+        ) {
+          const blob =
+            await createJpeg(
+              img,
+              scale,
+              0.01
+            );
+
+          if (!blob) {
+            break;
+          }
+
+          if (
+            blob.size <=
+            safeTargetBytes
+          ) {
+            bestBlob =
+              blob;
+            break;
+          }
+
+          const ratio =
+            Math.sqrt(
+              safeTargetBytes /
+                blob.size
+            );
+
+          scale *=
+            Math.max(
+              0.35,
+              Math.min(
+                0.85,
+                ratio
+              )
+            );
+
+          scale =
+            Math.max(
+              0.01,
+              scale
+            );
+        }
+      }
+
+      /*
+       * CRITICAL:
+       *
+       * We do NOT return an over-target
+       * Blob as a fallback.
+       *
+       * If it cannot reach the requested
+       * safe size, return null.
+       */
+      if (
+        bestBlob &&
+        bestBlob.size <=
+          safeTargetBytes
+      ) {
+        return bestBlob;
+      }
+
+      return null;
+    };
+
+  const compress =
+    async () => {
+      if (
+        !file ||
+        !preview
+      ) {
+        setError(
+          "Please upload an image first."
+        );
+        return;
+      }
+
+      const finalKB =
+        getTargetKB();
+
+      setTarget(
+        finalKB
+      );
+
+      setCustomKB(
+        String(finalKB)
+      );
+
+      setLoading(
+        true
+      );
+
+      setError("");
+
+      clearResultUrl();
+
+      try {
+        const img =
+          new Image();
+
+        img.src =
+          preview;
+
+        await new Promise<void>(
+          (
+            resolve,
+            reject
+          ) => {
+            img.onload =
+              () =>
+                resolve();
+
+            img.onerror =
+              () =>
+                reject(
+                  new Error(
+                    "Unable to read this image."
+                  )
+                );
+          }
+        );
+
+        if (
+          !img.naturalWidth ||
+          !img.naturalHeight
+        ) {
+          throw new Error(
+            "Invalid image dimensions."
+          );
+        }
+
+        /*
+         * Decimal KB:
+         * 10 KB = 10,000 bytes
+         */
+        const targetBytes =
+          finalKB *
+          1000;
+
+        /*
+         * findBestBlob returns ONLY
+         * a Blob under the safe target.
+         */
+        const blob =
+          await findBestBlob(
+            img,
+            targetBytes
+          );
+
+        if (!blob) {
+          throw new Error(
+            `Unable to create an image under ${finalKB} KB.`
+          );
+        }
+
+        /*
+         * FINAL VERIFICATION
+         *
+         * 10 KB target:
+         * maximum allowed here = 9,000 bytes
+         */
+        const safeTargetBytes =
+          Math.floor(
+            targetBytes *
+              0.9
+          );
+
+        if (
+          blob.size >
+          safeTargetBytes
+        ) {
+          throw new Error(
+            "The generated file did not pass the size verification."
+          );
+        }
+
+        /*
+         * Store the EXACT Blob.
+         *
+         * This same Blob is used for:
+         * 1. Preview
+         * 2. Size display
+         * 3. Download
+         */
+        compressedBlobRef.current =
+          blob;
+
+        /*
+         * Create preview URL from
+         * the exact same Blob.
+         */
+        const resultUrl =
+          URL.createObjectURL(
+            blob
+          );
+
+        compressedUrlRef.current =
+          resultUrl;
+
+        setCompressedUrl(
+          resultUrl
+        );
+
+        /*
+         * blob.size is the exact
+         * byte size of the file.
+         */
+        setNewSize(
+          blob.size
+        );
+      } catch (
+        caughtError
+      ) {
+        const message =
+          caughtError instanceof
+          Error
+            ? caughtError.message
+            : "We could not process this image.";
+
+        setError(
+          message
+        );
+
+        clearResultUrl();
+      } finally {
+        setLoading(
+          false
+        );
+      }
+    };
+
+  /*
+   * DOWNLOAD
+   *
+   * This does NOT compress anything.
+   * This does NOT convert anything.
+   *
+   * It downloads the exact same Blob
+   * that produced the preview.
+   */
+  const download =
+    () => {
+      const blob =
+        compressedBlobRef.current;
+
+      if (
+        !blob ||
+        !file
+      ) {
+        return;
+      }
+
+      /*
+       * Verify the Blob again
+       * immediately before download.
+       */
+      if (
+        blob.size !==
+        newSize
+      ) {
+        setError(
+          "Download verification failed. Please compress the image again."
+        );
+        return;
+      }
+
+      /*
+       * Create a File from the SAME
+       * Blob bytes.
+       */
+      const outputFile =
+        new File(
+          [blob],
+          `NEXORA-${target}KB-${getBaseName(
+            file.name
+          )}.jpg`,
+          {
+            type: "image/jpeg",
+            lastModified:
+              Date.now(),
+          }
+        );
+
+      /*
+       * Verify File size.
+       *
+       * File.size must be identical
+       * to Blob.size.
+       */
+      if (
+        outputFile.size !==
+        blob.size
+      ) {
+        setError(
+          "The downloaded file could not be verified."
+        );
+        return;
+      }
+
+      const downloadUrl =
+        URL.createObjectURL(
+          outputFile
+        );
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+      link.href =
+        downloadUrl;
+
+      link.download =
+        outputFile.name;
+
+      link.rel =
+        "noopener";
+
+      link.style.display =
+        "none";
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      link.remove();
+
+      /*
+       * Keep the URL alive for a few
+       * seconds so Safari/iPhone has
+       * enough time to begin the
+       * download.
+       */
+      window.setTimeout(
+        () => {
+          URL.revokeObjectURL(
+            downloadUrl
+          );
+        },
+        5000
+      );
+    };
+
+  const clearAll =
+    () => {
+      if (
+        previewUrlRef.current
+      ) {
+        URL.revokeObjectURL(
+          previewUrlRef.current
+        );
+
+        previewUrlRef.current =
+          "";
+      }
+
+      clearResultUrl();
+
+      setFile(null);
+      setPreview("");
+      setError("");
+      setOrigSize(0);
+
+      setTarget(20);
+      setCustomKB("20");
+
+      if (
+        inputRef.current
+      ) {
+        inputRef.current.value =
+          "";
+      }
+    };
+
   const savedPercent =
-    origSize && newSize
+    origSize &&
+    newSize
       ? Math.max(
           0,
           Math.round(
@@ -637,7 +834,8 @@ export default function CompressImageClient() {
   const isWithinTarget =
     newSize > 0 &&
     newSize <=
-      target * 1024;
+      target *
+        1000;
 
   return (
     <div className="page">
@@ -677,9 +875,10 @@ export default function CompressImageClient() {
           </h1>
 
           <p>
-            Compress JPG, PNG, and
-            WebP images to your
-            required file size.
+            Compress JPG, PNG,
+            and WebP images to
+            your required file
+            size.
           </p>
         </section>
 
@@ -696,9 +895,12 @@ export default function CompressImageClient() {
             type="file"
             accept="image/jpeg,image/png,image/webp,image/*"
             hidden
-            onChange={(event) =>
+            onChange={(
+              event
+            ) =>
               onFile(
-                event.target.files?.[0]
+                event.target
+                  .files?.[0]
               )
             }
           />
@@ -717,7 +919,9 @@ export default function CompressImageClient() {
           >
             {preview ? (
               <img
-                src={preview}
+                src={
+                  preview
+                }
                 alt="Selected image preview"
                 className="preview"
               />
@@ -732,8 +936,9 @@ export default function CompressImageClient() {
                 </strong>
 
                 <span>
-                  JPG, PNG or WebP •
-                  Up to 25 MB
+                  JPG, PNG or
+                  WebP • Up to
+                  25 MB
                 </span>
               </>
             )}
@@ -765,15 +970,22 @@ export default function CompressImageClient() {
               <input
                 id="target-size"
                 type="number"
-                min={MIN_KB}
-                max={MAX_KB}
+                min={
+                  MIN_KB
+                }
+                max={
+                  MAX_KB
+                }
                 inputMode="numeric"
-                value={customKB}
+                value={
+                  customKB
+                }
                 onChange={(
                   event
                 ) => {
                   const value =
-                    event.target
+                    event
+                      .target
                       .value;
 
                   setCustomKB(
@@ -828,7 +1040,9 @@ export default function CompressImageClient() {
                 (size) => (
                   <button
                     type="button"
-                    key={size}
+                    key={
+                      size
+                    }
                     className={
                       target ===
                       size
@@ -892,9 +1106,10 @@ export default function CompressImageClient() {
           </div>
 
           <p className="privacy-note">
-            Your image is processed
-            in your browser. It is
-            not uploaded to our
+            Your image is
+            processed in your
+            browser. It is not
+            uploaded to our
             server.
           </p>
         </section>
@@ -936,7 +1151,9 @@ export default function CompressImageClient() {
                 </span>
 
                 <img
-                  src={preview}
+                  src={
+                    preview
+                  }
                   alt="Original image"
                 />
               </div>
@@ -968,7 +1185,6 @@ export default function CompressImageClient() {
           </section>
         )}
 
-        {/* Large separation between the working tool and SEO content */}
         <div className="content-gap" />
 
         <article className="seo-content">
@@ -978,42 +1194,54 @@ export default function CompressImageClient() {
             </h2>
 
             <p>
-              NEXORA Image Compressor
-              helps you reduce JPG,
-              PNG, and WebP image sizes
-              quickly without installing
-              software. Enter your
-              required target size, such
-              as 20 KB, 50 KB, 100 KB,
-              or 200 KB, and download
-              the compressed image.
+              NEXORA Image
+              Compressor helps
+              you reduce JPG,
+              PNG, and WebP
+              image sizes
+              quickly without
+              installing
+              software. Enter
+              your required
+              target size, such
+              as 20 KB, 50 KB,
+              100 KB, or 200
+              KB, and download
+              the compressed
+              image.
             </p>
 
             <p>
-              This is useful when an
-              online application, exam
-              form, passport form,
-              college application,
-              website, or document
-              upload has a strict
+              This is useful
+              when an online
+              application, exam
+              form, passport
+              form, college
+              application,
+              website, or
+              document upload
+              has a strict
               image-size limit.
             </p>
           </section>
 
           <section>
             <h2>
-              How to Compress an Image
+              How to Compress
+              an Image
             </h2>
 
             <ol>
               <li>
-                Choose your JPG,
-                PNG, or WebP image.
+                Choose your
+                JPG, PNG, or
+                WebP image.
               </li>
 
               <li>
-                Enter the required
-                target size in KB.
+                Enter the
+                required target
+                size in KB.
               </li>
 
               <li>
@@ -1025,8 +1253,9 @@ export default function CompressImageClient() {
               </li>
 
               <li>
-                Preview the result
-                and download it.
+                Preview the
+                result and
+                download it.
               </li>
             </ol>
           </section>
@@ -1038,63 +1267,76 @@ export default function CompressImageClient() {
 
             <ul>
               <li>
-                Free to use with
-                no account required.
+                Free to use
+                with no account
+                required.
               </li>
 
               <li>
-                Works directly in
-                your browser.
+                Works directly
+                in your browser.
               </li>
 
               <li>
-                Supports JPG, PNG,
-                and WebP images.
+                Supports JPG,
+                PNG, and WebP
+                images.
               </li>
 
               <li>
-                Custom target sizes
-                from 10 KB to 1000 KB.
+                Custom target
+                sizes from 10
+                KB to 1000 KB.
               </li>
 
               <li>
-                No watermark added
-                to the output.
+                No watermark
+                added to the
+                output.
               </li>
 
               <li>
                 Works on phones,
-                tablets, and desktop
-                devices.
+                tablets, and
+                desktop devices.
               </li>
             </ul>
           </section>
 
           <section>
             <h2>
-              Image Compressor for Forms
+              Image Compressor
+              for Forms
             </h2>
 
             <p>
-              Many online forms specify
-              an image-size limit.
-              Instead of manually
-              changing image dimensions
-              or repeatedly trying
-              different quality settings,
-              you can enter the required
-              size directly and let the
-              browser create a smaller
-              JPEG version.
+              Many online
+              forms specify an
+              image-size limit.
+              Instead of
+              manually changing
+              image dimensions
+              or repeatedly
+              trying different
+              quality settings,
+              you can enter
+              the required size
+              directly and let
+              the browser create
+              a smaller JPEG
+              version.
             </p>
 
             <p>
-              The tool is suitable for
-              common image-compression
-              tasks such as reducing a
-              photo for an application
-              form, document upload,
-              profile image, website
+              The tool is
+              suitable for common
+              image-compression
+              tasks such as
+              reducing a photo
+              for an application
+              form, document
+              upload, profile
+              image, website
               upload, or other
               file-size-restricted
               submission.
@@ -1103,103 +1345,123 @@ export default function CompressImageClient() {
 
           <section>
             <h2>
-              Frequently Asked Questions
+              Frequently Asked
+              Questions
             </h2>
 
             <details>
               <summary>
-                Can I compress an image
-                to 20 KB?
+                Can I compress
+                an image to
+                20 KB?
               </summary>
 
               <p>
-                Yes. Enter 20 KB as
-                the target size and
-                click Compress Image.
+                Yes. Enter 20
+                KB as the target
+                size and click
+                Compress Image.
                 The tool tries to
                 produce a result
                 slightly below the
-                requested size while
-                preserving as much
-                quality as possible.
+                requested size
+                while preserving
+                as much quality
+                as possible.
               </p>
             </details>
 
             <details>
               <summary>
-                Can I choose a custom
-                image size?
+                Can I choose a
+                custom image
+                size?
               </summary>
 
               <p>
-                Yes. You can enter
-                any target from 10 KB
-                to 1000 KB.
+                Yes. You can
+                enter any target
+                from 10 KB to
+                1000 KB.
               </p>
             </details>
 
             <details>
               <summary>
-                Which image formats
-                are supported?
+                Which image
+                formats are
+                supported?
               </summary>
 
               <p>
-                JPG, JPEG, PNG, and
-                WebP images are
-                supported. The
-                compressed output is
-                provided as a JPEG file.
+                JPG, JPEG, PNG,
+                and WebP images
+                are supported.
+                The compressed
+                output is
+                provided as a
+                JPEG file.
               </p>
             </details>
 
             <details>
               <summary>
-                Is my image uploaded
-                to a server?
+                Is my image
+                uploaded to a
+                server?
               </summary>
 
               <p>
-                No. Compression is
-                performed in your
-                browser. The image is
-                not intentionally
-                uploaded to a NEXORA
-                processing server.
+                No. Compression
+                is performed in
+                your browser. The
+                image is not
+                intentionally
+                uploaded to a
+                NEXORA processing
+                server.
               </p>
             </details>
 
             <details>
               <summary>
-                Does the compressor
-                work on mobile?
+                Does the
+                compressor work
+                on mobile?
               </summary>
 
               <p>
                 Yes. The tool is
-                designed to work on
-                modern mobile and
-                desktop browsers.
+                designed to work
+                on modern mobile
+                and desktop
+                browsers.
               </p>
             </details>
 
             <details>
               <summary>
-                Will the image quality
-                remain the same?
+                Will the image
+                quality remain
+                the same?
               </summary>
 
               <p>
-                Compression can reduce
-                image quality because
-                a smaller file generally
-                requires some quality
-                or dimension reduction.
-                NEXORA tries to keep
-                the output as large and
-                clear as possible while
-                staying close to the
-                selected target.
+                Compression can
+                reduce image
+                quality because a
+                smaller file
+                generally requires
+                some quality or
+                dimension
+                reduction. NEXORA
+                tries to keep the
+                output as large
+                and clear as
+                possible while
+                staying close to
+                the selected
+                target.
               </p>
             </details>
           </section>
@@ -1230,9 +1492,9 @@ export default function CompressImageClient() {
         </article>
 
         <p className="updated">
-          NEXORA • Free online tools •
-          Last updated: November 27,
-          2026
+          NEXORA • Free online
+          tools • Last updated:
+          November 27, 2026
         </p>
       </main>
 
@@ -1256,8 +1518,9 @@ export default function CompressImageClient() {
         </div>
 
         <p>
-          Free tools designed to be
-          simple, fast, and useful.
+          Free tools designed
+          to be simple, fast,
+          and useful.
         </p>
       </footer>
 
@@ -1288,8 +1551,11 @@ export default function CompressImageClient() {
             255,
             0.96
           );
-          border-bottom: 1px solid #eef2f7;
-          backdrop-filter: blur(8px);
+          border-bottom: 1px solid
+            #eef2f7;
+          backdrop-filter: blur(
+            8px
+          );
         }
 
         .nav {
@@ -1341,7 +1607,8 @@ export default function CompressImageClient() {
         .badge {
           display: inline-block;
           padding: 5px 10px;
-          border: 1px solid #bfdbfe;
+          border: 1px solid
+            #bfdbfe;
           border-radius: 999px;
           background: #eff6ff;
           color: #2563eb;
@@ -1380,7 +1647,8 @@ export default function CompressImageClient() {
         .tool-card,
         .result-card {
           background: #ffffff;
-          border: 1px solid #e2e8f0;
+          border: 1px solid
+            #e2e8f0;
           border-radius: 16px;
           padding: 15px;
           box-shadow:
@@ -1403,7 +1671,8 @@ export default function CompressImageClient() {
         .upload-box {
           width: 100%;
           min-height: 145px;
-          border: 1.5px dashed #cbd5e1;
+          border: 1.5px dashed
+            #cbd5e1;
           border-radius: 12px;
           background: #ffffff;
           cursor: pointer;
@@ -1473,7 +1742,8 @@ export default function CompressImageClient() {
         .target-box {
           margin-top: 12px;
           padding: 10px;
-          border: 1px solid #eef2f7;
+          border: 1px solid
+            #eef2f7;
           border-radius: 11px;
           background: #f8fafc;
         }
@@ -1495,7 +1765,8 @@ export default function CompressImageClient() {
           width: 100%;
           min-width: 0;
           padding: 9px 10px;
-          border: 1px solid #2563eb;
+          border: 1px solid
+            #2563eb;
           border-radius: 8px;
           outline: none;
           background: #ffffff;
@@ -1524,7 +1795,8 @@ export default function CompressImageClient() {
         .preset {
           flex: 0 0 auto;
           padding: 5px 8px;
-          border: 1px solid #e2e8f0;
+          border: 1px solid
+            #e2e8f0;
           border-radius: 999px;
           background: #ffffff;
           color: #334155;
@@ -1544,7 +1816,8 @@ export default function CompressImageClient() {
           padding: 9px 10px;
           border-radius: 9px;
           background: #fef2f2;
-          border: 1px solid #fecaca;
+          border: 1px solid
+            #fecaca;
           color: #b91c1c;
           text-align: center;
           font-size: 11px;
@@ -1582,7 +1855,8 @@ export default function CompressImageClient() {
         .clear-btn {
           padding: 11px 15px;
           background: #f8fafc;
-          border: 1px solid #e2e8f0;
+          border: 1px solid
+            #e2e8f0;
           color: #334155;
           font-size: 12px;
         }
@@ -1643,7 +1917,8 @@ export default function CompressImageClient() {
 
         .image-panel.after {
           background: #ecfdf5;
-          border: 1px solid #bbf7d0;
+          border: 1px solid
+            #bbf7d0;
         }
 
         .image-panel span {
@@ -1675,10 +1950,6 @@ export default function CompressImageClient() {
           font-size: 12px;
         }
 
-        /*
-         * Large separation between the
-         * working tool and SEO content.
-         */
         .content-gap {
           height: 110px;
         }
@@ -1718,7 +1989,8 @@ export default function CompressImageClient() {
         .seo-content details {
           margin-top: 7px;
           padding: 9px 11px;
-          border: 1px solid #e2e8f0;
+          border: 1px solid
+            #e2e8f0;
           border-radius: 9px;
           background: #ffffff;
         }
@@ -1748,7 +2020,8 @@ export default function CompressImageClient() {
 
         .related-grid a {
           padding: 9px 10px;
-          border: 1px solid #e2e8f0;
+          border: 1px solid
+            #e2e8f0;
           border-radius: 9px;
           color: #2563eb;
           text-decoration: none;
