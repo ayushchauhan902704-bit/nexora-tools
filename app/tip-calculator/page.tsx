@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import TipClient from "./TipClient";
 
 export const metadata: Metadata = {
-  title: "Tip Calculator - Calculate Tip & Split Bill Easily | THE NEXORA TOOLS",
-  description: "Free Tip Calculator USA - Calculate 10%, 15%, 20% tip, total bill and split between friends. Best for Restaurant, Food Delivery, USA, UK.",
+  title: "Tip Calculator - Calculate Tip, Total & Split Bill | NEXORA",
+  description:
+    "Free tip calculator to calculate restaurant tips, total bill, change and split the bill between people. Enter the bill and amount paid to instantly calculate the tip.",
 };
 
 export default function Page() {
