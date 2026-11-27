@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Doc = {
   label: string;
@@ -12,126 +12,126 @@ type Doc = {
 
 const DOCS: Doc[] = [
   {
-    label: "Passport India",
-    sub: "413 × 531 • 3.5 × 4.5 cm",
+    label: "India Passport",
+    sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "Passport USA",
-    sub: "600 × 600 • 2 × 2 inch",
+    label: "USA Passport",
+    sub: "600 × 600 • 2 × 2 in",
     w: 600,
     h: 600,
     kb: 0,
   },
   {
-    label: "Visa USA 2×2",
-    sub: "600 × 600 • 2 × 2 inch",
+    label: "USA Visa",
+    sub: "600 × 600 • 2 × 2 in",
     w: 600,
     h: 600,
     kb: 0,
   },
   {
-    label: "Visa UK",
+    label: "UK / Schengen",
     sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "Visa Schengen",
+    label: "Canada Visa",
     sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "Visa Canada",
+    label: "Australia Visa",
     sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "Visa Australia",
-    sub: "413 × 531 • 35 × 45 mm",
-    w: 413,
-    h: 531,
-    kb: 0,
-  },
-  {
-    label: "Visa China",
+    label: "China Visa",
     sub: "390 × 567 • 33 × 48 mm",
     w: 390,
     h: 567,
     kb: 0,
   },
   {
-    label: "Visa Japan",
+    label: "Japan Visa",
     sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "Visa Korea",
+    label: "Korea Visa",
     sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "Visa Dubai",
+    label: "Dubai Visa",
     sub: "413 × 531 • 35 × 45 mm",
     w: 413,
     h: 531,
     kb: 0,
   },
   {
-    label: "SSC • 20KB",
-    sub: "200 × 230 • target ≤ 20KB",
+    label: "SSC Photo",
+    sub: "200 × 230 • ≤ 20 KB",
     w: 200,
     h: 230,
     kb: 20,
   },
   {
-    label: "UPSC • 50KB",
-    sub: "300 × 350 • target ≤ 50KB",
+    label: "IBPS Photo",
+    sub: "200 × 230 • ≤ 20 KB",
+    w: 200,
+    h: 230,
+    kb: 20,
+  },
+  {
+    label: "Railway Photo",
+    sub: "200 × 230 • ≤ 20 KB",
+    w: 200,
+    h: 230,
+    kb: 20,
+  },
+  {
+    label: "UPSC Photo",
+    sub: "300 × 350 • ≤ 50 KB",
     w: 300,
     h: 350,
     kb: 50,
-  },
-  {
-    label: "IBPS • 20KB",
-    sub: "200 × 230 • target ≤ 20KB",
-    w: 200,
-    h: 230,
-    kb: 20,
-  },
-  {
-    label: "Railway • 20KB",
-    sub: "200 × 230 • target ≤ 20KB",
-    w: 200,
-    h: 230,
-    kb: 20,
   },
   {
     label: "Bank Form",
-    sub: "300 × 350 • target ≤ 50KB",
+    sub: "300 × 350 • ≤ 50 KB",
     w: 300,
     h: 350,
     kb: 50,
   },
   {
-    label: "PAN Card",
+    label: "PAN Photo",
     sub: "400 × 300 • 3.5 × 2.5 cm",
     w: 400,
     h: 300,
     kb: 0,
   },
   {
-    label: "Aadhaar Card",
+    label: "Aadhaar Photo",
+    sub: "300 × 400 • HD",
+    w: 300,
+    h: 400,
+    kb: 0,
+  },
+  {
+    label: "Voter ID",
     sub: "300 × 400 • HD",
     w: 300,
     h: 400,
@@ -145,15 +145,8 @@ const DOCS: Doc[] = [
     kb: 0,
   },
   {
-    label: "Voter ID",
-    sub: "300 × 400 • HD",
-    w: 300,
-    h: 400,
-    kb: 0,
-  },
-  {
-    label: "OCI Card",
-    sub: "600 × 600 • 2 × 2 inch",
+    label: "OCI Photo",
+    sub: "600 × 600 • 2 × 2 in",
     w: 600,
     h: 600,
     kb: 0,
@@ -180,115 +173,193 @@ const DOCS: Doc[] = [
     kb: 0,
   },
   {
-    label: "Job Resume",
+    label: "Job / Resume",
     sub: "400 × 500 • HD",
     w: 400,
     h: 500,
     kb: 0,
   },
+  {
+    label: "Custom",
+    sub: "Your own dimensions",
+    w: 600,
+    h: 600,
+    kb: 0,
+  },
 ];
 
+const MAX_FILE_SIZE = 30 * 1024 * 1024;
+const MIN_DIMENSION = 50;
+const MAX_DIMENSION = 2000;
+
+function formatKB(bytes: number) {
+  return Math.max(1, Math.round(bytes / 1024));
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export default function PassportClient() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [preview, setPreview] = useState("");
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+
   const [sel, setSel] = useState(0);
 
   const [customW, setCustomW] = useState("");
   const [customH, setCustomH] = useState("");
   const [customKB, setCustomKB] = useState("");
 
-  const [status, setStatus] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [processing, setProcessing] = useState(false);
+  const [positionX, setPositionX] = useState(50);
+  const [positionY, setPositionY] = useState(50);
 
   const [origW, setOrigW] = useState(0);
   const [origH, setOrigH] = useState(0);
   const [origKB, setOrigKB] = useState(0);
   const [newKB, setNewKB] = useState(0);
 
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   const hasCustom =
     customW.trim() !== "" ||
     customH.trim() !== "" ||
     customKB.trim() !== "";
 
-  const getCurrent = (): Doc => {
+  const current = useMemo(() => {
     const d = DOCS[sel];
 
-    const parsedW = customW.trim() ? Number(customW) : d.w;
-    const parsedH = customH.trim() ? Number(customH) : d.h;
-    const parsedKB = customKB.trim() ? Number(customKB) : d.kb;
+    const w = customW.trim() ? Number(customW) : d.w;
+    const h = customH.trim() ? Number(customH) : d.h;
+    const kb = customKB.trim() ? Number(customKB) : d.kb;
 
     return {
       label: hasCustom ? "Custom Size" : d.label,
       sub: d.sub,
-      w: Number.isFinite(parsedW) ? parsedW : d.w,
-      h: Number.isFinite(parsedH) ? parsedH : d.h,
-      kb: Number.isFinite(parsedKB) ? parsedKB : d.kb,
+      w: Number.isFinite(w) ? w : d.w,
+      h: Number.isFinite(h) ? h : d.h,
+      kb: Number.isFinite(kb) ? kb : d.kb,
     };
+  }, [sel, customW, customH, customKB, hasCustom]);
+
+  const revokePreview = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
   };
 
-  const toBlob = (
-    sourceCanvas: HTMLCanvasElement,
+  useEffect(() => {
+    return () => revokePreview();
+  }, []);
+
+  const canvasToBlob = (
+    source: HTMLCanvasElement,
     quality: number
-  ): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      sourceCanvas.toBlob(
+  ): Promise<Blob | null> =>
+    new Promise((resolve) => {
+      source.toBlob(
         (blob) => resolve(blob),
         "image/jpeg",
         quality
       );
     });
+
+  const makePreview = (source: HTMLCanvasElement) => {
+    revokePreview();
+
+    source.toBlob(
+      (blob) => {
+        if (!blob) return;
+
+        const url = URL.createObjectURL(blob);
+        previewUrlRef.current = url;
+        setPreview(url);
+      },
+      "image/jpeg",
+      0.88
+    );
   };
 
-  const processImage = (image: HTMLImageElement, doc: Doc) => {
+  const renderImage = (
+    image: HTMLImageElement,
+    doc: {
+      w: number;
+      h: number;
+    },
+    x = positionX,
+    y = positionY
+  ) => {
+    const width = Math.round(doc.w);
+    const height = Math.round(doc.h);
+
+    if (
+      width < MIN_DIMENSION ||
+      width > MAX_DIMENSION ||
+      height < MIN_DIMENSION ||
+      height > MAX_DIMENSION
+    ) {
+      setStatus(
+        `Width and height must be between ${MIN_DIMENSION} and ${MAX_DIMENSION}px.`
+      );
+      setSuccess(false);
+      return;
+    }
+
     const c = document.createElement("canvas");
 
-    c.width = Math.round(doc.w);
-    c.height = Math.round(doc.h);
+    c.width = width;
+    c.height = height;
 
     const ctx = c.getContext("2d");
 
     if (!ctx) {
-      setStatus("Browser canvas is not available. Please try another browser.");
-      setIsSuccess(false);
+      setStatus(
+        "Your browser could not start image processing. Please try another browser."
+      );
+      setSuccess(false);
       return;
     }
 
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillRect(0, 0, width, height);
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    const iw = image.naturalWidth || image.width;
-    const ih = image.naturalHeight || image.height;
+    const iw = image.naturalWidth;
+    const ih = image.naturalHeight;
 
     if (!iw || !ih) {
       setStatus("Could not read the image dimensions.");
-      setIsSuccess(false);
+      setSuccess(false);
       return;
     }
 
     const imageRatio = iw / ih;
-    const canvasRatio = c.width / c.height;
+    const outputRatio = width / height;
 
-    let sx = 0;
-    let sy = 0;
-    let sw = iw;
-    let sh = ih;
+    let sw: number;
+    let sh: number;
 
-    if (imageRatio > canvasRatio) {
+    if (imageRatio > outputRatio) {
       sh = ih;
-      sw = ih * canvasRatio;
-      sx = (iw - sw) / 2;
+      sw = ih * outputRatio;
     } else {
       sw = iw;
-      sh = iw / canvasRatio;
-      sy = (ih - sh) / 2;
+      sh = iw / outputRatio;
     }
+
+    const maxX = Math.max(0, iw - sw);
+    const maxY = Math.max(0, ih - sh);
+
+    const sx = (clamp(x, 0, 100) / 100) * maxX;
+    const sy = (clamp(y, 0, 100) / 100) * maxY;
 
     ctx.drawImage(
       image,
@@ -298,36 +369,61 @@ export default function PassportClient() {
       sh,
       0,
       0,
-      c.width,
-      c.height
+      width,
+      height
     );
 
     setCanvas(c);
-    setPreview(c.toDataURL("image/jpeg", 0.9));
+    makePreview(c);
 
     c.toBlob(
       (blob) => {
         if (blob) {
-          setNewKB(Math.max(1, Math.round(blob.size / 1024)));
+          setNewKB(formatKB(blob.size));
         }
       },
       "image/jpeg",
-      0.9
+      0.88
     );
   };
 
-  const handleFile = (file: File | undefined) => {
+  const handleFile = (file?: File) => {
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setStatus("Please select a JPG, JPEG, PNG or other image file.");
-      setIsSuccess(false);
+    const lowerName = file.name.toLowerCase();
+
+    if (
+      file.type === "image/heic" ||
+      file.type === "image/heif" ||
+      lowerName.endsWith(".heic") ||
+      lowerName.endsWith(".heif")
+    ) {
+      setStatus(
+        "HEIC photos are not supported. Please convert the photo to JPG or PNG and upload it again."
+      );
+      setSuccess(false);
       return;
     }
 
-    setStatus("Loading your photo...");
-    setIsSuccess(false);
+    if (!file.type.startsWith("image/")) {
+      setStatus(
+        "Please upload a JPG, JPEG, PNG, WebP, or another supported image file."
+      );
+      setSuccess(false);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setStatus(
+        "This image is larger than 30 MB. Please choose a smaller image."
+      );
+      setSuccess(false);
+      return;
+    }
+
     setProcessing(true);
+    setSuccess(false);
+    setStatus("Loading your photo...");
 
     const reader = new FileReader();
 
@@ -339,20 +435,26 @@ export default function PassportClient() {
 
         setOrigW(image.naturalWidth);
         setOrigH(image.naturalHeight);
-        setOrigKB(Math.max(1, Math.round(file.size / 1024)));
+        setOrigKB(formatKB(file.size));
 
-        processImage(image, getCurrent());
+        setPositionX(50);
+        setPositionY(50);
+
+        renderImage(image, current, 50, 50);
 
         setStatus(
-          "Photo loaded. Select a document size or enter your own dimensions."
+          "Photo ready. Adjust the position if needed, then download."
         );
-        setIsSuccess(true);
+
+        setSuccess(true);
         setProcessing(false);
       };
 
       image.onerror = () => {
-        setStatus("This image could not be opened. Please try another photo.");
-        setIsSuccess(false);
+        setStatus(
+          "This image could not be opened. Please choose another image."
+        );
+        setSuccess(false);
         setProcessing(false);
       };
 
@@ -360,130 +462,172 @@ export default function PassportClient() {
     };
 
     reader.onerror = () => {
-      setStatus("Could not read the selected file. Please try again.");
-      setIsSuccess(false);
+      setStatus("The image could not be read. Please try again.");
+      setSuccess(false);
       setProcessing(false);
     };
 
     reader.readAsDataURL(file);
   };
 
-  const selectDoc = (idx: number) => {
-    setSel(idx);
+  const selectDoc = (index: number) => {
+    setSel(index);
 
     setCustomW("");
     setCustomH("");
     setCustomKB("");
 
+    setPositionX(50);
+    setPositionY(50);
+
+    const selected = DOCS[index];
+
     if (img) {
-      processImage(img, DOCS[idx]);
+      renderImage(img, selected, 50, 50);
 
       setStatus(
-        `${DOCS[idx].label} selected • ${DOCS[idx].w} × ${DOCS[idx].h}${
-          DOCS[idx].kb ? ` • target ≤ ${DOCS[idx].kb}KB` : ""
+        `${selected.label} selected • ${selected.w} × ${selected.h}${
+          selected.kb
+            ? ` • target ≤ ${selected.kb} KB`
+            : ""
         }`
       );
 
-      setIsSuccess(true);
+      setSuccess(true);
     }
   };
 
   const applyCustom = () => {
     if (!img) {
       setStatus("Please upload a photo first.");
-      setIsSuccess(false);
+      setSuccess(false);
       return;
     }
 
-    const cur = getCurrent();
+    const w = Number(customW);
+    const h = Number(customH);
+    const kb = customKB.trim() ? Number(customKB) : 0;
 
     if (
-      !Number.isInteger(cur.w) ||
-      !Number.isInteger(cur.h) ||
-      cur.w < 50 ||
-      cur.w > 2000 ||
-      cur.h < 50 ||
-      cur.h > 2000
+      !Number.isInteger(w) ||
+      !Number.isInteger(h) ||
+      w < MIN_DIMENSION ||
+      w > MAX_DIMENSION ||
+      h < MIN_DIMENSION ||
+      h > MAX_DIMENSION
     ) {
       setStatus(
-        "Width and Height must be whole numbers between 50 and 2000 pixels."
+        `Width and height must be whole numbers between ${MIN_DIMENSION} and ${MAX_DIMENSION}px.`
       );
-      setIsSuccess(false);
+      setSuccess(false);
       return;
     }
 
     if (
-      cur.kb !== 0 &&
-      (!Number.isInteger(cur.kb) || cur.kb < 5 || cur.kb > 500)
+      kb !== 0 &&
+      (!Number.isInteger(kb) || kb < 5 || kb > 500)
     ) {
-      setStatus("KB must be between 5 and 500.");
-      setIsSuccess(false);
+      setStatus("File size must be between 5 and 500 KB.");
+      setSuccess(false);
       return;
     }
 
-    processImage(img, cur);
+    const customDoc = {
+      w,
+      h,
+    };
+
+    setPositionX(50);
+    setPositionY(50);
+
+    renderImage(img, customDoc, 50, 50);
 
     setStatus(
-      `Custom size applied • ${cur.w} × ${cur.h}${
-        cur.kb ? ` • target ≤ ${cur.kb}KB` : " • HD"
+      `Custom size applied • ${w} × ${h}${
+        kb ? ` • target ≤ ${kb} KB` : ""
       }`
     );
 
-    setIsSuccess(true);
+    setSuccess(true);
+  };
+
+  const changePosition = (
+    type: "x" | "y",
+    value: number
+  ) => {
+    if (!img) return;
+
+    const nextX =
+      type === "x" ? value : positionX;
+
+    const nextY =
+      type === "y" ? value : positionY;
+
+    if (type === "x") {
+      setPositionX(value);
+    }
+
+    if (type === "y") {
+      setPositionY(value);
+    }
+
+    renderImage(
+      img,
+      current,
+      nextX,
+      nextY
+    );
   };
 
   const compressToTarget = async (
     source: HTMLCanvasElement,
     targetKB: number
-  ): Promise<{
-    blob: Blob | null;
-    canvas: HTMLCanvasElement;
-  }> => {
+  ) => {
     const targetBytes = targetKB * 1024;
 
-    let bestBlob: Blob | null = null;
+    let low = 0.15;
+    let high = 0.95;
 
-    let low = 0.05;
-    let high = 0.98;
+    let best: Blob | null = null;
 
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 10; i++) {
       const quality = (low + high) / 2;
 
-      const blob = await toBlob(source, quality);
+      const blob = await canvasToBlob(
+        source,
+        quality
+      );
 
       if (!blob) continue;
 
       if (blob.size <= targetBytes) {
-        bestBlob = blob;
+        best = blob;
         low = quality;
       } else {
         high = quality;
       }
     }
 
-    if (bestBlob) {
-      return {
-        blob: bestBlob,
-        canvas: source,
-      };
+    if (best) {
+      return best;
     }
 
-    let workingCanvas = source;
+    let working = source;
 
-    for (let scaleStep = 0; scaleStep < 8; scaleStep++) {
-      const nextCanvas = document.createElement("canvas");
+    for (let step = 0; step < 7; step++) {
+      const next = document.createElement("canvas");
 
-      nextCanvas.width = Math.max(
+      next.width = Math.max(
         50,
-        Math.floor(workingCanvas.width * 0.9)
+        Math.floor(working.width * 0.88)
       );
 
-      nextCanvas.height = Math.max(
+      next.height = Math.max(
         50,
-        Math.floor(workingCanvas.height * 0.9)
+        Math.floor(working.height * 0.88)
       );
 
-      const ctx = nextCanvas.getContext("2d");
+      const ctx = next.getContext("2d");
 
       if (!ctx) break;
 
@@ -491,79 +635,72 @@ export default function PassportClient() {
       ctx.fillRect(
         0,
         0,
-        nextCanvas.width,
-        nextCanvas.height
+        next.width,
+        next.height
       );
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
       ctx.drawImage(
-        workingCanvas,
+        working,
         0,
         0,
-        workingCanvas.width,
-        workingCanvas.height,
+        working.width,
+        working.height,
         0,
         0,
-        nextCanvas.width,
-        nextCanvas.height
+        next.width,
+        next.height
       );
 
-      let lowQuality = 0.05;
-      let highQuality = 0.95;
-      let underTarget: Blob | null = null;
+      low = 0.1;
+      high = 0.9;
+      best = null;
 
-      for (let i = 0; i < 10; i++) {
-        const quality = (lowQuality + highQuality) / 2;
+      for (let i = 0; i < 9; i++) {
+        const quality = (low + high) / 2;
 
-        const blob = await toBlob(nextCanvas, quality);
+        const blob = await canvasToBlob(
+          next,
+          quality
+        );
 
         if (!blob) continue;
 
         if (blob.size <= targetBytes) {
-          underTarget = blob;
-          lowQuality = quality;
+          best = blob;
+          low = quality;
         } else {
-          highQuality = quality;
+          high = quality;
         }
       }
 
-      if (underTarget) {
-        return {
-          blob: underTarget,
-          canvas: nextCanvas,
-        };
+      if (best) {
+        return best;
       }
 
-      workingCanvas = nextCanvas;
+      working = next;
     }
 
-    const fallbackBlob = await toBlob(workingCanvas, 0.05);
-
-    return {
-      blob: fallbackBlob,
-      canvas: workingCanvas,
-    };
+    return canvasToBlob(working, 0.1);
   };
 
   const download = async () => {
     if (!canvas) {
       setStatus("Please upload a photo first.");
-      setIsSuccess(false);
+      setSuccess(false);
       return;
     }
 
-    const current = getCurrent();
-
     if (
-      current.w < 50 ||
-      current.w > 2000 ||
-      current.h < 50 ||
-      current.h > 2000
+      current.w < MIN_DIMENSION ||
+      current.w > MAX_DIMENSION ||
+      current.h < MIN_DIMENSION ||
+      current.h > MAX_DIMENSION
     ) {
-      setStatus("Invalid photo dimensions.");
-      setIsSuccess(false);
+      setStatus("The selected photo dimensions are invalid.");
+      setSuccess(false);
       return;
     }
 
@@ -571,59 +708,68 @@ export default function PassportClient() {
       current.kb &&
       (current.kb < 5 || current.kb > 500)
     ) {
-      setStatus("KB target must be between 5 and 500.");
-      setIsSuccess(false);
+      setStatus(
+        "The file-size target must be between 5 and 500 KB."
+      );
+      setSuccess(false);
       return;
     }
 
-    setStatus("Preparing your photo...");
-    setIsSuccess(false);
     setProcessing(true);
+    setSuccess(false);
+    setStatus("Preparing your photo...");
 
     try {
-      let finalCanvas = canvas;
-      let blob: Blob | null = null;
+      let blob: Blob | null;
 
       if (current.kb > 0) {
-        const result = await compressToTarget(
+        blob = await compressToTarget(
           canvas,
           current.kb
         );
-
-        blob = result.blob;
-        finalCanvas = result.canvas;
       } else {
-        blob = await toBlob(canvas, 0.92);
+        blob = await canvasToBlob(
+          canvas,
+          0.92
+        );
       }
 
       if (!blob) {
-        setStatus("Could not create the JPG. Please try again.");
-        setIsSuccess(false);
-        return;
+        throw new Error("Unable to create image.");
       }
 
       const actualKB = blob.size / 1024;
 
-      setNewKB(Math.max(1, Math.round(actualKB)));
+      setNewKB(
+        Math.max(1, Math.round(actualKB))
+      );
 
-      const objectUrl = URL.createObjectURL(blob);
-
-      const safeLabel = hasCustom
-        ? `Custom-${current.w}x${current.h}`
-        : current.label.replace(/[^a-zA-Z0-9]+/g, "-");
+      const safeName = current.label
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
       const fileName =
-        `NEXORA-${safeLabel}-${finalCanvas.width}x${finalCanvas.height}` +
-        `${current.kb ? `-${current.kb}KB` : "-HD"}.jpg`;
+        `NEXORA-${safeName}-${current.w}x${current.h}` +
+        `${
+          current.kb
+            ? `-${current.kb}KB`
+            : "-HD"
+        }.jpg`;
+
+      const url =
+        URL.createObjectURL(blob);
 
       const isIOS =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        /iPad|iPhone|iPod/.test(
+          navigator.userAgent
+        ) ||
         (navigator.platform === "MacIntel" &&
           navigator.maxTouchPoints > 1);
 
       if (
         isIOS &&
-        typeof (navigator as any).share === "function"
+        typeof (navigator as any).share ===
+          "function"
       ) {
         try {
           const file = new File(
@@ -635,114 +781,133 @@ export default function PassportClient() {
           );
 
           const canShare =
-            typeof (navigator as any).canShare === "function" &&
+            typeof (navigator as any)
+              .canShare === "function" &&
             (navigator as any).canShare({
               files: [file],
             });
 
           if (canShare) {
-            await (navigator as any).share({
-              files: [file],
-              title: "NEXORA Passport Photo",
-            });
+            await (navigator as any).share(
+              {
+                files: [file],
+                title:
+                  "NEXORA Passport Photo",
+              }
+            );
 
             setStatus(
-              `Photo ready • ${actualKB.toFixed(1)}KB`
+              `Photo ready • ${actualKB.toFixed(
+                1
+              )} KB`
             );
-            setIsSuccess(true);
+
+            setSuccess(true);
           } else {
-            throw new Error("File sharing is unavailable.");
+            window.open(url, "_blank");
+
+            setStatus(
+              "Photo opened in a new tab. Use Share or Save Image to save it."
+            );
+
+            setSuccess(true);
           }
         } catch (error: any) {
-          if (error?.name === "AbortError") {
-            setStatus("Sharing cancelled.");
-            setIsSuccess(false);
-          } else {
-            const newWindow = window.open(
-              "",
-              "_blank"
+          if (
+            error?.name === "AbortError"
+          ) {
+            setStatus(
+              "Sharing cancelled."
             );
 
-            if (newWindow) {
-              newWindow.location.href = objectUrl;
+            setSuccess(false);
+          } else {
+            window.open(url, "_blank");
 
-              setStatus(
-                "Photo opened in a new tab. Use Share or Save Image to save it."
-              );
+            setStatus(
+              "Photo opened in a new tab. Use Share or Save Image to save it."
+            );
 
-              setIsSuccess(true);
-            } else {
-              setStatus(
-                "Please allow pop-ups and try downloading again."
-              );
-
-              setIsSuccess(false);
-            }
+            setSuccess(true);
           }
         }
       } else {
-        const anchor = document.createElement("a");
+        const a =
+          document.createElement("a");
 
-        anchor.href = objectUrl;
-        anchor.download = fileName;
+        a.href = url;
+        a.download = fileName;
 
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
 
         setStatus(
-          `Download complete • ${actualKB.toFixed(1)}KB`
+          `Download complete • ${actualKB.toFixed(
+            1
+          )} KB`
         );
 
-        setIsSuccess(true);
+        setSuccess(true);
       }
 
-      window.setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
       }, 60000);
 
-      if (typeof (window as any).gtag === "function") {
+      if (
+        typeof (window as any).gtag ===
+        "function"
+      ) {
         (window as any).gtag(
           "event",
           "passport_photo_download",
           {
-            event_category: "Image Tools",
-            event_label: current.label,
-            target_kb: current.kb || 0,
-            width: finalCanvas.width,
-            height: finalCanvas.height,
+            event_category:
+              "Image Tools",
+            event_label:
+              current.label,
+            target_kb:
+              current.kb || 0,
+            width: current.w,
+            height: current.h,
           }
         );
       }
     } catch {
       setStatus(
-        "Download failed. Please try again."
+        "The photo could not be prepared. Please try again."
       );
-      setIsSuccess(false);
+
+      setSuccess(false);
     } finally {
       setProcessing(false);
     }
   };
 
   const clearAll = () => {
+    revokePreview();
+
     setImg(null);
     setPreview("");
-    setStatus("");
-    setIsSuccess(false);
+    setCanvas(null);
 
     setCustomW("");
     setCustomH("");
     setCustomKB("");
 
-    setSel(0);
-
-    setCanvas(null);
+    setPositionX(50);
+    setPositionY(50);
 
     setOrigW(0);
     setOrigH(0);
     setOrigKB(0);
     setNewKB(0);
 
+    setSel(0);
+
+    setStatus("");
+    setSuccess(false);
     setProcessing(false);
 
     if (fileRef.current) {
@@ -750,346 +915,128 @@ export default function PassportClient() {
     }
   };
 
-  const current = getCurrent();
-
   return (
-    <div
-      style={{
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        background: "#ffffff",
-        color: "#0f172a",
-        minHeight: "100vh",
-        colorScheme: "light",
-      }}
-    >
-      <header
-        style={{
-          background: "#ffffff",
-          borderBottom: "1px solid #eef2f7",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1100,
-            margin: "0 auto",
-            padding: "14px 20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <a
-            href="/"
-            style={{
-              fontSize: 24,
-              fontWeight: 900,
-              color: "#2563eb",
-              textDecoration: "none",
-            }}
-          >
-            NEXORA
-          </a>
+    <div className="page">
+      <main className="container">
 
-          <nav
-            style={{
-              display: "flex",
-              gap: 20,
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            <a
-              href="/"
-              style={{
-                color: "#0f172a",
-                textDecoration: "none",
-              }}
-            >
-              Home
-            </a>
+        <section className="hero">
+          <span className="badge">
+            FREE • HD • NO WATERMARK • BROWSER-BASED
+          </span>
 
-            <a
-              href="/"
-              style={{
-                color: "#0f172a",
-                textDecoration: "none",
-              }}
-            >
-              All Tools
-            </a>
-          </nav>
-        </div>
-      </header>
-
-      <main
-        style={{
-          maxWidth: 760,
-          margin: "0 auto",
-          padding: "30px 18px 10px",
-        }}
-      >
-        <section
-          style={{
-            textAlign: "center",
-            marginBottom: 22,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#eff6ff",
-                color: "#2563eb",
-                border: "1px solid #bfdbfe",
-                padding: "7px 12px",
-                borderRadius: 999,
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: "0.3px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              ✦ FREE • HD • NO WATERMARK • PRIVATE
-            </span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: 36,
-              margin: "12px 0 6px",
-              lineHeight: 1.05,
-              letterSpacing: "-0.5px",
-              fontWeight: 900,
-              background:
-                "linear-gradient(90deg, #1d4ed8, #6d28d9)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              textAlign: "center",
-            }}
-          >
-            Passport Photo
-            <br />
-            Maker
+          <h1>
+            Passport Photo Maker
           </h1>
 
-          <p
-            style={{
-              color: "#64748b",
-              fontSize: 14,
-              margin: 0,
-              lineHeight: 1.5,
-            }}
-          >
-            Create passport, visa and document photos with custom
-            dimensions and file size.
+          <p>
+            Create passport, visa and document
+            photos with custom size and
+            file-size options.
           </p>
         </section>
 
-        <section
-          style={{
-            background: "#ffffff",
-            border: "1.5px solid #e2e8f0",
-            borderRadius: 18,
-            padding: 14,
-            boxShadow:
-              "0 8px 30px rgba(0,0,0,0.05)",
-          }}
-        >
-          <p
-            style={{
-              fontWeight: 800,
-              fontSize: 13,
-              margin: "0 0 8px",
-              textAlign: "center",
-            }}
-          >
-            Upload Your Photo
-          </p>
+        <section className="tool-card">
+
+          <div className="section-title">
+            <span>1</span>
+            Upload Photo
+          </div>
 
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/*"
             hidden
             onChange={(e) => {
-              handleFile(e.target.files?.[0]);
+              handleFile(
+                e.target.files?.[0]
+              );
               e.target.value = "";
             }}
           />
 
-          <div
-            onClick={() => fileRef.current?.click()}
-            style={{
-              border: "1.5px dashed #cbd5e1",
-              borderRadius: 12,
-              padding: 14,
-              textAlign: "center",
-              cursor: "pointer",
-              background: "#ffffff",
-            }}
+          <button
+            className="upload"
+            onClick={() =>
+              fileRef.current?.click()
+            }
+            type="button"
           >
-            <div style={{ fontSize: 24 }}>📸</div>
+            <div className="upload-icon">
+              ＋
+            </div>
 
-            <p
-              style={{
-                fontWeight: 800,
-                margin: "4px 0 2px",
-                fontSize: 14,
-              }}
-            >
+            <strong>
               {preview
                 ? "Change Photo"
-                : "Tap to Upload a Photo"}
-            </p>
+                : "Upload Your Photo"}
+            </strong>
 
-            <p
-              style={{
-                fontSize: 11,
-                color: "#94a3b8",
-                margin: 0,
-              }}
-            >
-              JPG, JPEG, PNG • White background • Browser processing
-            </p>
+            <small>
+              JPG, JPEG, PNG or WebP •
+              Up to 30 MB
+            </small>
+          </button>
+
+          <div className="section-title size-title">
+            <span>2</span>
+            Choose Photo Size
           </div>
 
-          <p
-            style={{
-              fontWeight: 800,
-              fontSize: 12,
-              margin: "14px 0 6px",
-            }}
-          >
-            Choose a Document Size
-          </p>
+          <div className="preset-scroll">
+            {DOCS.map(
+              (doc, index) => {
+                const active =
+                  sel === index &&
+                  !hasCustom;
 
-          <div
-            style={{
-              display: "flex",
-              gap: 6,
-              overflowX: "auto",
-              paddingBottom: 6,
-              WebkitOverflowScrolling: "touch",
-              scrollbarWidth: "thin",
-            }}
-          >
-            {DOCS.map((doc, i) => {
-              const isActive =
-                sel === i && !hasCustom;
-
-              return (
-                <button
-                  key={`${doc.label}-${i}`}
-                  onClick={() => selectDoc(i)}
-                  style={{
-                    padding: "7px 9px",
-                    borderRadius: 9,
-                    border: isActive
-                      ? "1.5px solid #f97316"
-                      : "1px solid #e2e8f0",
-                    background: isActive
-                      ? "#fff7ed"
-                      : "#ffffff",
-                    color: isActive
-                      ? "#ea580c"
-                      : "#0f172a",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontSize: 11,
-                    lineHeight: 1.3,
-                    textAlign: "left",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                  }}
-                >
-                  {doc.label}
-
-                  <br />
-
-                  <span
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 600,
-                      color: "#64748b",
-                    }}
+                return (
+                  <button
+                    type="button"
+                    key={`${doc.label}-${index}`}
+                    className={`preset ${
+                      active
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      selectDoc(index)
+                    }
                   >
-                    {doc.sub}
-                  </span>
-                </button>
-              );
-            })}
+                    <strong>
+                      {doc.label}
+                    </strong>
+
+                    <small>
+                      {doc.sub}
+                    </small>
+                  </button>
+                );
+              }
+            )}
           </div>
 
-          <p
-            style={{
-              fontWeight: 800,
-              fontSize: 12,
-              margin: "10px 0 6px",
-            }}
-          >
-            Custom Width / Height / KB
-          </p>
+          <div className="custom-box">
+            <div className="custom-label">
+              Custom Size
+            </div>
 
-          <div
-            style={{
-              background: "#f8fafc",
-              border: "1px solid #eef2f7",
-              borderRadius: 10,
-              padding: 9,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: 6,
-              }}
-            >
+            <div className="custom-row">
               <input
                 type="number"
                 min={50}
                 max={2000}
                 value={customW}
                 onChange={(e) =>
-                  setCustomW(e.target.value)
+                  setCustomW(
+                    e.target.value
+                  )
                 }
-                placeholder={`W - ${DOCS[sel].w}`}
-                style={{
-                  flex: 1,
-                  padding: "9px 8px",
-                  borderRadius: 8,
-                  border:
-                    "1.5px solid #2563eb",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  outline: "none",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  minWidth: 0,
-                }}
+                placeholder={`Width ${DOCS[sel].w}`}
+                aria-label="Custom width"
               />
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  fontWeight: 800,
-                  color: "#94a3b8",
-                  fontSize: 13,
-                }}
-              >
-                ×
-              </div>
+              <span>×</span>
 
               <input
                 type="number"
@@ -1097,22 +1044,12 @@ export default function PassportClient() {
                 max={2000}
                 value={customH}
                 onChange={(e) =>
-                  setCustomH(e.target.value)
+                  setCustomH(
+                    e.target.value
+                  )
                 }
-                placeholder={`H - ${DOCS[sel].h}`}
-                style={{
-                  flex: 1,
-                  padding: "9px 8px",
-                  borderRadius: 8,
-                  border:
-                    "1.5px solid #2563eb",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  outline: "none",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  minWidth: 0,
-                }}
+                placeholder={`Height ${DOCS[sel].h}`}
+                aria-label="Custom height"
               />
 
               <input
@@ -1121,243 +1058,197 @@ export default function PassportClient() {
                 max={500}
                 value={customKB}
                 onChange={(e) =>
-                  setCustomKB(e.target.value)
+                  setCustomKB(
+                    e.target.value
+                  )
                 }
                 placeholder={
                   DOCS[sel].kb
                     ? `${DOCS[sel].kb} KB`
                     : "KB"
                 }
-                style={{
-                  flex: 1,
-                  padding: "9px 8px",
-                  borderRadius: 8,
-                  border:
-                    "1.5px solid #f97316",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  outline: "none",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  minWidth: 0,
-                }}
+                aria-label="Custom file size"
               />
             </div>
 
             {img && (
               <button
+                type="button"
+                className="apply-btn"
                 onClick={applyCustom}
-                style={{
-                  width: "100%",
-                  padding: 9,
-                  marginTop: 8,
-                  background: "#0f172a",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: 8,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  fontSize: 12,
-                }}
               >
-                Apply Custom Size →
+                Apply Custom Size
               </button>
             )}
           </div>
 
           {preview && (
-            <div
-              style={{
-                marginTop: 16,
-                background: "#f8fafc",
-                border: "1.5px solid #e2e8f0",
-                borderRadius: 12,
-                padding: 12,
-                textAlign: "center",
-              }}
-            >
-              <p
-                style={{
-                  fontWeight: 800,
-                  fontSize: 13,
-                  margin: "0 0 8px",
-                }}
-              >
-                Photo Preview
-              </p>
+            <>
+              <div className="section-title adjust-title">
+                <span>3</span>
+                Adjust Photo Position
+              </div>
 
-              <img
-                src={preview}
-                alt="Processed passport photo preview"
-                style={{
-                  width: "100%",
-                  maxWidth: 280,
-                  maxHeight: 320,
-                  borderRadius: 10,
-                  objectFit: "contain",
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                }}
-              />
+              <div className="adjust-box">
+
+                <div className="preview-wrap">
+                  <img
+                    src={preview}
+                    alt="Processed passport photo preview"
+                  />
+                </div>
+
+                <div className="adjust-controls">
+
+                  <label>
+                    <span>
+                      Horizontal
+                    </span>
+
+                    <b>
+                      {positionX}%
+                    </b>
+                  </label>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={positionX}
+                    onChange={(e) =>
+                      changePosition(
+                        "x",
+                        Number(
+                          e.target.value
+                        )
+                      )
+                    }
+                  />
+
+                  <label>
+                    <span>
+                      Vertical
+                    </span>
+
+                    <b>
+                      {positionY}%
+                    </b>
+                  </label>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={positionY}
+                    onChange={(e) =>
+                      changePosition(
+                        "y",
+                        Number(
+                          e.target.value
+                        )
+                      )
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    className="center-btn"
+                    onClick={() => {
+                      setPositionX(50);
+                      setPositionY(50);
+
+                      if (img) {
+                        renderImage(
+                          img,
+                          current,
+                          50,
+                          50
+                        );
+                      }
+                    }}
+                  >
+                    Reset Position
+                  </button>
+
+                </div>
+              </div>
 
               {origW > 0 && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    background: "#f0fdf4",
-                    border: "1px solid #bbf7d0",
-                    borderRadius: 10,
-                    padding: 10,
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#475569",
-                    }}
-                  >
-                    Original:{" "}
-                    <b style={{ color: "#0f172a" }}>
-                      {origW} × {origH} • {origKB} KB
-                    </b>
+                <div className="info">
+
+                  <div>
+                    Original
+                    <strong>
+                      {origW} × {origH} •{" "}
+                      {origKB} KB
+                    </strong>
                   </div>
 
-                  <div
-                    style={{
-                      fontSize: 18,
-                      color: "#16a34a",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    ↓
+                  <div>
+                    Output
+                    <strong>
+                      {current.w} ×{" "}
+                      {current.h} •{" "}
+                      {current.kb
+                        ? `≤ ${current.kb} KB`
+                        : `${newKB} KB`}
+                    </strong>
                   </div>
 
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 800,
-                      color: "#15803d",
-                    }}
-                  >
-                    Output: {current.w} × {current.h} •{" "}
-                    {current.kb
-                      ? `Target ≤ ${current.kb}KB`
-                      : `${newKB} KB`}
-                  </div>
                 </div>
               )}
-            </div>
-          )}
 
-          {preview && (
-            <a
-              href="/background-remover"
-              style={{
-                display: "block",
-                marginTop: 12,
-                padding: "14px 12px",
-                borderRadius: 14,
-                textDecoration: "none",
-                background:
-                  "linear-gradient(90deg, #2563eb, #7c3aed, #db2777)",
-                boxShadow:
-                  "0 10px 25px rgba(124,58,237,0.25)",
-                border: "2px solid #ffffff",
-                animation:
-                  "nexoraBlink 1.2s ease-in-out infinite",
-                textAlign: "center",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 15,
-                  fontWeight: 900,
-                  color: "#ffffff",
-                  lineHeight: 1.4,
-                }}
-              >
-                🎨 Need a White, Blue or Red Background?
+              <div className="background-card">
+
+                <div className="background-icon">
+                  🎨
+                </div>
+
+                <div className="background-copy">
+                  <strong>
+                    Need a different background?
+                  </strong>
+
+                  <span>
+                    Remove or change the photo
+                    background with NEXORA
+                    Background Remover.
+                  </span>
+                </div>
+
+                <a
+                  href="/background-remover"
+                  className="background-btn"
+                >
+                  Open Background Remover →
+                </a>
+
               </div>
-
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: "#fefce8",
-                  marginTop: 5,
-                  background:
-                    "rgba(0,0,0,0.22)",
-                  display: "inline-block",
-                  padding: "6px 14px",
-                  borderRadius: 999,
-                }}
-              >
-                👉 Open Background Remover
-              </div>
-
-              <style>{`
-                @keyframes nexoraBlink {
-                  0%, 100% {
-                    transform: scale(1);
-                  }
-                  50% {
-                    transform: scale(1.03);
-                  }
-                }
-              `}</style>
-            </a>
+            </>
           )}
 
           {status && (
-            <p
-              style={{
-                background: isSuccess
-                  ? "#ecfdf5"
-                  : "#fef2f2",
-                color: isSuccess
-                  ? "#047857"
-                  : "#dc2626",
-                padding: "9px 10px",
-                borderRadius: 9,
-                fontSize: 13,
-                margin: "12px 0 0",
-                textAlign: "center",
-                fontWeight: 600,
-              }}
+            <div
+              className={`status ${
+                success
+                  ? "success"
+                  : "error"
+              }`}
             >
               {status}
-            </p>
+            </div>
           )}
 
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              marginTop: 14,
-            }}
-          >
+          <div className="actions">
+
             <button
+              type="button"
+              className="download-btn"
               onClick={download}
-              disabled={!preview || processing}
-              style={{
-                flex: 1,
-                padding: 14,
-                background: "#f97316",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: 11,
-                fontSize: 15,
-                fontWeight: 800,
-                cursor:
-                  !preview || processing
-                    ? "not-allowed"
-                    : "pointer",
-                opacity:
-                  !preview || processing
-                    ? 0.5
-                    : 1,
-              }}
+              disabled={
+                !preview ||
+                processing
+              }
             >
               {processing
                 ? "Preparing..."
@@ -1365,641 +1256,947 @@ export default function PassportClient() {
             </button>
 
             <button
+              type="button"
+              className="clear-btn"
               onClick={clearAll}
-              style={{
-                padding: "13px 16px",
-                background: "#f8fafc",
-                border:
-                  "1px solid #e2e8f0",
-                borderRadius: 11,
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: 13,
-              }}
             >
               Clear
             </button>
+
           </div>
 
-          <p
-            style={{
-              textAlign: "center",
-              fontSize: 11,
-              color: "#94a3b8",
-              margin: "8px 0 0",
-              fontWeight: 700,
-            }}
-          >
-            🔒 Your photo is processed in your browser
-          </p>
+          <div className="privacy">
+            🔒 Your photo is processed
+            in your browser.
+          </div>
+
         </section>
 
-        <div style={{ height: 18 }} />
+        <div className="large-space" />
 
-        <a
-          href="/image-dpi-changer"
-          style={{
-            display: "block",
-            background: "#ecfdf5",
-            border: "1px solid #86efac",
-            borderRadius: 10,
-            padding: "10px 12px",
-            textDecoration: "none",
-            fontSize: 13,
-            color: "#15803d",
-            fontWeight: 700,
-            textAlign: "center",
-          }}
-        >
-          Need to change photo DPI?{" "}
-          <span
-            style={{
-              color: "#16a34a",
-              textDecoration: "underline",
-            }}
-          >
-            Open DPI Changer
-          </span>{" "}
-          →
-        </a>
+        <section className="seo-card">
 
-        <div style={{ height: 30 }} />
+          <span className="seo-kicker">
+            PASSPORT & DOCUMENT PHOTO TOOL
+          </span>
 
-        <section
-          style={{
-            background: "#fefce8",
-            border: "2px solid #facc15",
-            borderRadius: 16,
-            padding: 18,
-          }}
-        >
-          <b>💡 Free Tool for Quick Document Photos</b>
-
-          <p
-            style={{
-              margin: "8px 0 0",
-              fontSize: 14,
-              lineHeight: 1.7,
-              color: "#334155",
-            }}
-          >
-            Create passport, visa and application photos without
-            installing software. Select a preset or enter your own
-            width, height and file-size target.
-          </p>
-        </section>
-
-        <div style={{ height: 30 }} />
-
-        <section
-          style={{
-            background: "#ffffff",
-            border: "1px solid #eef2f7",
-            borderRadius: 18,
-            padding: 22,
-          }}
-        >
-          <h2 style={{ fontSize: 21 }}>
-            Common Passport & Document Photo Sizes
+          <h2>
+            Make Passport Size Photos Online
           </h2>
 
-          <p
-            style={{
-              color: "#475569",
-              lineHeight: 1.8,
-            }}
-          >
-            <b>India Passport:</b> 413 × 531 pixels
-            (3.5 × 4.5 cm preset).
-            <br />
-            <b>USA Passport / Visa:</b> 600 × 600 pixels
-            (2 × 2 inch preset).
-            <br />
-            <b>SSC / IBPS / Railway:</b> 200 × 230 pixels
-            with a 20KB target preset.
-            <br />
-            <b>UPSC / Bank Form:</b> 300 × 350 pixels
-            with a 50KB target preset.
-            <br />
-            <b>PAN:</b> 400 × 300 pixels.
-            <br />
-            <b>Aadhaar / Voter ID:</b> 300 × 400 pixels.
-            <br />
-            <b>Driving License:</b> 300 × 350 pixels.
+          <p>
+            NEXORA Passport Photo Maker lets
+            you resize and prepare photos for
+            passports, visas, applications,
+            exams, IDs and other document
+            requirements. Upload an image,
+            choose a preset or enter custom
+            dimensions, adjust the position
+            and download the result.
           </p>
 
-          <p
-            style={{
-              color: "#64748b",
-              fontSize: 13,
-              lineHeight: 1.7,
-            }}
-          >
-            Requirements can vary by country, authority,
-            application and current form instructions. Always
-            verify the required dimensions, file size and photo
-            rules on the official application instructions before
-            submitting.
-          </p>
-
-          <h2
-            style={{
-              fontSize: 21,
-              marginTop: 26,
-            }}
-          >
-            How to Make a Passport Size Photo
+          <h2>
+            How to Make a Passport Photo
           </h2>
 
-          <p
-            style={{
-              color: "#475569",
-              lineHeight: 1.8,
-            }}
-          >
-            <b>Step 1:</b> Upload your photo.
-            <br />
-            <b>Step 2:</b> Select Passport, Visa, SSC,
-            UPSC or another document preset.
-            <br />
-            <b>Step 3:</b> If required, enter your own
-            width, height and KB target.
-            <br />
-            <b>Step 4:</b> Download the processed JPG.
-          </p>
+          <ol>
+            <li>
+              Upload your photo.
+            </li>
 
-          <h2
-            style={{
-              fontSize: 21,
-              marginTop: 26,
-            }}
-          >
-            NEXORA Passport Photo Maker Features
+            <li>
+              Choose the required photo size.
+            </li>
+
+            <li>
+              Adjust the photo position if
+              needed.
+            </li>
+
+            <li>
+              Set a custom KB limit when
+              required.
+            </li>
+
+            <li>
+              Download the finished JPG.
+            </li>
+          </ol>
+
+          <h2>
+            Popular Photo Sizes
           </h2>
 
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: 13,
-              marginTop: 10,
-            }}
-          >
-            <tbody>
-              <tr>
-                <th
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    background: "#f8fafc",
-                    textAlign: "left",
-                  }}
-                >
-                  Feature
-                </th>
+          <div className="size-table">
 
-                <th
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    background: "#f8fafc",
-                  }}
-                >
-                  NEXORA
-                </th>
-              </tr>
+            <div>
+              <span>
+                India Passport
+              </span>
 
-              <tr>
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                  }}
-                >
-                  Document presets
-                </td>
+              <b>
+                413 × 531 px
+              </b>
+            </div>
 
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  25+
-                </td>
-              </tr>
+            <div>
+              <span>
+                USA Passport / Visa
+              </span>
 
-              <tr>
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                  }}
-                >
-                  Custom dimensions
-                </td>
+              <b>
+                600 × 600 px
+              </b>
+            </div>
 
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  Yes
-                </td>
-              </tr>
+            <div>
+              <span>
+                UK / Schengen
+              </span>
 
-              <tr>
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                  }}
-                >
-                  Custom file-size target
-                </td>
+              <b>
+                413 × 531 px
+              </b>
+            </div>
 
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  5–500KB
-                </td>
-              </tr>
+            <div>
+              <span>
+                SSC / IBPS / Railway
+              </span>
 
-              <tr>
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                  }}
-                >
-                  Watermark
-                </td>
+              <b>
+                200 × 230 px • ≤ 20 KB
+              </b>
+            </div>
 
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  No
-                </td>
-              </tr>
+            <div>
+              <span>
+                UPSC / Bank Form
+              </span>
 
-              <tr>
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                  }}
-                >
-                  Browser processing
-                </td>
+              <b>
+                300 × 350 px • ≤ 50 KB
+              </b>
+            </div>
 
-                <td
-                  style={{
-                    border:
-                      "1px solid #eef2f7",
-                    padding: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  Yes
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <div>
+              <span>
+                PAN
+              </span>
 
-          <h2
-            style={{
-              fontSize: 21,
-              marginTop: 26,
-            }}
-          >
+              <b>
+                400 × 300 px
+              </b>
+            </div>
+
+            <div>
+              <span>
+                Aadhaar / Voter ID
+              </span>
+
+              <b>
+                300 × 400 px
+              </b>
+            </div>
+
+            <div>
+              <span>
+                Driving License
+              </span>
+
+              <b>
+                300 × 350 px
+              </b>
+            </div>
+
+          </div>
+
+          <p className="note">
+            Photo requirements can vary by
+            country, authority and application.
+            Always check the current official
+            application instructions before
+            submitting a photo.
+          </p>
+
+          <h2>
+            Why Use NEXORA?
+          </h2>
+
+          <div className="feature-grid">
+
+            <div>
+              <b>Fast</b>
+              <span>
+                Browser-based image processing.
+              </span>
+            </div>
+
+            <div>
+              <b>Custom</b>
+              <span>
+                Set your own width, height
+                and KB target.
+              </span>
+            </div>
+
+            <div>
+              <b>Private</b>
+              <span>
+                Your photo does not need
+                server processing.
+              </span>
+            </div>
+
+            <div>
+              <b>No Watermark</b>
+              <span>
+                Download a clean JPG output.
+              </span>
+            </div>
+
+          </div>
+
+          <h2>
             Frequently Asked Questions
           </h2>
 
-          <details
-            style={{
-              border:
-                "1px solid #eef2f7",
-              borderRadius: 10,
-              padding: "12px 14px",
-              marginTop: 10,
-            }}
-          >
-            <summary
-              style={{
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              How can I make a 20KB photo?
+          <details>
+            <summary>
+              How do I make a 20KB photo?
             </summary>
 
-            <p
-              style={{
-                color: "#475569",
-                lineHeight: 1.7,
-              }}
-            >
-              Select the SSC, IBPS or Railway 20KB preset,
-              or enter 20 in the custom KB field. The tool
-              compresses the JPG to stay within the selected
-              target when possible.
+            <p>
+              Choose an available 20KB
+              preset or enter 20 KB in
+              the custom file-size field.
             </p>
           </details>
 
-          <details
-            style={{
-              border:
-                "1px solid #eef2f7",
-              borderRadius: 10,
-              padding: "12px 14px",
-              marginTop: 10,
-            }}
-          >
-            <summary
-              style={{
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              How can I make a 50KB photo?
+          <details>
+            <summary>
+              How do I make a 50KB photo?
             </summary>
 
-            <p
-              style={{
-                color: "#475569",
-                lineHeight: 1.7,
-              }}
-            >
-              Select the UPSC or Bank Form preset, or
-              enter 50 in the custom KB field. The tool
-              compresses the image to stay within the selected
-              target when possible.
+            <p>
+              Choose an available 50KB
+              preset or enter 50 KB in
+              the custom file-size field.
             </p>
           </details>
 
-          <details
-            style={{
-              border:
-                "1px solid #eef2f7",
-              borderRadius: 10,
-              padding: "12px 14px",
-              marginTop: 10,
-            }}
-          >
-            <summary
-              style={{
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              Can I enter my own photo size?
+          <details>
+            <summary>
+              Can I move my photo inside
+              the crop?
             </summary>
 
-            <p
-              style={{
-                color: "#475569",
-                lineHeight: 1.7,
-              }}
-            >
-              Yes. Enter your required width and height
-              between 50 and 2000 pixels and select Apply
-              Custom Size.
+            <p>
+              Yes. Use the Horizontal and
+              Vertical controls under the
+              preview to position the photo
+              before downloading it.
             </p>
           </details>
 
-          <details
-            style={{
-              border:
-                "1px solid #eef2f7",
-              borderRadius: 10,
-              padding: "12px 14px",
-              marginTop: 10,
-            }}
-          >
-            <summary
-              style={{
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
+          <details>
+            <summary>
+              Can I use my own dimensions?
+            </summary>
+
+            <p>
+              Yes. Enter a width and height
+              from 50 to 2000 pixels and
+              apply the custom size.
+            </p>
+          </details>
+
+          <details>
+            <summary>
               Is my photo uploaded to a server?
             </summary>
 
-            <p
-              style={{
-                color: "#475569",
-                lineHeight: 1.7,
-              }}
-            >
-              Normal image processing happens directly in
-              your browser, so the tool does not need to send
-              your photo to a server for processing.
+            <p>
+              Normal processing happens
+              directly in your browser. The
+              tool does not need to upload
+              the photo to a server for
+              normal processing.
             </p>
           </details>
 
-          <details
-            style={{
-              border:
-                "1px solid #eef2f7",
-              borderRadius: 10,
-              padding: "12px 14px",
-              marginTop: 10,
-            }}
-          >
-            <summary
-              style={{
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              Does the tool add a watermark?
+          <details>
+            <summary>
+              Can I change or remove the
+              background?
             </summary>
 
-            <p
-              style={{
-                color: "#475569",
-                lineHeight: 1.7,
-              }}
-            >
-              No. The generated JPG does not include a
-              NEXORA watermark.
+            <p>
+              Yes. After preparing your
+              photo, open NEXORA Background
+              Remover to remove or change
+              the background.
             </p>
           </details>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 22,
-            }}
-          >
-            <a
-              href="/image-dpi-changer"
-              style={{
-                flex: 1,
-                textAlign: "center",
-                padding: 14,
-                background: "#0f172a",
-                color: "#ffffff",
-                borderRadius: 10,
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              Need DPI? Open DPI Changer →
+          <div className="related">
+
+            <a href="/image-dpi-changer">
+              Image DPI Changer →
             </a>
+
+            <a href="/background-remover">
+              Background Remover →
+            </a>
+
           </div>
+
         </section>
 
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: 13,
-            color: "#94a3b8",
-            margin: "30px 0 10px",
-            lineHeight: 1.6,
-          }}
-        >
-          By{" "}
-          <b style={{ color: "#0f172a" }}>
-            Ayush Chauhan
-          </b>{" "}
-          • NEXORA
+        <p className="updated">
+          NEXORA • Free & Private
           <br />
-          Last Updated: 16 Nov 2026 • Free & Private
+          Last Updated: 27 Nov 2026
         </p>
+
       </main>
 
-      <div
-        style={{
-          background: "#f8fafc",
-          borderTop:
-            "1px solid #eef2f7",
-          padding: "16px 0",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <div
-          style={{
-            display: "inline-block",
-            animation:
-              "nexoraLoop 18s linear infinite",
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#2563eb",
-          }}
-        >
-          <span style={{ padding: "0 18px" }}>
-            ✦ Passport Photo Maker
-          </span>
+      <style jsx>{`
+        * {
+          box-sizing: border-box;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ DPI Changer
-          </span>
+        .page {
+          min-height: 100vh;
+          background: #ffffff;
+          color: #0f172a;
+          font-family:
+            Inter,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ Compress Image to 20KB
-          </span>
+        .container {
+          width: 100%;
+          max-width: 760px;
+          margin: auto;
+          padding: 27px 16px 0;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ Background Remover
-          </span>
+        .hero {
+          text-align: center;
+          margin-bottom: 18px;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ Passport Photo Maker
-          </span>
+        .badge {
+          display: inline-block;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #eff6ff;
+          border: 1px solid #dbeafe;
+          color: #2563eb;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: .3px;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ DPI Changer
-          </span>
+        h1 {
+          margin: 10px 0 6px;
+          font-size: clamp(29px, 7vw, 39px);
+          line-height: 1.05;
+          letter-spacing: -1px;
+          font-weight: 900;
+          background:
+            linear-gradient(
+              90deg,
+              #1d4ed8,
+              #7c3aed
+            );
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ Compress Image to 20KB
-          </span>
+        .hero p {
+          max-width: 530px;
+          margin: auto;
+          color: #64748b;
+          font-size: 12px;
+          line-height: 1.6;
+        }
 
-          <span style={{ padding: "0 18px" }}>
-            ✦ Background Remover
-          </span>
-        </div>
+        .tool-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 17px;
+          padding: 13px;
+          box-shadow:
+            0 10px 35px
+            rgba(15, 23, 42, .055);
+        }
 
-        <style>{`
-          @keyframes nexoraLoop {
-            from {
-              transform: translateX(0);
-            }
+        .section-title {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 8px;
+          font-size: 12px;
+          font-weight: 900;
+        }
 
-            to {
-              transform: translateX(-50%);
-            }
+        .section-title span {
+          width: 21px;
+          height: 21px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #eff6ff;
+          color: #2563eb;
+          font-size: 10px;
+        }
+
+        .size-title {
+          margin-top: 15px;
+        }
+
+        .upload {
+          width: 100%;
+          border: 1.5px dashed #bfdbfe;
+          border-radius: 12px;
+          background: #f8fbff;
+          padding: 16px 10px;
+          cursor: pointer;
+          color: #0f172a;
+        }
+
+        .upload-icon {
+          width: 32px;
+          height: 32px;
+          margin: auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #dbeafe;
+          color: #2563eb;
+          font-size: 22px;
+          font-weight: 300;
+        }
+
+        .upload strong {
+          display: block;
+          margin-top: 5px;
+          font-size: 13px;
+        }
+
+        .upload small {
+          display: block;
+          margin-top: 3px;
+          color: #94a3b8;
+          font-size: 9px;
+        }
+
+        .preset-scroll {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+          scrollbar-width: thin;
+        }
+
+        .preset {
+          flex: 0 0 auto;
+          min-width: 126px;
+          border: 1px solid #e2e8f0;
+          border-radius: 9px;
+          background: #fff;
+          padding: 7px 8px;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .preset.active {
+          border-color: #2563eb;
+          background: #eff6ff;
+        }
+
+        .preset strong {
+          display: block;
+          color: #0f172a;
+          font-size: 10px;
+        }
+
+        .preset.active strong {
+          color: #2563eb;
+        }
+
+        .preset small {
+          display: block;
+          margin-top: 2px;
+          color: #64748b;
+          font-size: 8px;
+          line-height: 1.3;
+        }
+
+        .custom-box {
+          margin-top: 10px;
+          padding: 9px;
+          border-radius: 11px;
+          background: #f8fafc;
+          border: 1px solid #eef2f7;
+        }
+
+        .custom-label {
+          margin-bottom: 6px;
+          font-size: 10px;
+          font-weight: 900;
+          color: #334155;
+        }
+
+        .custom-row {
+          display: grid;
+          grid-template-columns:
+            1fr 14px 1fr 1fr;
+          gap: 5px;
+          align-items: center;
+        }
+
+        input[type="number"] {
+          width: 100%;
+          min-width: 0;
+          padding: 9px 7px;
+          border: 1px solid #dbe3ec;
+          border-radius: 8px;
+          background: white;
+          color: #0f172a;
+          font-size: 11px;
+          font-weight: 700;
+          outline: none;
+        }
+
+        input[type="number"]:focus {
+          border-color: #2563eb;
+          box-shadow:
+            0 0 0 3px #dbeafe;
+        }
+
+        .custom-row span {
+          text-align: center;
+          color: #94a3b8;
+          font-weight: 900;
+          font-size: 12px;
+        }
+
+        .apply-btn {
+          width: 100%;
+          margin-top: 7px;
+          border: 0;
+          border-radius: 8px;
+          padding: 9px;
+          background: #0f172a;
+          color: white;
+          font-size: 10px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .adjust-title {
+          margin-top: 15px;
+        }
+
+        .adjust-box {
+          display: grid;
+          grid-template-columns:
+            minmax(0, 1fr) 190px;
+          gap: 13px;
+          padding: 10px;
+          background: #f8fafc;
+          border: 1px solid #eef2f7;
+          border-radius: 12px;
+        }
+
+        .preview-wrap {
+          min-height: 190px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          border-radius: 10px;
+          background:
+            repeating-conic-gradient(
+              #f1f5f9 0% 25%,
+              white 0% 50%
+            )
+            50% / 16px 16px;
+        }
+
+        .preview-wrap img {
+          display: block;
+          max-width: 100%;
+          max-height: 300px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          background: white;
+        }
+
+        .adjust-controls {
+          padding: 3px;
+        }
+
+        .adjust-controls label {
+          display: flex;
+          justify-content: space-between;
+          margin: 5px 0 4px;
+          font-size: 9px;
+          color: #64748b;
+          font-weight: 800;
+        }
+
+        .adjust-controls label b {
+          color: #2563eb;
+        }
+
+        input[type="range"] {
+          width: 100%;
+          accent-color: #2563eb;
+          cursor: pointer;
+        }
+
+        .center-btn {
+          width: 100%;
+          margin-top: 10px;
+          padding: 8px;
+          border: 1px solid #dbe3ec;
+          border-radius: 8px;
+          background: white;
+          color: #334155;
+          font-size: 9px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .info {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 7px;
+          margin-top: 8px;
+        }
+
+        .info div {
+          padding: 8px;
+          border: 1px solid #dcfce7;
+          border-radius: 9px;
+          background: #f0fdf4;
+          color: #64748b;
+          font-size: 9px;
+        }
+
+        .info strong {
+          display: block;
+          margin-top: 2px;
+          color: #15803d;
+          font-size: 10px;
+        }
+
+        .background-card {
+          display: grid;
+          grid-template-columns:
+            auto 1fr auto;
+          align-items: center;
+          gap: 9px;
+          margin-top: 9px;
+          padding: 10px;
+          border: 1px solid #ddd6fe;
+          border-radius: 11px;
+          background: #faf5ff;
+        }
+
+        .background-icon {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 9px;
+          background: #ede9fe;
+        }
+
+        .background-copy strong {
+          display: block;
+          color: #4c1d95;
+          font-size: 10px;
+        }
+
+        .background-copy span {
+          display: block;
+          margin-top: 2px;
+          color: #64748b;
+          font-size: 8px;
+          line-height: 1.4;
+        }
+
+        .background-btn {
+          display: inline-block;
+          padding: 8px 10px;
+          border-radius: 8px;
+          background: #7c3aed;
+          color: white;
+          text-decoration: none;
+          font-size: 9px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .status {
+          margin-top: 9px;
+          padding: 8px 9px;
+          border-radius: 8px;
+          text-align: center;
+          font-size: 10px;
+          line-height: 1.4;
+          font-weight: 700;
+        }
+
+        .status.success {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #bbf7d0;
+        }
+
+        .status.error {
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+        }
+
+        .actions {
+          display: flex;
+          gap: 7px;
+          margin-top: 10px;
+        }
+
+        .download-btn {
+          flex: 1;
+          border: 0;
+          border-radius: 9px;
+          padding: 12px;
+          background: #f97316;
+          color: white;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .download-btn:disabled {
+          opacity: .5;
+          cursor: not-allowed;
+        }
+
+        .clear-btn {
+          padding: 12px 15px;
+          border: 1px solid #e2e8f0;
+          border-radius: 9px;
+          background: #f8fafc;
+          color: #334155;
+          font-size: 10px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .privacy {
+          margin-top: 7px;
+          text-align: center;
+          color: #94a3b8;
+          font-size: 8px;
+          font-weight: 700;
+        }
+
+        .large-space {
+          height: 105px;
+        }
+
+        .seo-card {
+          border-top: 1px solid #eef2f7;
+          padding-top: 25px;
+        }
+
+        .seo-kicker {
+          color: #2563eb;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: .6px;
+        }
+
+        .seo-card h2 {
+          margin: 10px 0 7px;
+          color: #0f172a;
+          font-size: 20px;
+          line-height: 1.25;
+          letter-spacing: -.3px;
+        }
+
+        .seo-card p,
+        .seo-card li {
+          color: #475569;
+          font-size: 12px;
+          line-height: 1.75;
+        }
+
+        .seo-card ol {
+          padding-left: 20px;
+          margin-top: 5px;
+        }
+
+        .size-table {
+          margin-top: 8px;
+          border: 1px solid #eef2f7;
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .size-table div {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          padding: 9px 10px;
+          border-bottom: 1px solid #eef2f7;
+          font-size: 10px;
+        }
+
+        .size-table div:last-child {
+          border-bottom: 0;
+        }
+
+        .size-table span {
+          color: #64748b;
+        }
+
+        .size-table b {
+          color: #0f172a;
+          text-align: right;
+        }
+
+        .note {
+          font-size: 10px !important;
+          color: #64748b !important;
+        }
+
+        .feature-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 7px;
+        }
+
+        .feature-grid div {
+          padding: 10px;
+          border: 1px solid #eef2f7;
+          border-radius: 9px;
+          background: #f8fafc;
+        }
+
+        .feature-grid b {
+          display: block;
+          font-size: 10px;
+          color: #2563eb;
+        }
+
+        .feature-grid span {
+          display: block;
+          margin-top: 3px;
+          color: #64748b;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        details {
+          margin-top: 7px;
+          padding: 10px 11px;
+          border: 1px solid #eef2f7;
+          border-radius: 9px;
+          background: white;
+        }
+
+        summary {
+          cursor: pointer;
+          color: #0f172a;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        details p {
+          margin-bottom: 0;
+          font-size: 10px !important;
+        }
+
+        .related {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 7px;
+          margin-top: 17px;
+        }
+
+        .related a {
+          padding: 11px;
+          border-radius: 9px;
+          background: #0f172a;
+          color: white;
+          text-align: center;
+          text-decoration: none;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        .updated {
+          text-align: center;
+          margin: 25px 0 10px;
+          color: #94a3b8 !important;
+          font-size: 9px !important;
+        }
+
+        @media (max-width: 600px) {
+          .container {
+            padding-left: 12px;
+            padding-right: 12px;
           }
-        `}</style>
-      </div>
 
-      <footer
-        style={{
-          background: "#0f172a",
-          color: "#cbd5e1",
-          padding: "20px 16px",
-          textAlign: "center",
-          fontSize: 13,
-        }}
-      >
-        <b
-          style={{
-            color: "#ffffff",
-            fontSize: 16,
-          }}
-        >
-          NEXORA
-        </b>
+          .tool-card {
+            padding: 10px;
+            border-radius: 14px;
+          }
 
-        <p style={{ margin: "6px 0 0" }}>
-          Free Tools. Simple Solutions. •{" "}
-          <a
-            href="/about"
-            style={{ color: "#cbd5e1" }}
-          >
-            About
-          </a>{" "}
-          •{" "}
-          <a
-            href="/privacy-policy"
-            style={{ color: "#cbd5e1" }}
-          >
-            Privacy
-          </a>{" "}
-          •{" "}
-          <a
-            href="/contact"
-            style={{ color: "#cbd5e1" }}
-          >
-            Contact
-          </a>
-        </p>
-      </footer>
+          .adjust-box {
+            grid-template-columns: 1fr;
+          }
+
+          .preview-wrap {
+            min-height: 210px;
+          }
+
+          .adjust-controls {
+            padding: 0 5px 4px;
+          }
+
+          .background-card {
+            grid-template-columns:
+              auto 1fr;
+          }
+
+          .background-btn {
+            grid-column: 1 / -1;
+            text-align: center;
+          }
+
+          .large-space {
+            height: 120px;
+          }
+
+          .seo-card h2 {
+            font-size: 19px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
