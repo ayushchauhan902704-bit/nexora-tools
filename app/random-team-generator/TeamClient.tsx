@@ -43,7 +43,7 @@ export default function TeamClient() {
     return namesText.split("\n").map((n) => n.trim()).filter(Boolean);
   }, [namesText]);
 
-  // Duplicate detection
+  // Duplicate detection - FIXED for Vercel build
   const duplicates = useMemo(() => {
     const seen = new Set<string>();
     const dup = new Set<string>();
@@ -52,7 +52,7 @@ export default function TeamClient() {
       if (seen.has(low)) dup.add(n);
       seen.add(low);
     });
-    return [...dup];
+    return Array.from(dup);
   }, [names]);
 
   const totalPlayers = names.length;
@@ -116,7 +116,9 @@ export default function TeamClient() {
   const movePlayer = (toTeam: number) => {
     if (!selected) return;
     const newTeams = teams.map((t) => [...t]);
-    const [player] = newTeams[selected.team].splice(selected.index, 1);
+    const removed = newTeams[selected.team].splice(selected.index, 1);
+    const player = removed[0];
+    if (!player) return;
     newTeams[toTeam].push(player);
     setTeams(newTeams); setSelected(null);
   };
