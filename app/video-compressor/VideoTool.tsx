@@ -27,6 +27,8 @@ export default function VideoTool() {
   };
 
   const chips = [
+    { label: "100 KB", val: "100", unit: "KB" as const },
+    { label: "200 KB", val: "200", unit: "KB" as const },
     { label: "500 KB", val: "500", unit: "KB" as const },
     { label: "800 KB", val: "800", unit: "KB" as const },
     { label: "1 MB", val: "1", unit: "MB" as const },
@@ -44,7 +46,7 @@ export default function VideoTool() {
   const selectFile = (f: File | undefined | null) => {
     setError(""); setResult(null); setOutputURL("");
     if (!f) return;
-    if (!f.type.startsWith("video/")) { setError("Video file chuno."); return; }
+    if (!f.type.startsWith("video/")) { setError("Please upload a video file."); return; }
     if (sourceURL) URL.revokeObjectURL(sourceURL);
     const url = URL.createObjectURL(f);
     setSelectedFile(f); setSourceURL(url);
@@ -53,13 +55,13 @@ export default function VideoTool() {
 
   const getTargetBytes = () => {
     const v = Number(targetValue);
-    if (!Number.isFinite(v)) throw new Error("Size likho.");
+    if (!Number.isFinite(v) || v <= 0) throw new Error("Please enter a valid size.");
     if (currentUnit === "KB") {
-      if (v < 500 || v > 102400) throw new Error("KB me 500KB se 102400KB tak likho.");
-      return v * 1024;
+      if (v < 100 || v > 102400) throw new Error("KB me 100KB se 102400KB tak likho.");
+      return v * 1000;
     } else {
-      if (v < 0.5 || v > 100) throw new Error("MB me 0.5MB se 100MB tak likho.");
-      return v * 1024 * 1024;
+      if (v < 0.1 || v > 100) throw new Error("MB me 0.1MB se 100MB tak likho.");
+      return v * 1000 * 1000;
     }
   };
 
@@ -81,41 +83,56 @@ export default function VideoTool() {
       const dur = sourceVideo.duration;
       if (!dur || dur <= 0) throw new Error("Duration nahi mili.");
       if (dur > 600) throw new Error("10 minute se choti video use karo.");
-      const maxW = 1280;
+
+      // 100KB FIX - Chhote target pe auto chhota resolution + kam FPS + kam audio
+      let maxW = 1280;
+      let fps = 30;
+      let audioBps = 128000;
+      if (targetBytes < 300 * 1000) { maxW = 240; fps = 10; audioBps = 24000; }
+      else if (targetBytes < 1000 * 1000) { maxW = 360; fps = 15; audioBps = 32000; }
+      else if (targetBytes < 5 * 1000 * 1000) { maxW = 720; fps = 24; audioBps = 64000; }
+
       let w = sourceVideo.videoWidth, h = sourceVideo.videoHeight;
       if (w > maxW) { const r = maxW / w; w = Math.floor(w * r / 2) * 2; h = Math.floor(h * r / 2) * 2; }
-      const totalBits = (targetBytes * 8 / dur) * 0.88;
-      let videoBitrate = Math.max(100000, Math.floor(Math.floor(totalBits - 128000) * 0.85));
+      w = Math.max(2, w); h = Math.max(2, h);
+
+      // Bitrate - 92% target use karo, audio minus karke
+      const totalBits = (targetBytes * 8 / dur) * 0.92;
+      let videoBitrate = Math.max(15000, Math.floor(totalBits - audioBps));
+      // Agar bahut chhota target hai to audio band karke sirf video rakho
+      let useAudio = true;
+      if (targetBytes < 250 * 1000 && dur > 20) { useAudio = false; audioBps = 0; videoBitrate = Math.max(15000, Math.floor(totalBits)); }
+
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      const canvasStream: any = (canvas as any).captureStream(30);
+      const canvasStream: any = (canvas as any).captureStream(fps);
 
-      // Audio - Purana wala same
       let audioTracks: any[] = [];
       let audioContext: any = null;
-      try {
-        const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
-        audioContext = new AC();
-        if (audioContext.state === "suspended") await audioContext.resume();
-        const srcNode = audioContext.createMediaElementSource(sourceVideo);
-        const dest = audioContext.createMediaStreamDestination();
-        const gain = audioContext.createGain(); gain.gain.value = 1;
-        const silent = audioContext.createGain(); silent.gain.value = 0;
-        srcNode.connect(gain); gain.connect(dest);
-        srcNode.connect(silent); silent.connect(audioContext.destination);
-        audioTracks = dest.stream.getAudioTracks();
-      } catch { audioTracks = []; }
+      if (useAudio) {
+        try {
+          const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+          audioContext = new AC();
+          if (audioContext.state === "suspended") await audioContext.resume();
+          const srcNode = audioContext.createMediaElementSource(sourceVideo);
+          const dest = audioContext.createMediaStreamDestination();
+          const gain = audioContext.createGain(); gain.gain.value = 1;
+          const silent = audioContext.createGain(); silent.gain.value = 0;
+          srcNode.connect(gain); gain.connect(dest);
+          srcNode.connect(silent); silent.connect(audioContext.destination);
+          audioTracks = dest.stream.getAudioTracks();
+        } catch { audioTracks = []; }
+      }
 
       const combined = new MediaStream();
       canvasStream.getVideoTracks().forEach((t: any) => combined.addTrack(t));
       audioTracks.forEach((t: any) => combined.addTrack(t));
 
-      // FIX - iPhone ke liye MP4 pehle, nahi to WebM
       const allMimes = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
       let mime = "video/webm";
       for (const t of allMimes) { if ((MediaRecorder as any).isTypeSupported(t)) { mime = t; break; } }
-      const recorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: videoBitrate, audioBitsPerSecond: 128000 } as any);
+      const recorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: videoBitrate, audioBitsPerSecond: audioBps } as any);
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
       const done = new Promise<void>((res) => { recorder.onstop = () => res(); });
@@ -129,9 +146,9 @@ export default function VideoTool() {
         const draw = (now: number) => {
           if (fin) return;
           if (sourceVideo.ended) { finish(); return; }
-          if (now - last >= 1000 / 30) { ctx.drawImage(sourceVideo, 0, 0, w, h); last = now; }
+          if (now - last >= 1000 / fps) { ctx.drawImage(sourceVideo, 0, 0, w, h); last = now; }
           setProgress(Math.min(94, (sourceVideo.currentTime / dur) * 94));
-          setProgressLabel("Compressing..."); setStatusText(`⚡ 100x Fast - ${Math.floor(sourceVideo.currentTime)} / ${Math.ceil(dur)} sec`);
+          setProgressLabel("Compressing..."); setStatusText(`${Math.floor(sourceVideo.currentTime)} / ${Math.ceil(dur)} sec`);
           raf = requestAnimationFrame(draw);
         };
         sourceVideo.onended = finish;
@@ -141,13 +158,14 @@ export default function VideoTool() {
       setProgress(96); setProgressLabel("Finishing..."); setStatusText("Saving...");
       if (recorder.state !== "inactive") recorder.stop();
       await done;
+      if (audioContext) { try { await audioContext.close(); } catch {} }
       const outputBlob = new Blob(chunks, { type: mime.split(";")[0] });
       if (!outputBlob.size) throw new Error("Empty file bana.");
       const outUrl = URL.createObjectURL(outputBlob);
       const ext = outputBlob.type.includes("mp4") ? "mp4" : "webm";
       setOutputURL(outUrl); setOutputExtension(ext);
       const orig = selectedFile.size, nowB = outputBlob.size, diff = orig - nowB;
-      setResult({ orig: fmt(orig), now: fmt(nowB), saved: diff > 0 ? ((diff / orig) * 100).toFixed(1) + "% kam" : "-", big: `${fmt(orig)} → ${fmt(nowB)}`, note: `Target tha: ${fmt(targetBytes)}. ${nowB <= targetBytes ? "Target ke andar hai." : "Thoda bada hai, dobara try karo."} ${audioTracks.length ? "Audio ke saath." : ""} Format: .${ext}`, blob: outputBlob, base: selectedFile.name.replace(/\.[^/.]+$/, "") });
+      setResult({ orig: fmt(orig), now: fmt(nowB), saved: diff > 0 ? ((diff / orig) * 100).toFixed(1) + "% kam" : "-", big: `${fmt(orig)} → ${fmt(nowB)}`, note: `Target tha: ${fmt(targetBytes)}. ${nowB <= targetBytes ? "Target ke andar hai." : "Thoda bada hai - 100KB jaise chhote target pe lambi video me quality bahut kam hogi."} ${audioTracks.length ? "Audio ke saath." : "Audio ke bina (chhota target)."} Format: .${ext}`, blob: outputBlob, base: selectedFile.name.replace(/\.[^/.]+$/, "") });
       setProgress(100); setProgressLabel("Done!"); setStatusText("Ho gaya.");
     } catch (err: any) { setError(err.message); setShowProgress(false); }
     finally { setIsCompressing(false); }
@@ -156,7 +174,7 @@ export default function VideoTool() {
   const download = () => {
     if (!result?.blob) { setError("Pehle compress karo."); return; }
     const a = document.createElement("a");
-    a.href = outputURL; a.download = result.base + "-compressed." + outputExtension;
+    a.href = outputURL; a.download = `NEXORA-${result.base}-compressed.${outputExtension}`;
     document.body.appendChild(a); a.click(); a.remove();
   };
 
@@ -169,118 +187,150 @@ export default function VideoTool() {
   };
 
   return (
-    <>
-      <style>{`
-        *{box-sizing:border-box} body{margin:0;background:#f8faff;color:#17203a;font-family:'Inter',Arial,sans-serif}
-        .navbar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 6%;background:#fff;border-bottom:1px solid #e9edf7;position:sticky;top:0;z-index:10}
-        .logo{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;color:#1e5bff}
-        .hero{max-width:820px;margin:18px auto 10px;padding:0 16px;text-align:center}
-        .badge{display:inline-block;padding:5px 11px;border-radius:30px;background:#e8efff;color:#1e5bff;font-size:11px;font-weight:800}
-        h1{font-family:'Poppins',sans-serif;font-size:clamp(26px,5vw,38px);line-height:1.15;margin:10px 0 6px;color:#1e5bff}
-        .hero p{color:#5b657f;line-height:1.6;font-size:13px;max-width:620px;margin:auto}
-        .main{width:min(820px,calc(100% - 28px));margin:14px auto 30px}
-        .card{background:#fff;border:1px solid #e9edf7;border-radius:16px;padding:15px;box-shadow:0 10px 30px rgba(30,91,255,.06);margin-bottom:14px}
-        .upload-box{border:2px dashed #b9c7ff;border-radius:12px;background:#f0f4ff;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:50px;cursor:pointer}
-        .btn{border:0;border-radius:9px;padding:9px 13px;background:#ff7a00;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap;font-size:13px}
-        .btn:disabled{opacity:.45;cursor:not-allowed}
-        .btn-big{width:100%;padding:12px;font-size:15px;margin-top:11px}
-        .btn-secondary{background:#eef1f8;color:#17203a;border:1px solid #e5e8f5}
-        .scroll-title{font-size:13px;font-weight:800;margin:13px 0 7px}
-        .scroll-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;white-space:nowrap}
-        .chip{flex:0 0 auto;padding:8px 13px;border-radius:20px;border:1.5px solid #dde3f5;background:#fff;font-size:12px;font-weight:700;cursor:pointer}
-        .chip.active{background:#1e5bff;color:#fff;border-color:#1e5bff}
-        .write-box{margin-top:11px}.write-box label{font-size:13px;font-weight:800;display:block;margin-bottom:7px}
-        .write-row{display:flex;gap:6px;width:100%;align-items:stretch}
-        .write-row input{flex:1;min-width:0;border:2px solid #1e5bff;border-radius:10px;padding:11px 10px;font-size:16px;font-weight:800;text-align:center;outline:none}
-        .unit-mini{display:flex;gap:6px}.unit-mini button{width:48px;border-radius:10px;border:1.5px solid #dde3f5;background:#fff;font-weight:800;cursor:pointer;font-size:12px}
-        .unit-mini button.active{background:#1e5bff;color:#fff;border-color:#1e5bff}
-        .file-info{margin-top:9px;padding:9px;border-radius:10px;background:#f6f8ff;font-size:13px}
-        .progress{margin-top:11px}.bar{height:9px;background:#eef1f8;border-radius:20px;overflow:hidden}.bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#1e5bff,#ff7a00);transition:width .2s}
-        .error{margin-top:9px;padding:9px;border-radius:10px;background:#fff1f1;color:#c81e1e;font-size:13px}
-        .result{margin-top:13px;border:1.5px solid #b9eecb;border-radius:13px;padding:12px;background:#f0fff4}
-        .big-preview{font-size:16px;font-weight:800;text-align:center;background:#fff;border-radius:9px;padding:10px;margin:8px 0}
-        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;text-align:center}.stats div{background:#fff;border:1px solid #e5e8f5;border-radius:9px;padding:9px 5px}.stats strong{display:block;font-size:14px}.stats small{color:#6b7690;font-size:11px}
-        .preview{width:100%;max-height:280px;background:#000;border-radius:11px;margin-top:10px}
-        .big-gap{height:90px}.green-note{margin-top:0;background:#e9fff1;border:1px solid #1ed06a;border-radius:9px;padding:8px 10px;text-align:center;font-size:12px}.green-note a{color:#0a9e4a;font-weight:800;text-decoration:underline}
-        .loop{margin-top:12px;background:linear-gradient(90deg,#1e5bff,#7a3cff);color:#fff;border-radius:12px;padding:11px;text-align:center}
-        .seo-details{margin-top:18px;border:1px solid #e9edf7;border-radius:12px;background:#fff;overflow:hidden}.seo-details summary{padding:12px 14px;font-size:13px;font-weight:800;color:#1e5bff;cursor:pointer;list-style:none}
-        .seo-inner{padding:0 14px 14px;font-size:13px;line-height:1.8;color:#4b5568}.seo-inner h3{color:#17203a;font-size:14px;margin:14px 0 6px}
-        footer{text-align:center;color:#8793ad;border-top:1px solid #e9edf7;padding:16px 14px;font-size:11px;background:#fff;line-height:1.7} footer a{color:#1e5bff}
-      `}</style>
+    <div className="page">
+      <header className="topbar"><div className="nav"><a href="/" className="logo">NEXORA</a><nav className="navlinks"><a href="/">Home</a><a href="/#tools">All Tools</a></nav></div></header>
+      <main className="container">
+        <section className="hero">
+          <div className="badge">FREE • NO WATERMARK • BROWSER-BASED</div>
+          <h1>Video Compressor</h1>
+          <p>Compress video to 100KB, 500KB, 1MB, 10MB or 100MB. Fast, free, no watermark.</p>
+        </section>
 
-      <header className="navbar"><a className="logo" href="/">NEXORA</a><a href="/">← All Tools</a></header>
-      <section className="hero">
-        <span className="badge">⚡ 100x FAST • FREE • NO WATERMARK</span>
-        <h1>Video Compressor to 500KB - 100MB</h1>
-        <p>Video ko 500KB, 1MB, 5MB, 10MB, 100MB tak chota karo. Free, fast, no watermark.</p>
-      </section>
-
-      <main className="main">
-        <section className="card">
+        <section className="tool-card">
+          <div className="upload-label">Upload a video</div>
           <div className="upload-box" onClick={() => videoInputRef.current?.click()}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ fontSize: 21 }}>🎬</div><div><h2 style={{ fontSize: 14, margin: 0 }}>Video Yaha Dalein</h2><p style={{ fontSize: 11, color: "#6b7690", margin: "1px 0 0" }}>Tap karo ya drag karo</p></div></div>
-            <button className="btn" type="button" onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}>Choose Video</button>
+            <div className="upload-left"><div className="upload-icon">🎬</div><div><strong>{selectedFile ? selectedFile.name : "Choose Video"}</strong><span>{selectedFile ? `Original: ${fmt(selectedFile.size)}` : "MP4, WebM, MOV • Up to 10 min"}</span></div></div>
+            <button className="btn-small" type="button" onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}>Choose</button>
             <input type="file" ref={videoInputRef} accept="video/*" hidden onChange={(e) => selectFile(e.target.files?.[0])} />
           </div>
           <video ref={sourceVideoRef} playsInline preload="auto" style={{ display: "none" }} />
-          {selectedFile && <div className="file-info"><b>{selectedFile.name}</b><div>Original: {fmt(selectedFile.size)} • {selectedFile.type || "Video"}</div></div>}
 
-          <div className="scroll-title">👇 Size Chuno</div>
-          <div className="scroll-row">
-            {chips.map((c) => (
-              <button key={c.label} className={`chip ${activeChip === c.label ? "active" : ""}`} onClick={() => { setActiveChip(c.label); setCurrentUnit(c.unit); setTargetValue(c.val); }}>{c.label}</button>
-            ))}
-          </div>
-
-          <div className="write-box">
-            <label>✍️ Yaha Likho Kitne KB / MB Ki Video Chahiye</label>
-            <div className="write-row">
-              <input type="number" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} placeholder="10" />
+          <div className="target-box">
+            <label htmlFor="target-size">Target file size</label>
+            <div className="input-row">
+              <input id="target-size" type="number" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} placeholder="10" />
               <div className="unit-mini">
                 <button type="button" className={currentUnit === "KB" ? "active" : ""} onClick={() => setCurrentUnit("KB")}>KB</button>
                 <button type="button" className={currentUnit === "MB" ? "active" : ""} onClick={() => setCurrentUnit("MB")}>MB</button>
               </div>
             </div>
+            <div className="presets">
+              {chips.map((c) => (
+                <button key={c.label} type="button" className={activeChip === c.label ? "preset active" : "preset"} onClick={() => { setActiveChip(c.label); setCurrentUnit(c.unit); setTargetValue(c.val); }}>{c.label}</button>
+              ))}
+            </div>
           </div>
 
-          <button className="btn btn-big" onClick={compress} disabled={!selectedFile || isCompressing}>⚡ GENERATE - Compress Video</button>
-          <button className="btn btn-big btn-secondary" onClick={reset} type="button" style={{ marginTop: 8 }}>Reset</button>
-          {error && <div className="error" style={{ display: "block" }}>{error}</div>}
-          {showProgress && <div className="progress"><div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 7, fontWeight: 700 }}><span>{progressLabel}</span><span>{Math.round(progress)}%</span></div><div className="bar"><i style={{ width: progress + "%" }} /></div><div style={{ fontSize: 12, color: "#6b7690", marginTop: 7 }}>{statusText}</div></div>}
-          {result && <div className="result" style={{ display: "block" }}>
-            <h3 style={{ margin: "0 0 8px", color: "#0a9e4a", fontSize: 15 }}>✅ Ho Gaya! Preview Dekho</h3>
-            <div className="big-preview">{result.big}</div>
-            <div className="stats"><div><strong>{result.orig}</strong><small>Original</small></div><div><strong>{result.now}</strong><small>New Size</small></div><div><strong>{result.saved}</strong><small>Kitna Kam Hua</small></div></div>
-            <p style={{ fontSize: 12, color: "#334155", lineHeight: 1.6, marginTop: 8 }}>{result.note}</p>
-            {outputURL && <video src={outputURL} className="preview" controls playsInline autoPlay muted />}
-            <button className="btn btn-big" onClick={download} style={{ marginTop: 12 }}>⬇️ Download Compressed Video (. {outputExtension.toUpperCase()})</button>
+          {error && <div className="error" role="alert">{error}</div>}
+
+          <div className="actions">
+            <button type="button" className="compress-btn" onClick={compress} disabled={!selectedFile || isCompressing}>{isCompressing ? "Compressing..." : "Compress Video"}</button>
+            <button type="button" className="clear-btn" onClick={reset}>Clear</button>
+          </div>
+          {showProgress && <div className="progress"><div className="progress-top"><span>{progressLabel}</span><span>{Math.round(progress)}%</span></div><div className="bar"><i style={{ width: progress + "%" }} /></div><div className="progress-sub">{statusText}</div></div>}
+          <p className="privacy-note">Your video is processed in your browser. It is not uploaded to our server.</p>
+
+          {result && <div className="result">
+            <div className="result-title">Compression Complete</div>
+            <div className="size-result">{result.big}</div>
+            <p className="result-message">{result.saved} smaller • Format: .{outputExtension.toUpperCase()}</p>
+            <p className="result-note">{result.note}</p>
+            {outputURL && <video src={outputURL} className="preview" controls playsInline muted />}
+            <button type="button" className="download-btn" onClick={download}>Download Compressed Video</button>
           </div>}
         </section>
 
-        <div className="big-gap"></div>
-        <div className="green-note">Photo Compressor Karna Hai To Yaha Kare - <a href="/compress-image">Photo Compressor</a></div>
-        <div className="loop"><div style={{ fontWeight: 800, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>🔥 NEXORA - Free Tools • Video Compressor • Photo Compressor • PDF Compressor • 100% Free • No Watermark 🔥</div></div>
+        <div className="content-gap" />
 
-        <details className="seo-details">
-          <summary>▼ Video Compressor Ke Baare Me Aur Jano - Click Karo</summary>
-          <div className="seo-inner">
-            <h3>Video Compressor Online Free - 500KB Se 100MB Tak</h3>
-            <p>NEXORA Video Compressor duniya ka sabse fast video compressor online free hai. Agar aapko compress video to 500KB, compress video to 1MB, compress video to 5MB, compress video to 10MB, compress video to 20MB, compress video to 100MB karna hai, to ye tool aapke liye hai. Ye ek MP4 video compressor, WhatsApp video compressor, video size reducer hai jo bina watermark ke kaam karta hai.</p>
-            <h3>Kaise Compress Kare?</h3>
-            <ul><li>Step 1: Video dalo.</li><li>Step 2: Size chuno ya likho - jaise 500KB ya 10MB.</li><li>Step 3: GENERATE dabao, Preview dekho - Itne se itna hua, fir Download karo.</li></ul>
-            <h3>Kis Kaam Aayega?</h3>
-            <ul><li>WhatsApp Video Compressor: 16MB se badi video ko 10MB karo.</li><li>Form: 10MB wali video ko 9MB karo.</li><li>Email: 25MB wali video ko 5MB karo.</li><li>Discord: 8MB wali video banao.</li></ul>
-            <h3>100x Fast Kyu Hai?</h3>
-            <p>Video server pe upload nahi hoti. Sab kuch browser me hota hai. Isliye 100x fast hai.</p>
-            <h3>FAQ</h3>
-            <p><b>1. Video compressor to 10MB kaise kare?</b> Video dalo, 10MB chuno, GENERATE dabao.<br /><b>2. Kya ye free hai?</b> Haan, 100% free, no watermark.<br /><b>3. Kya audio rahega?</b> Haan, awaz ke saath.<br /><b>4. WhatsApp ke liye kitna size?</b> 10MB ya 16MB.</p>
-          </div>
-        </details>
+        <article className="seo-content">
+          <section><h2>Free Video Compressor</h2><p>NEXORA Video Compressor helps you reduce video file size quickly without installing software. Enter your required target size, such as 100KB, 500KB, 1MB, 10MB, 20MB or 100MB, and download the compressed video.</p><p>This is useful when WhatsApp, email, Discord, an online form, or a website has a strict video-size limit.</p></section>
+          <section><h2>How to Compress a Video</h2><ol><li>Choose your video file.</li><li>Enter the required target size in KB or MB.</li><li>Click <strong>Compress Video</strong>.</li><li>Preview the result and download it.</li></ol></section>
+          <section><h2>Why Use NEXORA?</h2><ul><li>Free to use with no account required.</li><li>Works directly in your browser.</li><li>Custom target sizes from 100KB to 100MB.</li><li>No watermark added to the output.</li><li>Works on phones, tablets, and desktop.</li><li>Audio is preserved where possible.</li></ul></section>
+          <section><h2>Video Compressor for WhatsApp & Forms</h2><p>Many platforms limit video size. Instead of manually changing resolution or repeatedly trying different settings, you can enter the required size directly and let the browser create a smaller version.</p><p><strong>Note:</strong> 100KB is a very small target. A 10-12 MB video can be made to 100KB, but for long videos quality will be very low. For best quality, use 1MB to 10MB for short videos.</p></section>
+          <section><h2>Frequently Asked Questions</h2>
+            <details><summary>Can I compress a video to 100KB?</summary><p>Yes. Enter 100KB as target. For short videos it works well. For long videos, resolution and quality will be reduced automatically to reach the target.</p></details>
+            <details><summary>Can I compress a video to 10MB?</summary><p>Yes. Select 10MB and click Compress Video.</p></details>
+            <details><summary>Will audio remain?</summary><p>Yes, audio is preserved where possible. For very small targets like under 250KB, audio may be removed to reach the size.</p></details>
+            <details><summary>Which formats are supported?</summary><p>MP4, WebM, MOV and other browser-supported video formats. Output is MP4 where supported, otherwise WebM.</p></details>
+            <details><summary>Is my video uploaded to a server?</summary><p>No. Compression is performed in your browser.</p></details>
+            <details><summary>Does it work on mobile?</summary><p>Yes. Works on modern mobile and desktop browsers.</p></details>
+          </section>
+          <section className="related"><h2>Related Tools</h2><div className="related-grid"><a href="/compress-image">Image Compressor</a><a href="/passport-size-photo-maker">Passport Photo Maker</a><a href="/image-resizer">Image Resizer</a><a href="/background-remover">Background Remover</a></div></section>
+        </article>
+        <p className="updated">NEXORA • Free online tools • Last updated: November 27, 2026</p>
       </main>
-      <footer><div>© {new Date().getFullYear()} NEXORA. Free online tools for everyone.</div><div><a href="/">Home</a> · <a href="/compress-image">Photo Compressor</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy">Privacy Policy</a></div></footer>
-
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "WebApplication", name: "NEXORA Video Compressor", applicationCategory: "MultimediaApplication", operatingSystem: "Any", offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, description: "Free video compressor to 500KB, 1MB, 5MB, 10MB, 20MB, 100MB. MP4, WhatsApp, Discord compressor, 100x fast, no watermark." }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [{ "@type": "Question", name: "How to compress video to 10MB?", acceptedAnswer: { "@type": "Answer", text: "Upload video, select 10MB, click Generate. Tool makes 10MB to 9MB." } }, { "@type": "Question", name: "Is video compressor free?", acceptedAnswer: { "@type": "Answer", text: "Yes 100% free, no watermark, no signup." } }] }) }} />
-    </>
+      <footer className="footer"><strong>NEXORA</strong><div><a href="/about">About</a><a href="/privacy-policy">Privacy</a><a href="/contact">Contact</a></div><p>Free tools designed to be simple, fast, and useful.</p></footer>
+      <style jsx>{`
+        * { box-sizing: border-box; }
+        .page { min-height: 100vh; background: #ffffff; color: #0f172a; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .topbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,0.96); border-bottom: 1px solid #eef2f7; backdrop-filter: blur(8px); }
+        .nav { width: min(100%,1000px); margin: 0 auto; padding: 11px 18px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { color: #2563eb; text-decoration: none; font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+        .navlinks { display: flex; gap: 17px; }
+        .navlinks a { color: #334155; text-decoration: none; font-size: 12px; font-weight: 700; }
+        .container { width: min(100%,760px); margin: 0 auto; padding: 24px 16px 0; }
+        .hero { text-align: center; margin-bottom: 20px; }
+        .badge { display: inline-block; padding: 5px 10px; border: 1px solid #bfdbfe; border-radius: 999px; background: #eff6ff; color: #2563eb; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; }
+        h1 { margin: 11px 0 5px; font-size: clamp(30px,7vw,40px); line-height: 1.08; letter-spacing: -1.2px; font-weight: 900; background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { max-width: 540px; margin: 0 auto; color: #64748b; font-size: 13px; line-height: 1.5; }
+        .tool-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; box-shadow: 0 7px 26px rgba(15,23,42,0.05); }
+        .upload-label { margin-bottom: 7px; text-align: center; font-size: 12px; font-weight: 800; }
+        .upload-box { width: 100%; min-height: 56px; border: 1.5px dashed #cbd5e1; border-radius: 12px; background: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; }
+        .upload-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .upload-icon { width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+        .upload-left strong { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .upload-left span { color: #94a3b8; font-size: 10px; }
+        .btn-small { border: 0; border-radius: 8px; padding: 8px 12px; background: #2563eb; color: #fff; font-size: 11px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
+        .target-box { margin-top: 12px; padding: 10px; border: 1px solid #eef2f7; border-radius: 11px; background: #f8fafc; }
+        .target-box label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 800; }
+        .input-row { display: flex; align-items: center; gap: 7px; }
+        .input-row input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid #2563eb; border-radius: 8px; outline: none; background: #fff; font-size: 13px; font-weight: 700; }
+        .unit-mini { display: flex; gap: 5px; flex-shrink: 0; }
+        .unit-mini button { padding: 9px 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-size: 11px; font-weight: 800; cursor: pointer; }
+        .unit-mini button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        .presets { display: flex; gap: 5px; overflow-x: auto; padding-top: 8px; scrollbar-width: none; }
+        .presets::-webkit-scrollbar { display: none; }
+        .preset { flex: 0 0 auto; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 999px; background: #fff; color: #334155; font-size: 10px; font-weight: 800; cursor: pointer; }
+        .preset.active { border-color: #f97316; background: #fff7ed; color: #ea580c; }
+        .error { margin-top: 10px; padding: 9px 10px; border-radius: 9px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; text-align: center; font-size: 11px; }
+        .actions { display: flex; gap: 8px; margin-top: 12px; }
+        .compress-btn, .clear-btn, .download-btn { border: 0; border-radius: 9px; cursor: pointer; font-weight: 800; }
+        .compress-btn { flex: 1; padding: 11px; background: #f97316; color: #fff; font-size: 13px; }
+        .compress-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .clear-btn { padding: 11px 15px; background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; font-size: 12px; }
+        .privacy-note { margin: 8px 0 0; color: #94a3b8; text-align: center; font-size: 9px; }
+        .progress { margin-top: 11px; }
+        .progress-top { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+        .bar { height: 8px; background: #eef1f8; border-radius: 20px; overflow: hidden; }
+        .bar i { display: block; height: 100%; background: linear-gradient(90deg,#2563eb,#f97316); transition: width .2s; }
+        .progress-sub { font-size: 10px; color: #64748b; margin-top: 6px; text-align: center; }
+        .result { margin-top: 13px; border: 1.5px solid #bbf7d0; border-radius: 12px; padding: 12px; background: #f0fdf4; }
+        .result-title { text-align: center; font-size: 13px; font-weight: 900; color: #15803d; }
+        .size-result { margin-top: 4px; text-align: center; font-size: 18px; font-weight: 900; color: #2563eb; }
+        .result-message { margin: 4px 0; text-align: center; color: #64748b; font-size: 10px; font-weight: 700; }
+        .result-note { font-size: 11px; color: #334155; line-height: 1.6; text-align: center; }
+        .preview { width: 100%; max-height: 280px; background: #000; border-radius: 11px; margin-top: 10px; }
+        .download-btn { width: 100%; margin-top: 10px; padding: 11px; background: #0f172a; color: #fff; font-size: 12px; }
+        .content-gap { height: 40px; }
+        .seo-content { color: #334155; font-size: 12px; line-height: 1.75; }
+        .seo-content section { margin-bottom: 28px; }
+        .seo-content h2 { margin: 0 0 7px; color: #0f172a; font-size: 19px; line-height: 1.25; }
+        .seo-content p { margin: 0 0 9px; }
+        .seo-content ol, .seo-content ul { margin: 6px 0 0; padding-left: 21px; }
+        .seo-content li { margin: 3px 0; }
+        .seo-content details { margin-top: 7px; padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; }
+        .seo-content summary { cursor: pointer; color: #0f172a; font-size: 11px; font-weight: 800; }
+        .seo-content details p { margin: 7px 0 0; color: #64748b; font-size: 11px; line-height: 1.65; }
+        .related-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; }
+        .related-grid a { padding: 9px 10px; border: 1px solid #e2e8f0; border-radius: 9px; color: #2563eb; text-decoration: none; background: #f8fafc; font-size: 10px; font-weight: 800; }
+        .updated { margin: 38px 0 15px; text-align: center; color: #94a3b8; font-size: 9px; }
+        .footer { padding: 18px 15px; background: #0f172a; color: #94a3b8; text-align: center; font-size: 10px; }
+        .footer strong { color: #fff; font-size: 14px; }
+        .footer div { display: flex; justify-content: center; gap: 13px; margin-top: 7px; }
+        .footer a { color: #cbd5e1; text-decoration: none; }
+        .footer p { margin: 6px 0 0; }
+        @media (max-width: 520px) { .container { padding-left: 12px; padding-right: 12px; } .tool-card { padding: 12px; } .content-gap { height: 40px; } }
+      `}</style>
+    </div>
   );
 }
