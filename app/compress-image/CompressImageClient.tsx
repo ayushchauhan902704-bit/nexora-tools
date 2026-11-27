@@ -35,8 +35,10 @@ export default function CompressImageClient() {
   const [error, setError] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+
   const previewUrlRef = useRef("");
   const compressedUrlRef = useRef("");
+  const compressedBlobRef = useRef<Blob | null>(null);
 
   useEffect(() => {
     return () => {
@@ -47,14 +49,26 @@ export default function CompressImageClient() {
       if (compressedUrlRef.current) {
         URL.revokeObjectURL(compressedUrlRef.current);
       }
+
+      compressedBlobRef.current = null;
     };
   }, []);
 
+  /*
+   * Clears the previous compressed result.
+   *
+   * IMPORTANT:
+   * The actual compressed Blob is also cleared,
+   * so an old result can never be downloaded
+   * after a new image is selected.
+   */
   const clearResultUrl = () => {
     if (compressedUrlRef.current) {
       URL.revokeObjectURL(compressedUrlRef.current);
       compressedUrlRef.current = "";
     }
+
+    compressedBlobRef.current = null;
 
     setCompressedUrl("");
     setNewSize(0);
@@ -67,7 +81,9 @@ export default function CompressImageClient() {
     setError("");
 
     if (!selectedFile.type.startsWith("image/")) {
-      setError("Please upload a JPG, PNG, or WebP image.");
+      setError(
+        "Please upload a JPG, PNG, or WebP image."
+      );
       return;
     }
 
@@ -79,10 +95,13 @@ export default function CompressImageClient() {
     }
 
     if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
+      URL.revokeObjectURL(
+        previewUrlRef.current
+      );
     }
 
-    const url = URL.createObjectURL(selectedFile);
+    const url =
+      URL.createObjectURL(selectedFile);
 
     previewUrlRef.current = url;
 
@@ -92,21 +111,26 @@ export default function CompressImageClient() {
   };
 
   const getTargetKB = () => {
-    let value = Number.parseInt(customKB, 10);
+    let value = Number.parseInt(
+      customKB,
+      10
+    );
 
     if (!Number.isFinite(value)) {
       value = target;
     }
 
-    return Math.min(MAX_KB, Math.max(MIN_KB, value));
+    return Math.min(
+      MAX_KB,
+      Math.max(MIN_KB, value)
+    );
   };
 
   /*
-   * Creates a JPEG blob.
+   * Creates a JPEG Blob.
    *
-   * Important:
-   * We allow very low quality and very small scales because
-   * very small targets such as 10 KB need aggressive compression.
+   * The returned Blob is the actual file that
+   * will later be downloaded.
    */
   const createJpeg = (
     img: HTMLImageElement,
@@ -114,24 +138,30 @@ export default function CompressImageClient() {
     quality: number
   ): Promise<Blob | null> => {
     return new Promise((resolve) => {
-      const canvas = document.createElement("canvas");
+      const canvas =
+        document.createElement("canvas");
 
       const width = Math.max(
         32,
-        Math.round(img.naturalWidth * scale)
+        Math.round(
+          img.naturalWidth * scale
+        )
       );
 
       const height = Math.max(
         32,
-        Math.round(img.naturalHeight * scale)
+        Math.round(
+          img.naturalHeight * scale
+        )
       );
 
       canvas.width = width;
       canvas.height = height;
 
-      const ctx = canvas.getContext("2d", {
-        alpha: false,
-      });
+      const ctx =
+        canvas.getContext("2d", {
+          alpha: false,
+        });
 
       if (!ctx) {
         resolve(null);
@@ -140,10 +170,16 @@ export default function CompressImageClient() {
 
       /*
        * JPEG does not support transparency.
-       * White background keeps transparent PNG/WebP images usable.
+       * White background is used for transparent
+       * PNG/WebP images.
        */
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+      );
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
@@ -157,7 +193,9 @@ export default function CompressImageClient() {
       );
 
       canvas.toBlob(
-        (blob) => resolve(blob),
+        (blob) => {
+          resolve(blob);
+        },
         "image/jpeg",
         Math.max(
           0.01,
@@ -168,35 +206,34 @@ export default function CompressImageClient() {
   };
 
   /*
-   * Finds the largest JPEG that stays BELOW the internal target.
+   * Finds the largest JPEG that is safely
+   * below the requested target.
    *
    * Example:
-   * User target = 10 KB
-   * Internal target = about 9 KB
    *
-   * This prevents results such as 26 KB when the user asks for 10 KB.
+   * Requested = 10 KB
+   * Safe target = 9 KB
+   *
+   * This gives the downloaded file a margin
+   * below the user's requested limit.
    */
   const findBestBlob = async (
     img: HTMLImageElement,
     targetBytes: number
   ): Promise<Blob | null> => {
-    /*
-     * We intentionally aim slightly below the user's requested
-     * size so the final file has a safety margin.
-     *
-     * 10 KB -> about 9 KB
-     * 20 KB -> about 18 KB
-     * 50 KB -> about 45 KB
-     */
-    const safeTargetBytes = Math.max(
-      4 * 1024,
-      Math.floor(targetBytes * 0.9)
-    );
+    const safeTargetBytes =
+      Math.max(
+        4 * 1024,
+        Math.floor(
+          targetBytes * 0.9
+        )
+      );
 
     /*
-     * Start from normal size and gradually reduce dimensions.
-     *
-     * Very small targets need much smaller dimensions.
+     * Multiple dimensions are tested because
+     * extremely small file-size targets cannot
+     * always be reached through JPEG quality
+     * alone.
      */
     const scales = [
       1,
@@ -218,39 +255,46 @@ export default function CompressImageClient() {
       0.05,
       0.04,
       0.03,
+      0.025,
+      0.02,
+      0.015,
     ];
 
-    let bestUnderTarget: Blob | null = null;
+    let bestUnderTarget: Blob | null =
+      null;
 
     /*
-     * First pass:
-     * Find the largest result that fits inside the safe target.
+     * For every scale, binary-search JPEG
+     * quality to find the largest file that
+     * stays under the safe target.
      */
     for (const scale of scales) {
       let low = 0.01;
       let high = 0.95;
 
-      for (let i = 0; i < 10; i++) {
-        const quality = (low + high) / 2;
+      let bestAtThisScale: Blob | null =
+        null;
 
-        const blob = await createJpeg(
-          img,
-          scale,
-          quality
-        );
+      for (let i = 0; i < 10; i++) {
+        const quality =
+          (low + high) / 2;
+
+        const blob =
+          await createJpeg(
+            img,
+            scale,
+            quality
+          );
 
         if (!blob) {
           continue;
         }
 
-        if (blob.size <= safeTargetBytes) {
-          if (
-            !bestUnderTarget ||
-            blob.size > bestUnderTarget.size
-          ) {
-            bestUnderTarget = blob;
-          }
-
+        if (
+          blob.size <=
+          safeTargetBytes
+        ) {
+          bestAtThisScale = blob;
           low = quality;
         } else {
           high = quality;
@@ -258,122 +302,123 @@ export default function CompressImageClient() {
       }
 
       /*
-       * Test the lowest quality too.
+       * Make one exact lowest-quality
+       * attempt for this scale.
        */
-      const lowestQualityBlob = await createJpeg(
-        img,
-        scale,
-        0.01
-      );
-
-      if (
-        lowestQualityBlob &&
-        lowestQualityBlob.size <= safeTargetBytes
-      ) {
-        if (
-          !bestUnderTarget ||
-          lowestQualityBlob.size > bestUnderTarget.size
-        ) {
-          bestUnderTarget = lowestQualityBlob;
-        }
-      }
-
-      /*
-       * If this scale can already produce something
-       * reasonably close to the target, there is no need
-       * to keep making the image smaller.
-       */
-      if (
-        bestUnderTarget &&
-        bestUnderTarget.size >=
-          safeTargetBytes * 0.82
-      ) {
-        break;
-      }
-    }
-
-    /*
-     * Safety fallback:
-     * If the image still could not reach the target,
-     * dynamically reduce the scale based on the actual size.
-     *
-     * This is especially useful for tiny targets such as 10 KB.
-     */
-    if (!bestUnderTarget) {
-      let scale = 0.08;
-
-      for (let i = 0; i < 12; i++) {
-        const blob = await createJpeg(
+      const lowestQualityBlob =
+        await createJpeg(
           img,
           scale,
           0.01
         );
+
+      if (
+        lowestQualityBlob &&
+        lowestQualityBlob.size <=
+          safeTargetBytes
+      ) {
+        bestAtThisScale =
+          lowestQualityBlob;
+      }
+
+      if (bestAtThisScale) {
+        if (
+          !bestUnderTarget ||
+          bestAtThisScale.size >
+            bestUnderTarget.size
+        ) {
+          bestUnderTarget =
+            bestAtThisScale;
+        }
+
+        /*
+         * Once we are extremely close to
+         * the safe target, there is little
+         * benefit in making the image smaller.
+         */
+        if (
+          bestUnderTarget.size >=
+          safeTargetBytes * 0.98
+        ) {
+          break;
+        }
+      }
+    }
+
+    /*
+     * Emergency adaptive search.
+     *
+     * This handles unusual images that are
+     * difficult to reduce to very small
+     * targets such as 10 KB.
+     */
+    if (!bestUnderTarget) {
+      let scale = 0.08;
+
+      for (let i = 0; i < 15; i++) {
+        const blob =
+          await createJpeg(
+            img,
+            scale,
+            0.01
+          );
 
         if (!blob) {
           break;
         }
 
-        if (blob.size <= safeTargetBytes) {
-          bestUnderTarget = blob;
+        if (
+          blob.size <=
+          safeTargetBytes
+        ) {
+          bestUnderTarget =
+            blob;
           break;
         }
 
-        const ratio = Math.sqrt(
-          safeTargetBytes / blob.size
-        );
+        const ratio =
+          Math.sqrt(
+            safeTargetBytes /
+              blob.size
+          );
 
         scale *= Math.max(
-          0.45,
-          Math.min(0.85, ratio)
+          0.4,
+          Math.min(
+            0.85,
+            ratio
+          )
         );
 
-        scale = Math.max(0.02, scale);
+        scale = Math.max(
+          0.01,
+          scale
+        );
       }
     }
 
     /*
-     * Final emergency attempt.
-     *
-     * Never intentionally return a large "over target"
-     * result just because the target was difficult.
+     * Never intentionally return an
+     * over-target Blob.
      */
-    if (!bestUnderTarget) {
-      const emergencyScales = [
-        0.025,
-        0.02,
-        0.015,
-      ];
-
-      for (const scale of emergencyScales) {
-        const blob = await createJpeg(
-          img,
-          scale,
-          0.01
-        );
-
-        if (
-          blob &&
-          blob.size <= safeTargetBytes
-        ) {
-          bestUnderTarget = blob;
-          break;
-        }
-      }
-    }
-
     return bestUnderTarget;
   };
 
   const compress = async () => {
     if (!file || !preview) {
-      setError("Please upload an image first.");
+      setError(
+        "Please upload an image first."
+      );
       return;
     }
 
-    const finalKB = getTargetKB();
+    const finalKB =
+      getTargetKB();
 
     setTarget(finalKB);
-    setCustomKB(String(finalKB));
+    setCustomKB(
+      String(finalKB)
+    );
 
     setLoading(true);
     setError("");
@@ -381,18 +426,24 @@ export default function CompressImageClient() {
     clearResultUrl();
 
     try {
-      const img = new Image();
+      const img =
+        new Image();
 
       img.src = preview;
 
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
+      await new Promise<void>(
+        (resolve, reject) => {
+          img.onload = () =>
+            resolve();
 
-        img.onerror = () =>
-          reject(
-            new Error("Unable to read this image.")
-          );
-      });
+          img.onerror = () =>
+            reject(
+              new Error(
+                "Unable to read this image."
+              )
+            );
+        }
+      );
 
       if (
         !img.naturalWidth ||
@@ -406,10 +457,15 @@ export default function CompressImageClient() {
       const targetBytes =
         finalKB * 1024;
 
-      const blob = await findBestBlob(
-        img,
-        targetBytes
-      );
+      /*
+       * This is the EXACT Blob that will
+       * be displayed and downloaded.
+       */
+      const blob =
+        await findBestBlob(
+          img,
+          targetBytes
+        );
 
       if (!blob) {
         throw new Error(
@@ -417,20 +473,48 @@ export default function CompressImageClient() {
         );
       }
 
+      /*
+       * Store the exact Blob.
+       * The download function uses this
+       * exact same object.
+       */
+      compressedBlobRef.current =
+        blob;
+
       const resultUrl =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+          blob
+        );
 
       compressedUrlRef.current =
         resultUrl;
 
-      setCompressedUrl(resultUrl);
-      setNewSize(blob.size);
+      setCompressedUrl(
+        resultUrl
+      );
 
       /*
-       * This should normally be under the requested target.
-       * We only show an error if something unexpected happens.
+       * IMPORTANT:
+       *
+       * blob.size is the exact number
+       * of bytes in the downloadable Blob.
+       *
+       * The result UI therefore displays
+       * the same file that Download uses.
        */
-      if (blob.size > targetBytes) {
+      setNewSize(
+        blob.size
+      );
+
+      /*
+       * This should normally never happen
+       * because findBestBlob only returns
+       * a Blob under the safe target.
+       */
+      if (
+        blob.size >
+        targetBytes
+      ) {
         setError(
           `The image could not be reduced to ${finalKB} KB.`
         );
@@ -444,36 +528,84 @@ export default function CompressImageClient() {
     }
   };
 
+  /*
+   * Downloads the EXACT Blob stored in
+   * compressedBlobRef.
+   *
+   * It does NOT re-compress the image.
+   * It does NOT use the preview image.
+   * It does NOT create another JPEG.
+   */
   const download = () => {
-    if (!compressedUrl || !file) {
+    const blob =
+      compressedBlobRef.current;
+
+    if (!blob || !file) {
       return;
     }
 
-    const link =
-      document.createElement("a");
+    /*
+     * Create a new temporary URL for the
+     * exact same Blob.
+     */
+    const downloadUrl =
+      URL.createObjectURL(
+        blob
+      );
 
-    link.href = compressedUrl;
+    const link =
+      document.createElement(
+        "a"
+      );
+
+    link.href =
+      downloadUrl;
 
     link.download =
       `${getBaseName(file.name)}-${target}kb.jpg`;
 
-    document.body.appendChild(link);
+    /*
+     * Force download instead of
+     * navigating to the image.
+     */
+    link.style.display = "none";
+
+    document.body.appendChild(
+      link
+    );
 
     link.click();
 
     link.remove();
+
+    /*
+     * Give mobile browsers enough time
+     * to start the download before
+     * releasing the temporary URL.
+     */
+    setTimeout(() => {
+      URL.revokeObjectURL(
+        downloadUrl
+      );
+    }, 3000);
   };
 
   const clearAll = () => {
-    if (previewUrlRef.current) {
+    if (
+      previewUrlRef.current
+    ) {
       URL.revokeObjectURL(
         previewUrlRef.current
       );
 
-      previewUrlRef.current = "";
+      previewUrlRef.current =
+        "";
     }
 
     clearResultUrl();
+
+    compressedBlobRef.current =
+      null;
 
     setFile(null);
     setPreview("");
@@ -484,7 +616,8 @@ export default function CompressImageClient() {
     setCustomKB("20");
 
     if (inputRef.current) {
-      inputRef.current.value = "";
+      inputRef.current.value =
+        "";
     }
   };
 
@@ -493,20 +626,27 @@ export default function CompressImageClient() {
       ? Math.max(
           0,
           Math.round(
-            (1 - newSize / origSize) * 100
+            (1 -
+              newSize /
+                origSize) *
+              100
           )
         )
       : 0;
 
   const isWithinTarget =
     newSize > 0 &&
-    newSize <= target * 1024;
+    newSize <=
+      target * 1024;
 
   return (
     <div className="page">
       <header className="topbar">
         <div className="nav">
-          <a href="/" className="logo">
+          <a
+            href="/"
+            className="logo"
+          >
             NEXORA
           </a>
 
@@ -514,8 +654,13 @@ export default function CompressImageClient() {
             className="navlinks"
             aria-label="Main navigation"
           >
-            <a href="/">Home</a>
-            <a href="/#tools">All Tools</a>
+            <a href="/">
+              Home
+            </a>
+
+            <a href="/#tools">
+              All Tools
+            </a>
           </nav>
         </div>
       </header>
@@ -523,14 +668,18 @@ export default function CompressImageClient() {
       <main className="container">
         <section className="hero">
           <div className="badge">
-            FREE • NO WATERMARK • BROWSER-BASED
+            FREE • NO WATERMARK •
+            BROWSER-BASED
           </div>
 
-          <h1>Image Compressor</h1>
+          <h1>
+            Image Compressor
+          </h1>
 
           <p>
-            Compress JPG, PNG, and WebP images
-            to your required file size.
+            Compress JPG, PNG, and
+            WebP images to your
+            required file size.
           </p>
         </section>
 
@@ -557,7 +706,9 @@ export default function CompressImageClient() {
           <button
             type="button"
             className={`upload-box ${
-              preview ? "has-preview" : ""
+              preview
+                ? "has-preview"
+                : ""
             }`}
             onClick={() =>
               inputRef.current?.click()
@@ -581,7 +732,8 @@ export default function CompressImageClient() {
                 </strong>
 
                 <span>
-                  JPG, PNG or WebP • Up to 25 MB
+                  JPG, PNG or WebP •
+                  Up to 25 MB
                 </span>
               </>
             )}
@@ -592,7 +744,9 @@ export default function CompressImageClient() {
               <span>
                 Original:{" "}
                 <strong>
-                  {formatSize(origSize)}
+                  {formatSize(
+                    origSize
+                  )}
                 </strong>
               </span>
 
@@ -615,11 +769,16 @@ export default function CompressImageClient() {
                 max={MAX_KB}
                 inputMode="numeric"
                 value={customKB}
-                onChange={(event) => {
+                onChange={(
+                  event
+                ) => {
                   const value =
-                    event.target.value;
+                    event.target
+                      .value;
 
-                  setCustomKB(value);
+                  setCustomKB(
+                    value
+                  );
 
                   const number =
                     Number.parseInt(
@@ -646,7 +805,9 @@ export default function CompressImageClient() {
                 placeholder="20"
               />
 
-              <span>KB</span>
+              <span>
+                KB
+              </span>
             </div>
 
             <div
@@ -663,25 +824,33 @@ export default function CompressImageClient() {
                 100,
                 200,
                 500,
-              ].map((size) => (
-                <button
-                  type="button"
-                  key={size}
-                  className={
-                    target === size
-                      ? "preset active"
-                      : "preset"
-                  }
-                  onClick={() => {
-                    setTarget(size);
-                    setCustomKB(
-                      String(size)
-                    );
-                  }}
-                >
-                  {size} KB
-                </button>
-              ))}
+              ].map(
+                (size) => (
+                  <button
+                    type="button"
+                    key={size}
+                    className={
+                      target ===
+                      size
+                        ? "preset active"
+                        : "preset"
+                    }
+                    onClick={() => {
+                      setTarget(
+                        size
+                      );
+
+                      setCustomKB(
+                        String(
+                          size
+                        )
+                      );
+                    }}
+                  >
+                    {size} KB
+                  </button>
+                )
+              )}
             </div>
           </div>
 
@@ -698,9 +867,12 @@ export default function CompressImageClient() {
             <button
               type="button"
               className="compress-btn"
-              onClick={compress}
+              onClick={
+                compress
+              }
               disabled={
-                loading || !file
+                loading ||
+                !file
               }
             >
               {loading
@@ -711,16 +883,19 @@ export default function CompressImageClient() {
             <button
               type="button"
               className="clear-btn"
-              onClick={clearAll}
+              onClick={
+                clearAll
+              }
             >
               Clear
             </button>
           </div>
 
           <p className="privacy-note">
-            Your image is processed in your
-            browser. It is not uploaded to
-            our server.
+            Your image is processed
+            in your browser. It is
+            not uploaded to our
+            server.
           </p>
         </section>
 
@@ -741,7 +916,9 @@ export default function CompressImageClient() {
                 origSize
               )}{" "}
               →{" "}
-              {formatSize(newSize)}
+              {formatSize(
+                newSize
+              )}
             </div>
 
             <p className="result-message">
@@ -770,7 +947,9 @@ export default function CompressImageClient() {
                 </span>
 
                 <img
-                  src={compressedUrl}
+                  src={
+                    compressedUrl
+                  }
                   alt="Compressed image"
                 />
               </div>
@@ -779,14 +958,17 @@ export default function CompressImageClient() {
             <button
               type="button"
               className="download-btn"
-              onClick={download}
+              onClick={
+                download
+              }
             >
-              Download Compressed Image
+              Download Compressed
+              Image
             </button>
           </section>
         )}
 
-        {/* Large separation between the tool and SEO content */}
+        {/* Large separation between the working tool and SEO content */}
         <div className="content-gap" />
 
         <article className="seo-content">
@@ -796,22 +978,25 @@ export default function CompressImageClient() {
             </h2>
 
             <p>
-              NEXORA Image Compressor helps
-              you reduce JPG, PNG, and WebP
-              image sizes quickly without
-              installing software. Enter your
-              required target size, such as
-              20 KB, 50 KB, 100 KB, or 200 KB,
-              and download the compressed
-              image.
+              NEXORA Image Compressor
+              helps you reduce JPG,
+              PNG, and WebP image sizes
+              quickly without installing
+              software. Enter your
+              required target size, such
+              as 20 KB, 50 KB, 100 KB,
+              or 200 KB, and download
+              the compressed image.
             </p>
 
             <p>
-              This is useful when an online
-              application, exam form, passport
-              form, college application,
-              website, or document upload has
-              a strict image-size limit.
+              This is useful when an
+              online application, exam
+              form, passport form,
+              college application,
+              website, or document
+              upload has a strict
+              image-size limit.
             </p>
           </section>
 
@@ -822,13 +1007,13 @@ export default function CompressImageClient() {
 
             <ol>
               <li>
-                Choose your JPG, PNG, or WebP
-                image.
+                Choose your JPG,
+                PNG, or WebP image.
               </li>
 
               <li>
-                Enter the required target
-                size in KB.
+                Enter the required
+                target size in KB.
               </li>
 
               <li>
@@ -840,8 +1025,8 @@ export default function CompressImageClient() {
               </li>
 
               <li>
-                Preview the result and
-                download it.
+                Preview the result
+                and download it.
               </li>
             </ol>
           </section>
@@ -853,33 +1038,34 @@ export default function CompressImageClient() {
 
             <ul>
               <li>
-                Free to use with no account
-                required.
+                Free to use with
+                no account required.
               </li>
 
               <li>
-                Works directly in your
-                browser.
+                Works directly in
+                your browser.
               </li>
 
               <li>
-                Supports JPG, PNG, and WebP
-                images.
+                Supports JPG, PNG,
+                and WebP images.
               </li>
 
               <li>
-                Custom target sizes from
-                10 KB to 1000 KB.
+                Custom target sizes
+                from 10 KB to 1000 KB.
               </li>
 
               <li>
-                No watermark added to the
-                output.
+                No watermark added
+                to the output.
               </li>
 
               <li>
-                Works on phones, tablets,
-                and desktop devices.
+                Works on phones,
+                tablets, and desktop
+                devices.
               </li>
             </ul>
           </section>
@@ -890,24 +1076,28 @@ export default function CompressImageClient() {
             </h2>
 
             <p>
-              Many online forms specify an
-              image-size limit. Instead of
-              manually changing image
-              dimensions or repeatedly trying
-              different quality settings, you
-              can enter the required size
-              directly and let the browser
-              create a smaller JPEG version.
+              Many online forms specify
+              an image-size limit.
+              Instead of manually
+              changing image dimensions
+              or repeatedly trying
+              different quality settings,
+              you can enter the required
+              size directly and let the
+              browser create a smaller
+              JPEG version.
             </p>
 
             <p>
-              The tool is suitable for common
-              image-compression tasks such as
-              reducing a photo for an
-              application form, document
-              upload, profile image, website
-              upload, or other file-size-
-              restricted submission.
+              The tool is suitable for
+              common image-compression
+              tasks such as reducing a
+              photo for an application
+              form, document upload,
+              profile image, website
+              upload, or other
+              file-size-restricted
+              submission.
             </p>
           </section>
 
@@ -923,83 +1113,92 @@ export default function CompressImageClient() {
               </summary>
 
               <p>
-                Yes. Enter 20 KB as the
-                target size and click
-                Compress Image. The tool
-                tries to produce a result
-                slightly below the requested
-                size while preserving as much
+                Yes. Enter 20 KB as
+                the target size and
+                click Compress Image.
+                The tool tries to
+                produce a result
+                slightly below the
+                requested size while
+                preserving as much
                 quality as possible.
               </p>
             </details>
 
             <details>
               <summary>
-                Can I choose a custom image
-                size?
+                Can I choose a custom
+                image size?
               </summary>
 
               <p>
-                Yes. You can enter any target
-                from 10 KB to 1000 KB.
+                Yes. You can enter
+                any target from 10 KB
+                to 1000 KB.
               </p>
             </details>
 
             <details>
               <summary>
-                Which image formats are
-                supported?
+                Which image formats
+                are supported?
               </summary>
 
               <p>
-                JPG, JPEG, PNG, and WebP
-                images are supported. The
-                compressed output is provided
-                as a JPEG file.
+                JPG, JPEG, PNG, and
+                WebP images are
+                supported. The
+                compressed output is
+                provided as a JPEG file.
               </p>
             </details>
 
             <details>
               <summary>
-                Is my image uploaded to a
-                server?
+                Is my image uploaded
+                to a server?
               </summary>
 
               <p>
-                No. Compression is performed
-                in your browser. The image is
-                not intentionally uploaded to
-                a NEXORA processing server.
+                No. Compression is
+                performed in your
+                browser. The image is
+                not intentionally
+                uploaded to a NEXORA
+                processing server.
               </p>
             </details>
 
             <details>
               <summary>
-                Does the compressor work
-                on mobile?
+                Does the compressor
+                work on mobile?
               </summary>
 
               <p>
-                Yes. The tool is designed to
-                work on modern mobile and
+                Yes. The tool is
+                designed to work on
+                modern mobile and
                 desktop browsers.
               </p>
             </details>
 
             <details>
               <summary>
-                Will the image quality remain
-                the same?
+                Will the image quality
+                remain the same?
               </summary>
 
               <p>
-                Compression can reduce image
-                quality because a smaller file
-                generally requires some quality
-                or dimension reduction. NEXORA
-                tries to keep the output as
-                large and clear as possible
-                while staying close to the
+                Compression can reduce
+                image quality because
+                a smaller file generally
+                requires some quality
+                or dimension reduction.
+                NEXORA tries to keep
+                the output as large and
+                clear as possible while
+                staying close to the
                 selected target.
               </p>
             </details>
@@ -1031,13 +1230,16 @@ export default function CompressImageClient() {
         </article>
 
         <p className="updated">
-          NEXORA • Free online tools • Last
-          updated: November 27, 2026
+          NEXORA • Free online tools •
+          Last updated: November 27,
+          2026
         </p>
       </main>
 
       <footer className="footer">
-        <strong>NEXORA</strong>
+        <strong>
+          NEXORA
+        </strong>
 
         <div>
           <a href="/about">
@@ -1054,8 +1256,8 @@ export default function CompressImageClient() {
         </div>
 
         <p>
-          Free tools designed to be simple,
-          fast, and useful.
+          Free tools designed to be
+          simple, fast, and useful.
         </p>
       </footer>
 
@@ -1474,8 +1676,8 @@ export default function CompressImageClient() {
         }
 
         /*
-         * Large gap after the working tool.
-         * SEO content starts noticeably lower.
+         * Large separation between the
+         * working tool and SEO content.
          */
         .content-gap {
           height: 110px;
@@ -1616,9 +1818,6 @@ export default function CompressImageClient() {
             height: 105px;
           }
 
-          /*
-           * Still a large visible gap on mobile.
-           */
           .content-gap {
             height: 110px;
           }
