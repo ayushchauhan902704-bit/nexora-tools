@@ -11,8 +11,14 @@ function formatBytes(b: number) {
   return (b / (1024 * 1024)).toFixed(2) + " MB";
 }
 
-function trackEvent(name: string, params: Record<string, any> = {}) {
-  if (typeof window !== "undefined" && (window as any).gtag) {
+function trackEvent(
+  name: string,
+  params: Record<string, any> = {}
+) {
+  if (
+    typeof window !== "undefined" &&
+    (window as any).gtag
+  ) {
     (window as any).gtag("event", name, params);
   }
 }
@@ -88,7 +94,7 @@ function updateJpeg(
     src[0] !== 255 ||
     src[1] !== 216
   ) {
-    throw new Error("Invalid JPEG.");
+    throw new Error("Invalid JPEG file.");
   }
 
   const density = Math.min(
@@ -208,7 +214,7 @@ function updatePng(
       (v, i) => src[i] === v
     )
   ) {
-    throw new Error("Invalid PNG.");
+    throw new Error("Invalid PNG file.");
   }
 
   const parts: Uint8Array[] = [
@@ -228,7 +234,7 @@ function updatePng(
     if (
       len > src.length - pos - 12
     ) {
-      throw new Error("PNG damaged.");
+      throw new Error("PNG file is damaged.");
     }
 
     const type =
@@ -245,7 +251,7 @@ function updatePng(
     if (type === "IHDR") {
       if (foundH) {
         throw new Error(
-          "Invalid PNG."
+          "Invalid PNG structure."
         );
       }
 
@@ -282,7 +288,7 @@ function updatePng(
     !foundE
   ) {
     throw new Error(
-      "PNG could not be processed."
+      "The PNG file could not be processed."
     );
   }
 
@@ -391,7 +397,7 @@ export default function DpiChangerClient() {
             () =>
               reject(
                 new Error(
-                  "HEIC converter load nahi hua."
+                  "The HEIC converter could not be loaded."
                 )
               ),
             { once: true }
@@ -417,7 +423,7 @@ export default function DpiChangerClient() {
           () =>
             reject(
               new Error(
-                "HEIC converter load nahi hua."
+                "The HEIC converter could not be loaded."
               )
             );
 
@@ -510,13 +516,13 @@ export default function DpiChangerClient() {
         MAX_FILE_SIZE
       ) {
         throw new Error(
-          "30 MB se chhoti photo select karo."
+          "Please select an image smaller than 30 MB."
         );
       }
 
       if (f.size === 0) {
         throw new Error(
-          "File khaali hai."
+          "The selected file is empty."
         );
       }
 
@@ -527,7 +533,7 @@ export default function DpiChangerClient() {
         type === "unsupported"
       ) {
         throw new Error(
-          "Sirf JPG, PNG ya HEIC chalega."
+          "Only JPG, PNG, or HEIC files are supported."
         );
       }
 
@@ -536,7 +542,7 @@ export default function DpiChangerClient() {
 
       if (type === "heic") {
         setStatus(
-          "HEIC photo ko JPG me badal raha hu..."
+          "Converting the HEIC image to JPG..."
         );
 
         setProgress(30);
@@ -567,7 +573,7 @@ export default function DpiChangerClient() {
           b.size === 0
         ) {
           throw new Error(
-            "HEIC convert nahi hua."
+            "The HEIC image could not be converted."
           );
         }
 
@@ -602,7 +608,7 @@ export default function DpiChangerClient() {
 
               reject(
                 new Error(
-                  "Browser ye photo nahi padh paya."
+                  "Your browser could not read this image."
                 )
               );
             };
@@ -619,7 +625,7 @@ export default function DpiChangerClient() {
 
       if (!iw || !ih) {
         throw new Error(
-          "Photo ka size sahi nahi hai."
+          "The image dimensions could not be detected."
         );
       }
 
@@ -628,7 +634,7 @@ export default function DpiChangerClient() {
         MAX_PIXELS
       ) {
         throw new Error(
-          "Photo bahut badi hai. Chhoti photo lo."
+          "This image is too large. Please choose a smaller image."
         );
       }
 
@@ -654,7 +660,7 @@ export default function DpiChangerClient() {
           f.size
         )}${
           type === "heic"
-            ? " • JPG me badal gaya"
+            ? " • Converted to JPG"
             : ""
         }`
       );
@@ -663,7 +669,7 @@ export default function DpiChangerClient() {
       setProgress(100);
 
       setStatus(
-        "Photo ready hai. DPI select karke Download dabao."
+        "Your image is ready. Select a DPI value and click Download."
       );
 
       setIsSuccess(true);
@@ -680,7 +686,7 @@ export default function DpiChangerClient() {
     } catch (e: any) {
       const message =
         e?.message ||
-        "Photo load nahi hui.";
+        "The image could not be loaded.";
 
       setStatus(message);
       setIsSuccess(false);
@@ -712,7 +718,7 @@ export default function DpiChangerClient() {
       !blob
     ) {
       setStatus(
-        "Pehle photo upload karo."
+        "Please upload an image first."
       );
 
       setIsSuccess(false);
@@ -728,7 +734,7 @@ export default function DpiChangerClient() {
       dpi > 1200
     ) {
       setStatus(
-        "10 se 1200 ke beech pura number likho."
+        "Please enter a whole number between 10 and 1200 DPI."
       );
 
       setIsSuccess(false);
@@ -848,7 +854,7 @@ export default function DpiChangerClient() {
       setProgress(100);
 
       setStatus(
-        `Ho gaya! ${dpi} DPI wali photo ready hai.`
+        `Done! Your ${dpi} DPI image is ready.`
       );
 
       setIsSuccess(true);
@@ -868,7 +874,7 @@ export default function DpiChangerClient() {
     } catch (e: any) {
       const message =
         e?.message ||
-        "Photo ban nahi payi.";
+        "The image could not be created.";
 
       setStatus(message);
       setIsSuccess(false);
@@ -1703,9 +1709,9 @@ export default function DpiChangerClient() {
               print-resolution metadata stored
               in an image. It can be useful when
               a printing service, document
-              workflow, application or form asks
+              workflow, application, or form asks
               for a specific DPI value such as
-              72, 150, 300 or 600 DPI.
+              72, 150, 300, or 600 DPI.
             </p>
 
             <p
@@ -1715,7 +1721,7 @@ export default function DpiChangerClient() {
             >
               NEXORA supports custom values
               from <b>10 to 1200 DPI</b> for
-              supported JPG, PNG and HEIC images.
+              supported JPG, PNG, and HEIC images.
               The DPI operation is performed in
               the browser without requiring an
               account or software installation.
@@ -1758,7 +1764,7 @@ export default function DpiChangerClient() {
               }}
             >
               <li>
-                Upload a JPG, PNG or HEIC image.
+                Upload a JPG, PNG, or HEIC image.
               </li>
 
               <li>
@@ -1815,7 +1821,7 @@ export default function DpiChangerClient() {
             >
               <li>10–1200 DPI range.</li>
               <li>Custom DPI input.</li>
-              <li>JPG, PNG and HEIC support.</li>
+              <li>JPG, PNG, and HEIC support.</li>
               <li>No watermark added.</li>
               <li>No account required.</li>
               <li>Browser-based DPI processing.</li>
@@ -2157,7 +2163,7 @@ export default function DpiChangerClient() {
                 "#0f172a",
               fontWeight:
                 700,
-              fontSize:
+                fontSize:
                 12,
               textAlign:
                 "center",
@@ -2165,6 +2171,130 @@ export default function DpiChangerClient() {
           >
             Explore All NEXORA Tools →
           </a>
+        </div>
+
+        {/* LEGAL LINKS */}
+        <div
+          style={{
+            marginTop:
+              22,
+            padding:
+              "15px 12px",
+            borderTop:
+              "1px solid #e2e8f0",
+            borderBottom:
+              "1px solid #e2e8f0",
+          }}
+        >
+          <p
+            style={{
+              textAlign:
+                "center",
+              fontSize:
+                11,
+              fontWeight:
+                800,
+              color:
+                "#475569",
+              margin:
+                "0 0 10px",
+            }}
+          >
+            Legal & Information
+          </p>
+
+          <div
+            style={{
+              display:
+                "flex",
+              flexWrap:
+                "wrap",
+              justifyContent:
+                "center",
+              gap:
+                "7px 14px",
+            }}
+          >
+            <a
+              href="/privacy-policy"
+              style={{
+                color:
+                  "#64748b",
+                textDecoration:
+                  "none",
+                fontSize:
+                  11,
+                fontWeight:
+                  600,
+              }}
+            >
+              Privacy Policy
+            </a>
+
+            <a
+              href="/terms-of-service"
+              style={{
+                color:
+                  "#64748b",
+                textDecoration:
+                  "none",
+                fontSize:
+                  11,
+                fontWeight:
+                  600,
+              }}
+            >
+              Terms of Service
+            </a>
+
+            <a
+              href="/disclaimer"
+              style={{
+                color:
+                  "#64748b",
+                textDecoration:
+                  "none",
+                fontSize:
+                  11,
+                fontWeight:
+                  600,
+              }}
+            >
+              Disclaimer
+            </a>
+
+            <a
+              href="/cookie-policy"
+              style={{
+                color:
+                  "#64748b",
+                textDecoration:
+                  "none",
+                fontSize:
+                  11,
+                fontWeight:
+                  600,
+              }}
+            >
+              Cookie Policy
+            </a>
+
+            <a
+              href="/contact"
+              style={{
+                color:
+                  "#64748b",
+                textDecoration:
+                  "none",
+                fontSize:
+                  11,
+                fontWeight:
+                  600,
+              }}
+            >
+              Contact Us
+            </a>
+          </div>
         </div>
 
         {/* FOOTER INFO */}
