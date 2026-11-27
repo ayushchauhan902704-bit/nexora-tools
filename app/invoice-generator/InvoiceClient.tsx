@@ -218,7 +218,7 @@ export default function InvoiceClient() {
             <div className="brand-mark">N</div>
 
             <div>
-              <div className="brand-name">Invoice Generator</div>
+              <div className="brand-name">thenexoratools <span>• Invoice Generator</span></div>
               <div className="brand-sub">
                 Create a professional invoice in seconds
               </div>
@@ -302,7 +302,7 @@ export default function InvoiceClient() {
                     onChange={(e) =>
                       updateBusiness("name", e.target.value)
                     }
-                    placeholder="e.g. Acme Studio"
+                    placeholder=""
                   />
                 </div>
 
@@ -316,7 +316,7 @@ export default function InvoiceClient() {
                       onChange={(e) =>
                         updateBusiness("email", e.target.value)
                       }
-                      placeholder="you@example.com"
+                      placeholder=""
                     />
                   </div>
 
@@ -329,7 +329,7 @@ export default function InvoiceClient() {
                       onChange={(e) =>
                         updateBusiness("phone", e.target.value)
                       }
-                      placeholder="+91 98765 43210"
+                      placeholder=""
                     />
                   </div>
                 </div>
@@ -354,7 +354,7 @@ export default function InvoiceClient() {
                         onChange={(e) =>
                           updateBusiness("address", e.target.value)
                         }
-                        placeholder="Street, city, state, country"
+                        placeholder=""
                         rows={3}
                       />
                     </div>
@@ -367,7 +367,7 @@ export default function InvoiceClient() {
                         onChange={(e) =>
                           updateBusiness("gst", e.target.value)
                         }
-                        placeholder="Optional"
+                        placeholder=""
                       />
                     </div>
                   </div>
@@ -410,7 +410,7 @@ export default function InvoiceClient() {
                     onChange={(e) =>
                       updateCustomer("name", e.target.value)
                     }
-                    placeholder="e.g. John Smith"
+                    placeholder=""
                   />
                 </div>
 
@@ -423,7 +423,7 @@ export default function InvoiceClient() {
                     onChange={(e) =>
                       updateCustomer("email", e.target.value)
                     }
-                    placeholder="customer@example.com"
+                    placeholder=""
                   />
                 </div>
 
@@ -447,7 +447,7 @@ export default function InvoiceClient() {
                         onChange={(e) =>
                           updateCustomer("address", e.target.value)
                         }
-                        placeholder="Street, city, state, country"
+                        placeholder=""
                         rows={3}
                       />
                     </div>
@@ -536,7 +536,7 @@ export default function InvoiceClient() {
                             e.target.value
                           )
                         }
-                        placeholder="e.g. Website Design"
+                        placeholder=""
                       />
 
                       <input
@@ -566,7 +566,7 @@ export default function InvoiceClient() {
                               e.target.value
                             )
                           }
-                          placeholder="0"
+                          placeholder=""
                         />
                       </div>
 
@@ -670,7 +670,7 @@ export default function InvoiceClient() {
                       <label>Note / Payment Terms</label>
 
                       <textarea
-                        placeholder="Thank you for your business."
+                        placeholder=""
                         rows={3}
                       />
                     </div>
@@ -696,7 +696,7 @@ export default function InvoiceClient() {
 
             <div className="privacy-note">
               <span>🔒</span>
-              Your invoice is created in your browser. No sign-up required.
+              Your invoice is created in your browser. No sign-up required. • thenexoratools
             </div>
           </section>
 
@@ -885,7 +885,7 @@ export default function InvoiceClient() {
                 <div className="thank-you">
                   <b>Thank you for your business.</b>
                   <p>
-                    This invoice was created with Invoice Generator.
+                    This invoice was created with thenexoratools.
                   </p>
                 </div>
 
@@ -943,16 +943,22 @@ export default function InvoiceClient() {
           box-sizing: border-box;
         }
 
+        /* WHITE TEMPLATE - TEAM TOOL JESA - WORKING SAME HAI */
         .invoice-page {
           min-height: 100vh;
           background:
             radial-gradient(
-              circle at top left,
-              rgba(124, 108, 255, 0.08),
-              transparent 35%
+              circle at 50% -10%,
+              rgba(108, 92, 231, 0.10),
+              transparent 38%
             ),
-            #080d1b;
-          color: #f7f8fc;
+            radial-gradient(
+              circle at 95% 10%,
+              rgba(14, 165, 164, 0.06),
+              transparent 30%
+            ),
+            #f6f7fb;
+          color: #171925;
           padding: 28px 22px 60px;
           font-family:
             Inter,
@@ -985,27 +991,32 @@ export default function InvoiceClient() {
           font-weight: 900;
           font-size: 18px;
           color: white;
-          background:
-            linear-gradient(135deg, #9275ff, #51e1d0);
-          box-shadow: 0 10px 30px rgba(124, 108, 255, 0.2);
+          background: linear-gradient(135deg, #6c5ce7, #0ea5a4);
+          box-shadow: 0 10px 30px rgba(108, 92, 231, 0.25);
         }
 
         .brand-name {
-          font-size: 16px;
-          font-weight: 800;
-          letter-spacing: -0.3px;
+          font-size: 17px;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          color: #171925;
+        }
+        .brand-name span {
+          font-size: 13px;
+          font-weight: 700;
+          color: #777b8c;
         }
 
         .brand-sub {
-          color: #78829b;
+          color: #858997;
           font-size: 12px;
           margin-top: 3px;
         }
 
         .reset-btn {
-          border: 1px solid #222b42;
-          background: #11182a;
-          color: #aab3c8;
+          border: 1px solid #e3e5ec;
+          background: #fff;
+          color: #666978;
           padding: 10px 15px;
           border-radius: 10px;
           cursor: pointer;
@@ -1015,16 +1026,21 @@ export default function InvoiceClient() {
         }
 
         .reset-btn:hover {
-          border-color: #394563;
-          color: white;
+          border-color: #c9cce0;
+          color: #171925;
         }
 
         .progress-wrap {
           width: min(1120px, 100%);
-          margin: 0 auto 28px;
+          margin: 0 auto 22px;
           display: flex;
           align-items: center;
           gap: 12px;
+          background: #fff;
+          border: 1px solid #e7e9ef;
+          border-radius: 999px;
+          padding: 10px 14px;
+          box-shadow: 0 8px 25px rgba(31,35,55,.04);
         }
 
         .progress-step {
@@ -1032,7 +1048,7 @@ export default function InvoiceClient() {
           align-items: center;
           gap: 9px;
           min-width: 150px;
-          opacity: 0.4;
+          opacity: 0.45;
           transition: 0.25s;
         }
 
@@ -1046,35 +1062,36 @@ export default function InvoiceClient() {
           border-radius: 50%;
           display: grid;
           place-items: center;
-          background: #151d31;
-          border: 1px solid #29334d;
-          color: #8993aa;
+          background: #f0f1f5;
+          border: 1px solid #e7e9ef;
+          color: #777b88;
           font-size: 11px;
           font-weight: 800;
         }
 
         .progress-step.active > span {
-          background: #9275ff;
-          border-color: #9275ff;
+          background: #6c5ce7;
+          border-color: #6c5ce7;
           color: white;
-          box-shadow: 0 0 0 5px rgba(146, 117, 255, 0.1);
+          box-shadow: 0 0 0 5px rgba(108, 92, 231, 0.1);
         }
 
         .progress-step b {
           display: block;
           font-size: 12px;
+          color: #171925;
         }
 
         .progress-step small {
           display: block;
-          color: #69738c;
+          color: #858997;
           font-size: 10px;
           margin-top: 2px;
         }
 
         .progress-line {
           height: 2px;
-          background: #202940;
+          background: #eceef3;
           flex: 1;
           max-width: 100px;
         }
@@ -1083,8 +1100,8 @@ export default function InvoiceClient() {
           height: 100%;
           background: linear-gradient(
             90deg,
-            #9275ff,
-            #51e1d0
+            #6c5ce7,
+            #0ea5a4
           );
           transition: 0.3s;
         }
@@ -1103,10 +1120,10 @@ export default function InvoiceClient() {
         }
 
         .card {
-          background: rgba(14, 20, 36, 0.92);
-          border: 1px solid #202a43;
+          background: #fff;
+          border: 1px solid #e6e8ef;
           border-radius: 20px;
-          box-shadow: 0 20px 70px rgba(0, 0, 0, 0.18);
+          box-shadow: 0 18px 60px rgba(31, 35, 55, 0.07);
         }
 
         .step-card {
@@ -1132,32 +1149,33 @@ export default function InvoiceClient() {
         }
 
         .heading-icon.purple {
-          background: rgba(146, 117, 255, 0.13);
-          color: #a994ff;
-          border: 1px solid rgba(146, 117, 255, 0.2);
+          background: #f0edff;
+          color: #6c5ce7;
+          border: 1px solid #e8e3ff;
         }
 
         .heading-icon.teal {
-          background: rgba(81, 225, 208, 0.1);
-          color: #51e1d0;
-          border: 1px solid rgba(81, 225, 208, 0.18);
+          background: #e6fbf8;
+          color: #0ea5a4;
+          border: 1px solid #c8f0ec;
         }
 
         .heading-icon.orange {
-          background: rgba(255, 159, 67, 0.1);
-          color: #ffb66d;
-          border: 1px solid rgba(255, 159, 67, 0.18);
+          background: #fff4e5;
+          color: #f59e0b;
+          border: 1px solid #ffe6bf;
         }
 
         .step-heading h1 {
           font-size: 21px;
           margin: 1px 0 5px;
           letter-spacing: -0.5px;
+          color: #171925;
         }
 
         .step-heading p {
           margin: 0;
-          color: #7e889f;
+          color: #858997;
           font-size: 12px;
           line-height: 1.5;
         }
@@ -1174,16 +1192,16 @@ export default function InvoiceClient() {
           gap: 5px;
           font-size: 11px;
           font-weight: 800;
-          color: #c5ccda;
+          color: #454857;
           margin-bottom: 8px;
         }
 
         label span {
-          color: #ff6b6b;
+          color: #ef4444;
         }
 
         label em {
-          color: #66718a;
+          color: #a0a3ae;
           font-style: normal;
           font-weight: 600;
           font-size: 9px;
@@ -1194,9 +1212,9 @@ export default function InvoiceClient() {
         textarea,
         select {
           width: 100%;
-          border: 1px solid #29334c;
-          background: #0b1120;
-          color: #f5f7fb;
+          border: 1px solid #e4e6ed;
+          background: #fafbfc;
+          color: #181a25;
           border-radius: 11px;
           outline: none;
           font-family: inherit;
@@ -1220,14 +1238,15 @@ export default function InvoiceClient() {
 
         input::placeholder,
         textarea::placeholder {
-          color: #505b73;
+          color: #a8abb8;
         }
 
         input:focus,
         textarea:focus,
         select:focus {
-          border-color: #6f5bd1;
-          box-shadow: 0 0 0 3px rgba(124, 108, 255, 0.08);
+          border-color: #aaa0f1;
+          box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.09);
+          background: #fff;
         }
 
         .two-col {
@@ -1238,11 +1257,11 @@ export default function InvoiceClient() {
 
         .advanced-toggle {
           width: 100%;
-          border: 1px dashed #29334b;
-          background: #0b1120;
+          border: 1px dashed #d5d0f5;
+          background: #f7f6ff;
           border-radius: 11px;
           padding: 12px 13px;
-          color: #9da7bc;
+          color: #6c5ce7;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1252,8 +1271,8 @@ export default function InvoiceClient() {
         }
 
         .advanced-toggle:hover {
-          border-color: #4a5573;
-          color: #e3e7ef;
+          border-color: #6c5ce7;
+          background: #f0edff;
         }
 
         .advanced-toggle span {
@@ -1262,15 +1281,15 @@ export default function InvoiceClient() {
         }
 
         .advanced-toggle small {
-          color: #5e6880;
+          color: #858997;
           font-size: 9px;
         }
 
         .advanced-box {
           margin-top: 12px;
           padding: 15px;
-          border: 1px solid #202a43;
-          background: rgba(8, 13, 27, 0.5);
+          border: 1px solid #e6e8ef;
+          background: #fafbfc;
           border-radius: 12px;
         }
 
@@ -1285,11 +1304,7 @@ export default function InvoiceClient() {
           height: 48px;
           border-radius: 11px;
           margin-top: 22px;
-          background: linear-gradient(
-            135deg,
-            #9275ff,
-            #7359dd
-          );
+          background: #171925;
           color: white;
           font-weight: 850;
           font-size: 12px;
@@ -1298,8 +1313,7 @@ export default function InvoiceClient() {
           justify-content: center;
           align-items: center;
           gap: 10px;
-          box-shadow:
-            0 12px 30px rgba(124, 108, 255, 0.16);
+          box-shadow: 0 12px 30px rgba(23, 25, 37, 0.14);
           transition:
             transform 0.2s,
             opacity 0.2s;
@@ -1328,9 +1342,9 @@ export default function InvoiceClient() {
         }
 
         .back-btn {
-          border: 1px solid #29334c;
-          background: #11182a;
-          color: #aeb7c9;
+          border: 1px solid #e3e5ec;
+          background: #fff;
+          color: #666978;
           border-radius: 11px;
           cursor: pointer;
           font-weight: 800;
@@ -1338,15 +1352,13 @@ export default function InvoiceClient() {
         }
 
         .back-btn:hover {
-          color: white;
-          border-color: #45516d;
+          color: #171925;
+          border-color: #c9cce0;
         }
 
         .preview-btn {
-          background:
-            linear-gradient(135deg, #51e1d0, #27bfae);
-          box-shadow:
-            0 12px 30px rgba(39, 191, 174, 0.12);
+          background: #171925;
+          box-shadow: 0 12px 30px rgba(23, 25, 37, 0.14);
         }
 
         .currency-row {
@@ -1379,7 +1391,7 @@ export default function InvoiceClient() {
 
         .invoice-meta span {
           display: block;
-          color: #626d85;
+          color: #999ca8;
           font-size: 9px;
           font-weight: 700;
           text-transform: uppercase;
@@ -1390,11 +1402,11 @@ export default function InvoiceClient() {
           display: block;
           margin-top: 4px;
           font-size: 10px;
-          color: #b9c1d2;
+          color: #454857;
         }
 
         .items-box {
-          border: 1px solid #252f48;
+          border: 1px solid #e6e8ef;
           border-radius: 12px;
           overflow: hidden;
         }
@@ -1404,8 +1416,8 @@ export default function InvoiceClient() {
           grid-template-columns: 1fr 70px 130px 35px;
           gap: 10px;
           padding: 10px 12px;
-          background: #11182a;
-          color: #69738b;
+          background: #f7f7fa;
+          color: #999ca8;
           font-size: 8px;
           font-weight: 900;
           letter-spacing: 0.7px;
@@ -1416,28 +1428,30 @@ export default function InvoiceClient() {
           grid-template-columns: 1fr 70px 130px 35px;
           gap: 10px;
           padding: 10px 12px;
-          border-top: 1px solid #202940;
+          border-top: 1px solid #eef0f4;
           align-items: center;
+          background: #fff;
         }
 
         .item-row input {
           height: 40px;
           border-radius: 9px;
+          background: #fff;
         }
 
         .price-input {
           height: 40px;
           display: flex;
           align-items: center;
-          border: 1px solid #29334c;
+          border: 1px solid #e4e6ed;
           border-radius: 9px;
-          background: #0b1120;
+          background: #fff;
           overflow: hidden;
         }
 
         .price-input span {
           padding-left: 10px;
-          color: #69738b;
+          color: #999ca8;
           font-size: 11px;
         }
 
@@ -1454,21 +1468,21 @@ export default function InvoiceClient() {
           height: 32px;
           border: 0;
           background: transparent;
-          color: #59647c;
+          color: #a0a3ae;
           font-size: 21px;
           cursor: pointer;
           border-radius: 8px;
         }
 
         .remove-item:hover:not(:disabled) {
-          color: #ff6b6b;
-          background: rgba(255, 107, 107, 0.08);
+          color: #ef4444;
+          background: #fff1f1;
         }
 
         .add-item-btn {
           border: 0;
           background: transparent;
-          color: #9d8aff;
+          color: #6c5ce7;
           font-weight: 800;
           font-size: 11px;
           padding: 14px 2px 5px;
@@ -1476,7 +1490,7 @@ export default function InvoiceClient() {
         }
 
         .add-item-btn:hover {
-          color: #b8aaff;
+          color: #5a4bd6;
         }
 
         .adjustment-toggle {
@@ -1490,8 +1504,8 @@ export default function InvoiceClient() {
           padding: 13px;
           margin-top: 10px;
           border-radius: 11px;
-          border: 1px solid #202a43;
-          background: rgba(8, 13, 27, 0.5);
+          border: 1px solid #e6e8ef;
+          background: #fafbfc;
         }
 
         .adjustment-field {
@@ -1502,8 +1516,8 @@ export default function InvoiceClient() {
           height: 40px;
           display: flex;
           align-items: center;
-          border: 1px solid #29334c;
-          background: #0b1120;
+          border: 1px solid #e4e6ed;
+          background: #fff;
           border-radius: 9px;
           overflow: hidden;
         }
@@ -1517,13 +1531,13 @@ export default function InvoiceClient() {
 
         .percent-input span {
           padding-right: 11px;
-          color: #66718a;
+          color: #999ca8;
           font-size: 11px;
         }
 
         .privacy-note {
           text-align: center;
-          color: #5f6980;
+          color: #a0a3ae;
           font-size: 10px;
           margin-top: 16px;
         }
@@ -1538,16 +1552,12 @@ export default function InvoiceClient() {
         }
 
         .summary-card {
-          border: 1px solid #252f48;
-          background:
-            linear-gradient(
-              180deg,
-              rgba(18, 25, 45, 0.98),
-              rgba(11, 17, 32, 0.98)
-            );
+          border: 1px solid #e1e3eb;
+          background: #171925;
           border-radius: 20px;
           padding: 21px;
-          box-shadow: 0 20px 70px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 18px 45px rgba(23, 25, 37, 0.13);
+          color: #fff;
         }
 
         .summary-top {
@@ -1555,14 +1565,14 @@ export default function InvoiceClient() {
           align-items: flex-start;
           justify-content: space-between;
           padding-bottom: 19px;
-          border-bottom: 1px solid #222c44;
+          border-bottom: 1px solid rgba(255,255,255,.1);
         }
 
         .summary-label {
           font-size: 9px;
           font-weight: 900;
           letter-spacing: 1.3px;
-          color: #66718a;
+          color: #999baa;
         }
 
         .total {
@@ -1571,14 +1581,14 @@ export default function InvoiceClient() {
           line-height: 1;
           font-weight: 900;
           letter-spacing: -1px;
+          color: #fff;
         }
 
         .currency-badge {
           padding: 7px 9px;
           border-radius: 8px;
-          background: rgba(146, 117, 255, 0.11);
-          border: 1px solid rgba(146, 117, 255, 0.18);
-          color: #b09fff;
+          background: rgba(255,255,255,.09);
+          color: #c8c5ff;
           font-size: 9px;
           font-weight: 900;
         }
@@ -1595,27 +1605,27 @@ export default function InvoiceClient() {
         }
 
         .summary-lines span {
-          color: #707a92;
+          color: #a1a3b0;
           font-size: 11px;
         }
 
         .summary-lines b {
           font-size: 11px;
-          color: #cdd3df;
+          color: #f4f4f7;
         }
 
         .summary-lines .discount {
-          color: #51e1d0;
+          color: #74e0b2;
         }
 
         .summary-total {
-          border-top: 1px solid #222c44;
+          border-top: 1px solid rgba(255,255,255,.1);
           padding-top: 13px;
           margin-top: 13px;
         }
 
         .summary-total span {
-          color: #dce1eb;
+          color: #fff;
           font-weight: 800;
         }
 
@@ -1627,10 +1637,10 @@ export default function InvoiceClient() {
         .summary-preview {
           width: 100%;
           height: 44px;
-          border: 1px solid #35405d;
+          border: 0;
           border-radius: 10px;
-          background: #161e34;
-          color: white;
+          background: #fff;
+          color: #171925;
           font-size: 11px;
           font-weight: 850;
           cursor: pointer;
@@ -1642,25 +1652,25 @@ export default function InvoiceClient() {
         }
 
         .summary-preview:hover:not(:disabled) {
-          background: #1d2742;
+          background: #f0edff;
         }
 
         .quick-tip {
           margin-top: 13px;
-          border: 1px solid #202a43;
+          border: 1px solid #e8e9ef;
           border-radius: 15px;
-          background: rgba(12, 18, 33, 0.8);
+          background: #fff;
           padding: 14px;
           display: flex;
           gap: 10px;
+          box-shadow: 0 8px 25px rgba(31,35,55,.04);
         }
 
         .tip-icon {
           width: 30px;
           height: 30px;
           border-radius: 9px;
-          background: rgba(81, 225, 208, 0.08);
-          border: 1px solid rgba(81, 225, 208, 0.15);
+          background: #e9faf3;
           display: grid;
           place-items: center;
           flex: 0 0 auto;
@@ -1669,12 +1679,12 @@ export default function InvoiceClient() {
         .quick-tip b {
           display: block;
           font-size: 10px;
-          color: #dce2ee;
+          color: #343642;
         }
 
         .quick-tip p {
           margin: 4px 0 0;
-          color: #69738b;
+          color: #9295a1;
           font-size: 9px;
           line-height: 1.5;
         }
@@ -1685,8 +1695,8 @@ export default function InvoiceClient() {
           position: fixed;
           inset: 0;
           z-index: 9999;
-          background: rgba(2, 5, 12, 0.82);
-          backdrop-filter: blur(10px);
+          background: rgba(14, 15, 23, 0.58);
+          backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1696,13 +1706,13 @@ export default function InvoiceClient() {
         .preview-modal {
           width: min(900px, 100%);
           max-height: 94vh;
-          background: #11182a;
-          border: 1px solid #2a3550;
+          background: #f4f5f8;
+          border: 1px solid #e2e4ea;
           border-radius: 18px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 30px 100px rgba(0, 0, 0, 0.28);
         }
 
         .preview-toolbar {
@@ -1711,17 +1721,19 @@ export default function InvoiceClient() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid #252f48;
+          border-bottom: 1px solid #e2e4ea;
+          background: #fff;
         }
 
         .preview-toolbar b {
           display: block;
           font-size: 13px;
+          color: #171925;
         }
 
         .preview-toolbar span {
           display: block;
-          color: #68738c;
+          color: #979aa6;
           font-size: 9px;
           margin-top: 3px;
         }
@@ -1729,16 +1741,16 @@ export default function InvoiceClient() {
         .close-btn {
           width: 34px;
           height: 34px;
-          border: 0;
+          border: 1px solid #e4e6ec;
           border-radius: 9px;
-          background: #1b243a;
-          color: #aeb7c9;
+          background: #fff;
+          color: #555865;
           font-size: 20px;
           cursor: pointer;
         }
 
         .close-btn:hover {
-          color: white;
+          color: #171925;
         }
 
         .invoice-paper {
@@ -1749,7 +1761,7 @@ export default function InvoiceClient() {
           padding: 42px;
           border-radius: 5px;
           overflow: auto;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+          box-shadow: 0 10px 40px rgba(31,35,55,.08);
         }
 
         .paper-header {
@@ -1782,6 +1794,7 @@ export default function InvoiceClient() {
           margin: 0 0 13px;
           font-size: 28px;
           letter-spacing: 1px;
+          color: #6c5ce7;
         }
 
         .invoice-title div {
@@ -1892,11 +1905,11 @@ export default function InvoiceClient() {
 
         .preview-actions {
           padding: 14px 18px;
-          border-top: 1px solid #252f48;
+          border-top: 1px solid #e2e4ea;
           display: flex;
           justify-content: space-between;
           gap: 10px;
-          background: #0e1527;
+          background: #fff;
         }
 
         .secondary-action,
@@ -1910,18 +1923,14 @@ export default function InvoiceClient() {
         }
 
         .secondary-action {
-          border: 1px solid #2b3651;
-          background: #151d31;
-          color: #aab3c7;
+          border: 1px solid #e3e5ec;
+          background: #fff;
+          color: #626574;
         }
 
         .print-action {
           border: 0;
-          background: linear-gradient(
-            135deg,
-            #9275ff,
-            #7359dd
-          );
+          background: #171925;
           color: white;
         }
 
@@ -1988,6 +1997,7 @@ export default function InvoiceClient() {
           .brand-name {
             font-size: 14px;
           }
+          .brand-name span { display:block; font-size:11px; }
 
           .brand-sub {
             font-size: 10px;
