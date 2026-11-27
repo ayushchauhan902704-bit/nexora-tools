@@ -38,21 +38,11 @@ export async function POST(request: NextRequest) {
     }
 
     const image = body?.image;
-    const prompt = body?.prompt;
 
     if (!image || typeof image !== "string") {
       return NextResponse.json(
         {
           error: "No handwriting image was provided.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!prompt || typeof prompt !== "string") {
-      return NextResponse.json(
-        {
-          error: "No transcription instructions were provided.",
         },
         { status: 400 }
       );
@@ -91,7 +81,9 @@ export async function POST(request: NextRequest) {
     const header = image.slice(0, commaIndex);
     const base64Data = image.slice(commaIndex + 1);
 
-    const mimeMatch = header.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64$/);
+    const mimeMatch = header.match(
+      /^data:(image\/[a-zA-Z0-9.+-]+);base64$/
+    );
 
     if (!mimeMatch) {
       return NextResponse.json(
@@ -117,53 +109,83 @@ export async function POST(request: NextRequest) {
     if (!base64Data || base64Data.length < 100) {
       return NextResponse.json(
         {
-          error: "The uploaded image appears to be empty or invalid.",
+          error:
+            "The uploaded image appears to be empty or invalid.",
         },
         { status: 400 }
       );
     }
 
-    const cleanPrompt = `
+    const prompt = `
 You are a high-quality multilingual handwriting transcription system.
 
-Transcribe the handwritten content in the supplied image into editable text.
+Your task is to transcribe the handwritten content in the supplied image into editable digital text.
 
-IMPORTANT:
-- This is TRANSCRIPTION, not translation.
-- Preserve the original language.
-- Preserve the original script.
-- Preserve English as English.
-- Preserve Hindi/Devanagari as Hindi/Devanagari.
-- Preserve Hinglish exactly as written.
-- Preserve Hindi + English mixed writing.
+LANGUAGE RULES:
+
+- English handwriting must remain English.
+- Hindi handwriting written in Devanagari must remain Hindi/Devanagari.
+- Hinglish written using Latin letters must remain Hinglish.
+- Hindi and English mixed handwriting must remain mixed.
+- Preserve other recognizable languages and scripts in their original form.
 - Do not translate anything.
-- Do not rewrite anything.
-- Do not improve grammar.
+- Do not convert Hindi into English.
+- Do not convert English into Hindi.
+- Do not convert Hinglish into Hindi or English.
+
+TRANSCRIPTION RULES:
+
+- Transcribe what is actually visible.
+- Preserve the original wording.
 - Do not correct spelling.
+- Do not correct grammar.
+- Do not rewrite sentences.
+- Do not improve the writing.
 - Do not summarize.
+- Do not explain the content.
 - Do not add information.
 - Do not invent missing words.
+- Preserve names exactly as visible.
+- Preserve places exactly as visible.
+- Preserve numbers exactly as visible.
+- Preserve dates exactly as visible.
+- Preserve punctuation.
+- Preserve symbols.
+- Preserve repeated words.
+- Preserve informal language and abbreviations.
 
-Preserve whenever readable:
-- names
-- numbers
-- dates
-- punctuation
-- symbols
-- headings
-- paragraphs
-- line breaks
-- numbered lists
-- bullet-style lists
-- tables and their reading order
+STRUCTURE RULES:
 
-If a very small part is genuinely impossible to read, use [unclear] rather than guessing.
+- Read the ENTIRE image.
+- Preserve meaningful line breaks.
+- Preserve paragraphs.
+- Preserve headings.
+- Preserve numbered lists.
+- Preserve bullet-style lists when clearly visible.
+- Preserve the original reading order.
+- If a table is visible, preserve its rows and columns as closely as possible using text.
+- Do not merge the entire page into one paragraph.
+- Do not create Markdown unless the original document clearly represents a heading or list.
+- Do not add a title if the handwritten document does not contain one.
 
-Read the ENTIRE image carefully from top to bottom and left to right.
+UNCLEAR HANDWRITING:
+
+If a small portion is genuinely impossible to read, write:
+
+[unclear]
+
+Do not invent a word.
+
+IMPORTANT:
+
+This is transcription, NOT translation.
+This is transcription, NOT proofreading.
+This is transcription, NOT rewriting.
 
 Return ONLY the transcription.
-
-${cleanPrompt}
+Do not describe the image.
+Do not explain your answer.
+Do not add introductory text.
 `;
 
     const endpoint =
@@ -190,7 +212,7 @@ ${cleanPrompt}
               role: "user",
               parts: [
                 {
-                  text: cleanPrompt,
+                  text: prompt,
                 },
                 {
                   inline_data: {
@@ -201,14 +223,12 @@ ${cleanPrompt}
               ],
             },
           ],
-
           generationConfig: {
             temperature: 0,
             topP: 0.1,
             maxOutputTokens: 8192,
           },
         }),
-
         signal: controller.signal,
       });
     } catch (error: any) {
@@ -218,7 +238,7 @@ ${cleanPrompt}
         return NextResponse.json(
           {
             error:
-              "The handwriting request timed out. Please try the image again.",
+              "The handwriting request timed out. Please try again.",
           },
           { status: 504 }
         );
@@ -250,7 +270,7 @@ ${cleanPrompt}
       return NextResponse.json(
         {
           error:
-            "The handwriting service returned an invalid response. Please try again.",
+            "The handwriting service returned an invalid response.",
         },
         { status: 502 }
       );
@@ -261,11 +281,6 @@ ${cleanPrompt}
         status: response.status,
         data,
       });
-
-      const apiMessage =
-        data?.error?.message ||
-        data?.error?.status ||
-        "The Gemini API could not process this image.";
 
       if (response.status === 400) {
         return NextResponse.json(
@@ -299,7 +314,9 @@ ${cleanPrompt}
 
       return NextResponse.json(
         {
-          error: apiMessage,
+          error:
+            data?.error?.message ||
+            "The Gemini API could not process this image.",
         },
         { status: response.status }
       );
@@ -313,7 +330,7 @@ ${cleanPrompt}
       return NextResponse.json(
         {
           error:
-            "Gemini could not generate a transcription from this image. Please try a clearer image.",
+            "Gemini could not generate a transcription from this image.",
         },
         { status: 502 }
       );
@@ -334,7 +351,10 @@ ${cleanPrompt}
     const parts = candidate?.content?.parts;
 
     if (!Array.isArray(parts)) {
-      console.error("Gemini returned an unexpected response:", data);
+      console.error(
+        "Gemini returned an unexpected response:",
+        data
+      );
 
       return NextResponse.json(
         {
@@ -346,13 +366,9 @@ ${cleanPrompt}
     }
 
     const result = parts
-      .map((part: any) => {
-        if (typeof part?.text === "string") {
-          return part.text;
-        }
-
-        return "";
-      })
+      .map((part: any) =>
+        typeof part?.text === "string" ? part.text : ""
+      )
       .join("")
       .trim();
 
@@ -360,7 +376,7 @@ ${cleanPrompt}
       return NextResponse.json(
         {
           error:
-            "No readable handwriting was detected. Please use a sharper, well-lit image.",
+            "No readable handwriting was detected. Please try a sharper, well-lit image.",
         },
         { status: 422 }
       );
@@ -378,7 +394,10 @@ ${cleanPrompt}
       }
     );
   } catch (error) {
-    console.error("Handwriting API unexpected error:", error);
+    console.error(
+      "Handwriting API unexpected error:",
+      error
+    );
 
     return NextResponse.json(
       {
