@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Script from "next/script";
 
 declare global {
   interface Window {
-    puter?: any;
     gtag?: (...args: any[]) => void;
   }
 }
@@ -14,10 +12,19 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 2000;
 const MAX_SOURCE_PIXELS = 40_000_000;
 
-type Status = "idle" | "preparing" | "ready" | "processing" | "done" | "error";
+type Status =
+  | "idle"
+  | "preparing"
+  | "ready"
+  | "processing"
+  | "done"
+  | "error";
 
 function trackEvent(name: string, params: Record<string, any> = {}) {
-  if (typeof window !== "undefined" && typeof window.gtag === "function") {
+  if (
+    typeof window !== "undefined" &&
+    typeof window.gtag === "function"
+  ) {
     window.gtag("event", name, params);
   }
 }
@@ -74,17 +81,12 @@ export default function HandwritingClient() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
 
-  const [puterReady, setPuterReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [shareAvailable, setShareAvailable] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (window.puter) {
-        setPuterReady(true);
-      }
-
       setShareAvailable(typeof navigator.share === "function");
     }
 
@@ -140,13 +142,22 @@ export default function HandwritingClient() {
 
           const scale = Math.min(
             1,
-            MAX_IMAGE_DIMENSION / Math.max(naturalWidth, naturalHeight)
+            MAX_IMAGE_DIMENSION /
+              Math.max(naturalWidth, naturalHeight)
           );
 
-          const width = Math.max(1, Math.round(naturalWidth * scale));
-          const height = Math.max(1, Math.round(naturalHeight * scale));
+          const width = Math.max(
+            1,
+            Math.round(naturalWidth * scale)
+          );
+
+          const height = Math.max(
+            1,
+            Math.round(naturalHeight * scale)
+          );
 
           const canvas = document.createElement("canvas");
+
           canvas.width = width;
           canvas.height = height;
 
@@ -154,7 +165,11 @@ export default function HandwritingClient() {
 
           if (!ctx) {
             URL.revokeObjectURL(objectUrl);
-            reject(new Error("Your browser could not process this image."));
+            reject(
+              new Error(
+                "Your browser could not process this image."
+              )
+            );
             return;
           }
 
@@ -166,25 +181,38 @@ export default function HandwritingClient() {
 
           ctx.drawImage(img, 0, 0, width, height);
 
-          const result = canvas.toDataURL("image/jpeg", 0.9);
+          const result = canvas.toDataURL(
+            "image/jpeg",
+            0.9
+          );
 
           URL.revokeObjectURL(objectUrl);
 
           if (!result || result.length < 100) {
-            reject(new Error("The image could not be prepared."));
+            reject(
+              new Error("The image could not be prepared.")
+            );
             return;
           }
 
           resolve(result);
         } catch {
           URL.revokeObjectURL(objectUrl);
-          reject(new Error("The image could not be prepared."));
+
+          reject(
+            new Error("The image could not be prepared.")
+          );
         }
       };
 
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
-        reject(new Error("This image could not be decoded by your browser."));
+
+        reject(
+          new Error(
+            "This image could not be decoded by your browser."
+          )
+        );
       };
 
       img.src = objectUrl;
@@ -296,43 +324,12 @@ export default function HandwritingClient() {
     }
   };
 
-  const extractResult = (response: any): string => {
-    if (!response) return "";
-
-    if (typeof response === "string") {
-      return response;
-    }
-
-    if (typeof response?.text === "string") {
-      return response.text;
-    }
-
-    if (typeof response?.message?.content === "string") {
-      return response.message.content;
-    }
-
-    if (Array.isArray(response?.message?.content)) {
-      return response.message.content
-        .map((item: any) =>
-          typeof item === "string" ? item : item?.text || ""
-        )
-        .join("");
-    }
-
-    if (Array.isArray(response?.content)) {
-      return response.content
-        .map((item: any) =>
-          typeof item === "string" ? item : item?.text || ""
-        )
-        .join("");
-    }
-
-    return "";
-  };
-
   const cleanResult = (value: string) => {
     return value
-      .replace(/^```(?:text|plaintext|txt|markdown)?\s*/i, "")
+      .replace(
+        /^```(?:text|plaintext|txt|markdown)?\s*/i,
+        ""
+      )
       .replace(/\s*```$/i, "")
       .trim();
   };
@@ -340,14 +337,6 @@ export default function HandwritingClient() {
   const doAI = async () => {
     if (!image) {
       setError("Please upload a handwriting photo first.");
-      setStatus("error");
-      return;
-    }
-
-    if (!window.puter) {
-      setError(
-        "The AI service is still loading. Please wait a moment and try again."
-      );
       setStatus("error");
       return;
     }
@@ -470,31 +459,30 @@ Do not add introductory text.
 `.trim();
 
     try {
-      let response: any;
-
-      try {
-        response = await window.puter.ai.chat(prompt, image);
-      } catch {
-        response = await window.puter.ai.chat([
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: prompt,
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: image,
-                },
-              },
-            ],
+      const response = await fetch(
+        "/api/handwriting-to-text",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        ]);
+          body: JSON.stringify({
+            image,
+            prompt,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            "The handwriting could not be processed."
+        );
       }
 
-      const result = cleanResult(extractResult(response));
+      const result = cleanResult(data?.text || "");
 
       if (!result) {
         throw new Error("EMPTY_RESULT");
@@ -506,15 +494,28 @@ Do not add introductory text.
 
       trackEvent("processing_completed", {
         tool: "handwriting_to_text",
-        word_count: result.trim().split(/\s+/).filter(Boolean).length,
+        word_count: result
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean).length,
         character_count: result.length,
       });
-    } catch {
+    } catch (err: any) {
       setStatus("error");
 
-      setError(
-        "The handwriting could not be read successfully. Try a clearer, brighter, straighter photo and run it again."
-      );
+      const message = err?.message || "";
+
+      if (
+        message.includes("Failed to fetch")
+      ) {
+        setError(
+          "The handwriting service could not be reached. Please check your connection and try again."
+        );
+      } else {
+        setError(
+          "The handwriting could not be read successfully. Try a clearer, brighter, straighter photo and run it again."
+        );
+      }
 
       trackEvent("processing_error", {
         tool: "handwriting_to_text",
@@ -575,7 +576,10 @@ Do not add introductory text.
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${getBaseName(fileName)}-handwriting.txt`;
+    link.download = `${getBaseName(
+      fileName
+    )}-handwriting.txt`;
+
     link.click();
 
     URL.revokeObjectURL(url);
@@ -630,7 +634,10 @@ body {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${getBaseName(fileName)}-handwriting.doc`;
+    link.download = `${getBaseName(
+      fileName
+    )}-handwriting.doc`;
+
     link.click();
 
     URL.revokeObjectURL(url);
@@ -750,12 +757,6 @@ window.onload = function () {
 
   return (
     <div className="nexora-page">
-      <Script
-        src="https://js.puter.com/v2/"
-        strategy="afterInteractive"
-        onLoad={() => setPuterReady(true)}
-      />
-
       <main className="container">
         <section className="hero">
           <div className="eyebrow">
@@ -765,18 +766,13 @@ window.onload = function () {
           <h1>Handwriting to Text</h1>
 
           <p className="hero-copy">
-            Convert handwritten photos into editable text while keeping the
-            original language, wording and meaningful structure.
+            Convert handwritten photos into editable text while keeping
+            the original language, wording and meaningful structure.
           </p>
 
           <div className="status">
-            <span
-              className={`status-dot ${
-                puterReady ? "ready" : "loading"
-              }`}
-            />
-
-            {puterReady ? "AI service ready" : "Preparing AI service"}
+            <span className="status-dot ready" />
+            AI service ready
           </div>
         </section>
 
@@ -1342,11 +1338,6 @@ window.onload = function () {
         .status-dot.ready {
           background: #22c55e;
           box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-        }
-
-        .status-dot.loading {
-          background: #f59e0b;
-          box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
         }
 
         .tool-card,
