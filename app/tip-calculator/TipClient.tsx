@@ -4,121 +4,92 @@ import { useMemo, useState } from "react";
 
 const CURRENCIES = ["$", "€", "£", "₹"];
 
-const TIP_PRESETS = [
-  { value: 10, label: "10%" },
-  { value: 15, label: "15%" },
-  { value: 18, label: "18%" },
-  { value: 20, label: "20%" },
-  { value: 25, label: "25%" },
-];
+const TIP_PRESETS = [10, 15, 18, 20, 25];
 
 export default function TipClient() {
-  const [bill, setBill] = useState(100);
-  const [paid, setPaid] = useState(125);
+  const [bill, setBill] = useState("");
+  const [paid, setPaid] = useState("");
   const [currency, setCurrency] = useState("$");
-  const [people, setPeople] = useState(2);
+  const [people, setPeople] = useState(1);
   const [tipPercent, setTipPercent] = useState(20);
-  const [mode, setMode] = useState<"paid" | "percent">("paid");
+
+  const billNum = Number(bill) || 0;
+  const paidNum = Number(paid) || 0;
 
   const calculations = useMemo(() => {
-    const safeBill = Math.max(0, bill);
-    const safePaid = Math.max(0, paid);
-
-    let tipAmount = 0;
-
-    if (mode === "paid") {
-      tipAmount = Math.max(0, safePaid - safeBill);
-    } else {
-      tipAmount = (safeBill * tipPercent) / 100;
-    }
-
-    const total = safeBill + tipAmount;
-    const actualTipPercent =
-      safeBill > 0 ? (tipAmount / safeBill) * 100 : 0;
-
-    const change = Math.max(0, safePaid - total);
-    const short = Math.max(0, total - safePaid);
-
-    const perPersonTotal = people > 0 ? total / people : total;
-    const perPersonTip = people > 0 ? tipAmount / people : tipAmount;
+    const tip = Math.max(0, paidNum - billNum);
+    const tipRate = billNum > 0 ? (tip / billNum) * 100 : 0;
+    const total = billNum + tip;
+    const change = Math.max(0, paidNum - total);
 
     return {
-      safeBill,
-      safePaid,
-      tipAmount,
+      tip,
+      tipRate,
       total,
-      actualTipPercent,
       change,
-      short,
-      perPersonTotal,
-      perPersonTip,
+      perPerson: people > 0 ? total / people : 0,
+      tipPerPerson: people > 0 ? tip / people : 0,
     };
-  }, [bill, paid, people, tipPercent, mode]);
+  }, [billNum, paidNum, people]);
 
   const money = (value: number) =>
     `${currency}${value.toFixed(2)}`;
 
-  const updateBill = (value: number) => {
-    const nextBill = Math.max(0, value);
-    setBill(nextBill);
-
-    if (mode === "paid") {
-      setPaid(nextBill + (nextBill * tipPercent) / 100);
-    }
+  const handleBill = (value: string) => {
+    setBill(value.replace(/^0+(?=\d)/, ""));
   };
 
-  const updateTip = (value: number) => {
-    setTipPercent(value);
-
-    if (mode === "percent") {
-      setPaid(bill + (bill * value) / 100);
-    }
+  const handlePaid = (value: string) => {
+    setPaid(value.replace(/^0+(?=\d)/, ""));
   };
 
-  const usePresetBill = (value: number) => {
-    setBill(value);
-    setPaid(value + (value * tipPercent) / 100);
+  const setPresetTip = (percent: number) => {
+    setTipPercent(percent);
+
+    if (billNum > 0) {
+      const calculatedPaid =
+        billNum + (billNum * percent) / 100;
+
+      setPaid(calculatedPaid.toFixed(2));
+    }
   };
 
   return (
     <main className="tip-page">
-      <div className="tip-shell">
+      <div className="tip-container">
 
         {/* HEADER */}
-        <header className="tip-header">
-          <div className="brand-pill">
-            <span>✦</span>
-            Smart Tip Calculator
+        <header className="header">
+          <div className="badge">
+            <span>✦</span> Smart Tip Calculator
           </div>
 
           <h1>
-            Calculate Your <span>Tip</span>
+            Tip <span>Calculator</span>
           </h1>
 
           <p>
-            Enter the bill and payment amount to instantly find the tip,
-            total, and amount to split.
+            Enter the bill and payment to instantly calculate the tip.
           </p>
         </header>
 
-        {/* MAIN GRID */}
-        <section className="main-grid">
+        {/* MAIN */}
+        <div className="main">
 
-          {/* LEFT */}
-          <div className="card calculator-card">
+          {/* INPUT CARD */}
+          <section className="card input-card">
 
-            {/* CURRENCY */}
-            <div className="section-top">
+            <div className="top-row">
               <div>
-                <span className="eyebrow">BILL DETAILS</span>
+                <span className="label">BILL AMOUNT</span>
                 <h2>How much was the bill?</h2>
               </div>
 
-              <div className="currency-group">
+              <div className="currencies">
                 {CURRENCIES.map((c) => (
                   <button
                     key={c}
-                    className={currency === c ? "currency active" : "currency"}
+                    className={currency === c ? "active" : ""}
                     onClick={() => setCurrency(c)}
                   >
                     {c}
@@ -128,122 +99,76 @@ export default function TipClient() {
             </div>
 
             {/* BILL */}
-            <div className="money-input-wrap">
+            <div className="big-input">
               <span>{currency}</span>
 
               <input
                 type="number"
                 min="0"
                 value={bill}
-                onChange={(e) => updateBill(Number(e.target.value))}
-                aria-label="Bill amount"
+                placeholder="0"
+                onChange={(e) => handleBill(e.target.value)}
               />
             </div>
 
-            {/* QUICK BILL */}
-            <div className="quick-row">
-              {[25, 50, 100, 150, 200].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => usePresetBill(value)}
-                  className="quick-btn"
-                >
-                  {currency}{value}
-                </button>
-              ))}
-            </div>
-
-            {/* MODE */}
-            <div className="mode-switch">
-              <button
-                className={mode === "paid" ? "selected" : ""}
-                onClick={() => setMode("paid")}
-              >
-                Customer paid
-              </button>
-
-              <button
-                className={mode === "percent" ? "selected" : ""}
-                onClick={() => {
-                  setMode("percent");
-                  setPaid(bill + (bill * tipPercent) / 100);
-                }}
-              >
-                Choose tip %
-              </button>
-            </div>
-
             {/* PAID */}
-            {mode === "paid" ? (
-              <div className="input-section">
-                <label>
-                  Customer paid
-                  <small>Enter the amount received</small>
-                </label>
+            <div className="paid-row">
+              <div className="field">
+                <label>Customer paid</label>
 
-                <div className="secondary-input">
+                <div className="small-input">
                   <span>{currency}</span>
 
                   <input
                     type="number"
                     min="0"
                     value={paid}
-                    onChange={(e) => setPaid(Number(e.target.value))}
-                  />
-                </div>
-
-                <div className="helper">
-                  Tip is automatically calculated from the difference.
-                </div>
-              </div>
-            ) : (
-              <div className="input-section">
-                <label>
-                  Tip percentage
-                  <small>Choose a percentage</small>
-                </label>
-
-                <div className="tip-presets">
-                  {TIP_PRESETS.map((tip) => (
-                    <button
-                      key={tip.value}
-                      onClick={() => updateTip(tip.value)}
-                      className={
-                        tipPercent === tip.value ? "tip active" : "tip"
-                      }
-                    >
-                      {tip.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="range-wrap">
-                  <div className="range-value">
-                    <span>Custom tip</span>
-                    <strong>{tipPercent}%</strong>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="0"
-                    max="50"
-                    value={tipPercent}
-                    onChange={(e) => updateTip(Number(e.target.value))}
+                    placeholder="0"
+                    onChange={(e) => handlePaid(e.target.value)}
                   />
                 </div>
               </div>
-            )}
+
+              <div className="difference">
+                <span>Tip</span>
+                <strong>
+                  {money(calculations.tip)}
+                </strong>
+              </div>
+            </div>
+
+            {/* TIP PRESETS */}
+            <div className="tip-section">
+              <div className="tip-title">
+                <span>Quick tip</span>
+                <b>{tipPercent}%</b>
+              </div>
+
+              <div className="tips">
+                {TIP_PRESETS.map((value) => (
+                  <button
+                    key={value}
+                    className={tipPercent === value ? "selected" : ""}
+                    onClick={() => setPresetTip(value)}
+                  >
+                    {value}%
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* PEOPLE */}
-            <div className="people-section">
+            <div className="people-row">
               <div>
-                <span className="eyebrow">SPLIT THE BILL</span>
-                <h3>How many people?</h3>
+                <span className="label">SPLIT BILL</span>
+                <h3>People</h3>
               </div>
 
-              <div className="people-control">
+              <div className="counter">
                 <button
-                  onClick={() => setPeople(Math.max(1, people - 1))}
+                  onClick={() =>
+                    setPeople(Math.max(1, people - 1))
+                  }
                 >
                   −
                 </button>
@@ -257,73 +182,64 @@ export default function TipClient() {
                 </button>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* RIGHT */}
-          <div className="card result-card">
+          {/* RESULT CARD */}
+          <section className="card result-card">
 
-            <div className="result-head">
+            <div className="result-top">
               <div>
-                <span className="eyebrow">YOUR RESULT</span>
-                <h2>Tip summary</h2>
+                <span className="label">RESULT</span>
+                <h2>Your tip</h2>
               </div>
 
-              <div className="status">
-                <span></span>
-                Calculated
+              <div className="live">
+                <i></i> Live
               </div>
             </div>
 
-            {/* TIP HERO */}
-            <div className="tip-hero">
+            <div className="tip-result">
               <span>Tip amount</span>
 
               <strong>
-                {money(calculations.tipAmount)}
+                {money(calculations.tip)}
               </strong>
 
-              <div>
-                {calculations.actualTipPercent.toFixed(1)}% of the bill
-              </div>
+              <small>
+                {calculations.tipRate.toFixed(1)}% of bill
+              </small>
             </div>
 
-            {/* ROWS */}
-            <div className="result-list">
+            <div className="rows">
 
-              <div className="result-row">
-                <span>Bill amount</span>
-                <strong>{money(calculations.safeBill)}</strong>
+              <div>
+                <span>Bill</span>
+                <b>{money(billNum)}</b>
               </div>
 
-              <div className="result-row">
+              <div>
                 <span>Tip</span>
-                <strong className="green">
-                  {money(calculations.tipAmount)}
-                </strong>
+                <b className="green">
+                  {money(calculations.tip)}
+                </b>
               </div>
 
-              <div className="result-row total-row">
+              <div className="total">
                 <span>Total</span>
-                <strong>{money(calculations.total)}</strong>
+                <b>{money(calculations.total)}</b>
               </div>
 
               {calculations.change > 0 && (
-                <div className="result-row change-row">
+                <div>
                   <span>Change</span>
-                  <strong>{money(calculations.change)}</strong>
-                </div>
-              )}
-
-              {calculations.short > 0 && (
-                <div className="result-row warning-row">
-                  <span>Amount still needed</span>
-                  <strong>{money(calculations.short)}</strong>
+                  <b className="green">
+                    {money(calculations.change)}
+                  </b>
                 </div>
               )}
             </div>
 
-            {/* PER PERSON */}
-            <div className="split-box">
+            <div className="per-person">
               <div>
                 <span>Per person</span>
                 <small>
@@ -332,207 +248,198 @@ export default function TipClient() {
               </div>
 
               <strong>
-                {money(calculations.perPersonTotal)}
+                {money(calculations.perPerson)}
               </strong>
             </div>
 
-            <div className="small-note">
-              Includes {money(calculations.perPersonTip)} tip per person.
+            <div className="mini-note">
+              Tip per person: {money(calculations.tipPerPerson)}
             </div>
-          </div>
-        </section>
-
-        {/* HOW IT WORKS */}
-        <section className="info-card">
-          <div className="info-icon">✓</div>
-
-          <div>
-            <h3>How does this tip calculator work?</h3>
-
-            <p>
-              Enter your bill amount and the amount the customer paid.
-              The calculator automatically finds the tip, calculates the
-              effective tip percentage, shows the final total, and works
-              out the amount per person.
-            </p>
-          </div>
-        </section>
+          </section>
+        </div>
 
         {/* FOOTER */}
         <footer>
-          <span>Free to use</span>
-          <span>•</span>
-          <span>No sign-up</span>
-          <span>•</span>
-          <span>Instant calculation</span>
+          Free • No sign-up • Instant calculation
         </footer>
       </div>
 
       <style jsx>{`
         .tip-page {
           min-height: 100vh;
-          background:
-            radial-gradient(circle at top left, rgba(72, 94, 170, 0.08), transparent 34%),
-            #f5f7fb;
-          color: #182033;
-          padding: 28px 18px 42px;
+          background: #f4f6fa;
+          color: #171b28;
+          padding: 18px 12px;
           font-family:
             Inter,
-            ui-sans-serif,
             -apple-system,
             BlinkMacSystemFont,
             "Segoe UI",
             sans-serif;
         }
 
-        .tip-shell {
+        .tip-container {
           width: 100%;
-          max-width: 1040px;
-          margin: 0 auto;
+          max-width: 900px;
+          margin: auto;
         }
 
-        .tip-header {
+        /* HEADER */
+
+        .header {
           text-align: center;
-          max-width: 650px;
-          margin: 0 auto 24px;
+          margin-bottom: 14px;
         }
 
-        .brand-pill {
+        .badge {
           display: inline-flex;
           align-items: center;
-          gap: 7px;
-          padding: 7px 12px;
-          border: 1px solid #e2e6ef;
+          gap: 5px;
+          padding: 5px 10px;
+          border: 1px solid #e1e5ed;
+          background: #fff;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.8);
-          color: #667085;
-          font-size: 11px;
+          color: #737d90;
+          font-size: 9px;
           font-weight: 800;
-          letter-spacing: 0.02em;
         }
 
-        .brand-pill span {
-          color: #635bff;
-          font-size: 13px;
+        .badge span {
+          color: #665cf6;
         }
 
-        .tip-header h1 {
-          margin: 13px 0 7px;
-          font-size: clamp(30px, 5vw, 46px);
+        .header h1 {
+          margin: 8px 0 3px;
+          font-size: 30px;
           line-height: 1;
           letter-spacing: -0.045em;
           font-weight: 900;
         }
 
-        .tip-header h1 span {
-          color: #635bff;
+        .header h1 span {
+          color: #665cf6;
         }
 
-        .tip-header p {
-          margin: 0 auto;
-          color: #7a8498;
-          font-size: 13px;
-          line-height: 1.6;
-          max-width: 560px;
+        .header p {
+          margin: 0;
+          color: #858e9f;
+          font-size: 10px;
         }
 
-        .main-grid {
+        /* MAIN */
+
+        .main {
           display: grid;
-          grid-template-columns: 1.05fr 0.95fr;
-          gap: 16px;
+          grid-template-columns: 1fr 0.88fr;
+          gap: 10px;
         }
 
         .card {
-          background: rgba(255, 255, 255, 0.96);
-          border: 1px solid #e5e8ef;
-          border-radius: 22px;
-          box-shadow: 0 12px 40px rgba(30, 40, 70, 0.055);
+          border: 1px solid #e3e6ed;
+          background: #fff;
+          border-radius: 17px;
+          box-shadow: 0 8px 28px rgba(30, 40, 70, 0.045);
         }
 
-        .calculator-card {
-          padding: 22px;
-        }
-
+        .input-card,
         .result-card {
-          padding: 22px;
-          background:
-            linear-gradient(145deg, #ffffff 0%, #fbfaff 60%, #f5f3ff 100%);
+          padding: 15px;
         }
 
-        .section-top {
+        /* TOP */
+
+        .top-row,
+        .result-top,
+        .people-row {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: space-between;
-          gap: 12px;
+          gap: 8px;
         }
 
-        .eyebrow {
+        .label {
           display: block;
-          color: #8a93a5;
-          font-size: 9px;
+          color: #9aa2b1;
+          font-size: 8px;
           font-weight: 900;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
         }
 
         h2 {
-          margin: 4px 0 0;
-          font-size: 18px;
+          margin: 3px 0 0;
+          font-size: 15px;
+          font-weight: 900;
           letter-spacing: -0.02em;
+        }
+
+        h3 {
+          margin: 2px 0 0;
+          font-size: 12px;
           font-weight: 850;
         }
 
-        .currency-group {
+        /* CURRENCY */
+
+        .currencies {
           display: flex;
-          gap: 4px;
-          padding: 4px;
-          background: #f1f3f7;
-          border-radius: 11px;
+          gap: 2px;
+          padding: 3px;
+          background: #f0f2f6;
+          border-radius: 9px;
         }
 
-        .currency {
-          width: 30px;
-          height: 30px;
+        .currencies button {
+          width: 25px;
+          height: 25px;
           border: 0;
+          border-radius: 6px;
           background: transparent;
-          border-radius: 8px;
-          color: #788195;
-          font-weight: 800;
+          color: #818a9b;
+          font-size: 10px;
+          font-weight: 900;
           cursor: pointer;
         }
 
-        .currency.active {
-          background: white;
-          color: #635bff;
-          box-shadow: 0 2px 8px rgba(20, 30, 60, 0.08);
+        .currencies button.active {
+          background: #fff;
+          color: #665cf6;
+          box-shadow: 0 2px 6px rgba(30, 40, 70, 0.08);
         }
 
-        .money-input-wrap {
+        /* BIG INPUT */
+
+        .big-input {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-top: 16px;
-          padding: 5px 15px;
-          background: #f7f8fb;
-          border: 1px solid #e6e9f0;
-          border-radius: 14px;
+          gap: 6px;
+          margin-top: 10px;
+          padding: 3px 12px;
+          border: 1px solid #e4e7ed;
+          background: #f8f9fb;
+          border-radius: 11px;
         }
 
-        .money-input-wrap span {
-          color: #8a93a5;
-          font-size: 20px;
-          font-weight: 800;
+        .big-input span {
+          color: #929aaa;
+          font-size: 18px;
+          font-weight: 900;
         }
 
-        .money-input-wrap input {
+        .big-input input {
           width: 100%;
           min-width: 0;
           border: 0;
-          outline: none;
+          outline: 0;
           background: transparent;
-          color: #171d2b;
-          font-size: 28px;
+          padding: 6px 0;
+          color: #171c29;
+          font-size: 24px;
           font-weight: 900;
-          padding: 9px 0;
+        }
+
+        input::placeholder {
+          color: #b5bac4;
+          opacity: 1;
         }
 
         input::-webkit-outer-spin-button,
@@ -545,445 +452,450 @@ export default function TipClient() {
           -moz-appearance: textfield;
         }
 
-        .quick-row {
-          display: flex;
-          gap: 6px;
-          margin-top: 8px;
-        }
+        /* PAID */
 
-        .quick-btn {
-          flex: 1;
-          border: 1px solid #e5e8ef;
-          background: white;
-          color: #687286;
-          border-radius: 9px;
-          padding: 7px 4px;
-          font-size: 10px;
-          font-weight: 800;
-          cursor: pointer;
-        }
-
-        .quick-btn:hover {
-          border-color: #c9c5ff;
-          color: #635bff;
-        }
-
-        .mode-switch {
+        .paid-row {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 5px;
-          padding: 4px;
-          margin-top: 18px;
-          background: #f0f2f6;
-          border-radius: 11px;
+          grid-template-columns: 1fr 0.55fr;
+          gap: 8px;
+          margin-top: 9px;
         }
 
-        .mode-switch button {
-          border: 0;
-          background: transparent;
-          color: #7b8497;
-          padding: 8px;
-          border-radius: 8px;
-          font-size: 11px;
-          font-weight: 800;
-          cursor: pointer;
-        }
-
-        .mode-switch button.selected {
-          background: white;
-          color: #282e3d;
-          box-shadow: 0 2px 7px rgba(30, 40, 70, 0.07);
-        }
-
-        .input-section {
-          margin-top: 16px;
-        }
-
-        .input-section label {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-          color: #394154;
-          font-size: 12px;
+        .field label {
+          display: block;
+          margin-bottom: 4px;
+          color: #697285;
+          font-size: 9px;
           font-weight: 850;
         }
 
-        .input-section label small {
-          color: #929aaa;
-          font-size: 10px;
-          font-weight: 500;
-        }
-
-        .secondary-input {
+        .small-input {
           display: flex;
           align-items: center;
-          margin-top: 8px;
-          padding: 10px 13px;
-          border: 1px solid #e5e8ef;
-          border-radius: 12px;
+          padding: 7px 9px;
+          border: 1px solid #e5e8ee;
           background: #fafbfc;
+          border-radius: 9px;
         }
 
-        .secondary-input span {
-          color: #8b94a7;
+        .small-input span {
+          color: #9aa2b0;
+          font-size: 11px;
           font-weight: 800;
-          margin-right: 6px;
+          margin-right: 4px;
         }
 
-        .secondary-input input {
+        .small-input input {
           width: 100%;
           border: 0;
           outline: 0;
           background: transparent;
-          font-size: 19px;
-          color: #1d2432;
+          font-size: 14px;
           font-weight: 850;
+          color: #1c2230;
         }
 
-        .helper {
-          margin-top: 6px;
-          color: #929aaa;
-          font-size: 9px;
-        }
-
-        .tip-presets {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 6px;
-          margin-top: 9px;
-        }
-
-        .tip {
-          padding: 9px 3px;
-          border: 1px solid #e4e7ee;
+        .difference {
+          padding: 7px 10px;
           border-radius: 9px;
-          background: white;
-          color: #626c7f;
-          font-size: 11px;
-          font-weight: 850;
-          cursor: pointer;
+          background: #f0fdf7;
+          border: 1px solid #d9f3e7;
         }
 
-        .tip.active {
-          border-color: #635bff;
-          background: #635bff;
-          color: white;
-          box-shadow: 0 5px 14px rgba(99, 91, 255, 0.2);
+        .difference span {
+          display: block;
+          color: #7b9388;
+          font-size: 8px;
+          font-weight: 800;
         }
 
-        .range-wrap {
-          margin-top: 12px;
-        }
-
-        .range-value {
-          display: flex;
-          justify-content: space-between;
-          color: #929aaa;
-          font-size: 10px;
-          margin-bottom: 5px;
-        }
-
-        .range-value strong {
-          color: #635bff;
-        }
-
-        .range-wrap input {
-          width: 100%;
-          accent-color: #635bff;
-        }
-
-        .people-section {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 15px;
-          margin-top: 19px;
-          padding-top: 17px;
-          border-top: 1px solid #edf0f4;
-        }
-
-        .people-section h3 {
-          margin: 4px 0 0;
-          font-size: 13px;
-          font-weight: 850;
-        }
-
-        .people-control {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .people-control button {
-          width: 31px;
-          height: 31px;
-          border: 1px solid #e2e6ed;
-          background: white;
-          border-radius: 9px;
-          font-size: 18px;
-          color: #505a6d;
-          cursor: pointer;
-        }
-
-        .people-control strong {
-          min-width: 25px;
-          text-align: center;
+        .difference strong {
+          display: block;
+          margin-top: 2px;
+          color: #159767;
           font-size: 15px;
         }
 
-        .result-head {
+        /* TIPS */
+
+        .tip-section {
+          margin-top: 9px;
+        }
+
+        .tip-title {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-        }
-
-        .status {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          color: #718092;
+          color: #7e8797;
           font-size: 9px;
           font-weight: 800;
+          margin-bottom: 5px;
         }
 
-        .status span {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #35c98b;
-          box-shadow: 0 0 0 4px rgba(53, 201, 139, 0.1);
+        .tip-title b {
+          color: #665cf6;
         }
 
-        .tip-hero {
-          margin-top: 16px;
-          padding: 18px;
-          border-radius: 17px;
-          background:
-            linear-gradient(135deg, #625cff, #827cff);
-          color: white;
-          box-shadow: 0 12px 30px rgba(99, 91, 255, 0.18);
+        .tips {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 4px;
         }
 
-        .tip-hero span {
-          display: block;
-          opacity: 0.78;
-          font-size: 10px;
+        .tips button {
+          padding: 7px 2px;
+          border: 1px solid #e4e7ed;
+          background: #fff;
+          color: #697286;
+          border-radius: 7px;
+          font-size: 9px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .tips button.selected {
+          background: #665cf6;
+          border-color: #665cf6;
+          color: #fff;
+          box-shadow: 0 4px 10px rgba(102, 92, 246, 0.18);
+        }
+
+        /* PEOPLE */
+
+        .people-row {
+          margin-top: 10px;
+          padding-top: 9px;
+          border-top: 1px solid #edf0f4;
+        }
+
+        .counter {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .counter button {
+          width: 26px;
+          height: 26px;
+          border: 1px solid #e2e6ed;
+          background: #fff;
+          color: #4f5869;
+          border-radius: 7px;
+          font-size: 16px;
+          cursor: pointer;
+        }
+
+        .counter strong {
+          min-width: 16px;
+          text-align: center;
+          font-size: 12px;
+        }
+
+        /* RESULT */
+
+        .live {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          color: #879091;
+          font-size: 8px;
           font-weight: 800;
         }
 
-        .tip-hero strong {
+        .live i {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: #2fc98a;
+        }
+
+        .tip-result {
+          margin-top: 10px;
+          padding: 14px;
+          border-radius: 13px;
+          background: linear-gradient(135deg, #6259f5, #827bf8);
+          color: #fff;
+        }
+
+        .tip-result span {
           display: block;
-          margin-top: 2px;
-          font-size: 34px;
+          font-size: 8px;
+          font-weight: 800;
+          opacity: 0.78;
+        }
+
+        .tip-result strong {
+          display: block;
+          margin-top: 1px;
+          font-size: 29px;
           line-height: 1;
           letter-spacing: -0.04em;
         }
 
-        .tip-hero div {
-          margin-top: 6px;
-          font-size: 10px;
-          opacity: 0.85;
+        .tip-result small {
+          display: block;
+          margin-top: 4px;
+          font-size: 8px;
+          opacity: 0.8;
         }
 
-        .result-list {
-          margin-top: 14px;
+        .rows {
+          margin-top: 8px;
         }
 
-        .result-row {
+        .rows > div {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 10px 0;
-          border-bottom: 1px solid #edf0f4;
-          font-size: 11px;
+          justify-content: space-between;
+          padding: 7px 0;
+          border-bottom: 1px solid #edf0f3;
         }
 
-        .result-row span {
-          color: #7d8799;
+        .rows span {
+          color: #858e9e;
+          font-size: 9px;
         }
 
-        .result-row strong {
-          color: #252c3b;
-          font-size: 12px;
+        .rows b {
+          color: #252b38;
+          font-size: 10px;
         }
 
-        .result-row .green {
-          color: #159a68;
+        .rows .green {
+          color: #159767;
         }
 
-        .total-row {
-          padding-top: 13px;
+        .rows .total span {
+          color: #343b49;
+          font-weight: 900;
         }
 
-        .total-row span {
-          color: #343b4a;
+        .rows .total b {
+          font-size: 15px;
+          font-weight: 900;
+        }
+
+        /* PER PERSON */
+
+        .per-person {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 9px;
+          padding: 10px 11px;
+          border: 1px solid #e5e2ff;
+          background: #f7f6ff;
+          border-radius: 10px;
+        }
+
+        .per-person span {
+          display: block;
+          color: #666f81;
+          font-size: 9px;
           font-weight: 850;
         }
 
-        .total-row strong {
-          font-size: 18px;
-        }
-
-        .change-row strong {
-          color: #159a68;
-        }
-
-        .warning-row strong {
-          color: #d97706;
-        }
-
-        .split-box {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-top: 15px;
-          padding: 13px 14px;
-          border: 1px solid #e5e2ff;
-          background: #f7f6ff;
-          border-radius: 13px;
-        }
-
-        .split-box span {
+        .per-person small {
           display: block;
-          color: #626b7d;
-          font-size: 10px;
-          font-weight: 800;
+          color: #9ba2af;
+          font-size: 8px;
+          margin-top: 1px;
         }
 
-        .split-box small {
-          display: block;
-          color: #959dad;
-          font-size: 9px;
-          margin-top: 2px;
+        .per-person strong {
+          color: #665cf6;
+          font-size: 17px;
         }
 
-        .split-box strong {
-          color: #635bff;
-          font-size: 21px;
-        }
-
-        .small-note {
+        .mini-note {
           text-align: center;
-          color: #929aaa;
-          font-size: 9px;
-          margin-top: 7px;
+          color: #9aa1ad;
+          font-size: 8px;
+          margin-top: 5px;
         }
 
-        .info-card {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          margin-top: 16px;
-          padding: 16px;
-          background: white;
-          border: 1px solid #e5e8ef;
-          border-radius: 16px;
-        }
-
-        .info-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex: 0 0 auto;
-          width: 28px;
-          height: 28px;
-          border-radius: 9px;
-          background: #eeedff;
-          color: #635bff;
-          font-weight: 900;
-          font-size: 12px;
-        }
-
-        .info-card h3 {
-          margin: 0;
-          font-size: 12px;
-          font-weight: 900;
-        }
-
-        .info-card p {
-          margin: 5px 0 0;
-          color: #7d8799;
-          font-size: 10px;
-          line-height: 1.65;
-        }
+        /* FOOTER */
 
         footer {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          color: #a0a7b5;
-          font-size: 9px;
-          margin-top: 18px;
+          text-align: center;
+          color: #a1a8b4;
+          font-size: 8px;
+          margin-top: 10px;
         }
 
-        @media (max-width: 760px) {
+        /* MOBILE */
+
+        @media (max-width: 700px) {
           .tip-page {
-            padding: 18px 12px 30px;
+            padding: 10px 9px 15px;
           }
 
-          .tip-header {
-            margin-bottom: 17px;
+          .header {
+            margin-bottom: 8px;
           }
 
-          .tip-header h1 {
-            font-size: 31px;
+          .badge {
+            padding: 4px 9px;
+            font-size: 8px;
           }
 
-          .tip-header p {
-            font-size: 11px;
+          .header h1 {
+            margin: 5px 0 2px;
+            font-size: 25px;
           }
 
-          .main-grid {
+          .header p {
+            font-size: 8px;
+          }
+
+          .main {
             grid-template-columns: 1fr;
+            gap: 7px;
           }
 
-          .calculator-card,
+          .input-card,
           .result-card {
-            padding: 16px;
-            border-radius: 18px;
+            padding: 11px;
+            border-radius: 13px;
           }
 
-          .section-top {
-            align-items: center;
+          .label {
+            font-size: 7px;
           }
 
-          .quick-row {
-            gap: 4px;
+          h2 {
+            font-size: 13px;
           }
 
-          .quick-btn {
-            font-size: 9px;
+          .big-input {
+            margin-top: 7px;
+            padding: 2px 9px;
           }
 
-          .tip-presets {
+          .big-input span {
+            font-size: 15px;
+          }
+
+          .big-input input {
+            font-size: 20px;
+            padding: 5px 0;
+          }
+
+          .paid-row {
+            margin-top: 6px;
+          }
+
+          .field label {
+            font-size: 8px;
+          }
+
+          .small-input {
+            padding: 6px 8px;
+          }
+
+          .small-input input {
+            font-size: 12px;
+          }
+
+          .difference {
+            padding: 6px 8px;
+          }
+
+          .difference strong {
+            font-size: 13px;
+          }
+
+          .tip-section {
+            margin-top: 6px;
+          }
+
+          .tips button {
+            padding: 6px 2px;
+            font-size: 8px;
+          }
+
+          .people-row {
+            margin-top: 7px;
+            padding-top: 7px;
+          }
+
+          .result-top {
+            margin-bottom: 0;
+          }
+
+          .tip-result {
+            margin-top: 7px;
+            padding: 11px;
+            border-radius: 11px;
+          }
+
+          .tip-result strong {
+            font-size: 25px;
+          }
+
+          .rows {
+            margin-top: 5px;
+          }
+
+          .rows > div {
+            padding: 5px 0;
+          }
+
+          .per-person {
+            margin-top: 6px;
+            padding: 8px 9px;
+          }
+
+          .per-person strong {
+            font-size: 15px;
+          }
+
+          footer {
+            margin-top: 7px;
+          }
+        }
+
+        /* VERY SMALL PHONES */
+
+        @media (max-height: 700px) and (max-width: 700px) {
+          .tip-page {
+            padding-top: 7px;
+          }
+
+          .header h1 {
+            font-size: 22px;
+          }
+
+          .header p {
+            display: none;
+          }
+
+          .main {
             gap: 5px;
           }
 
-          .tip {
-            font-size: 10px;
+          .input-card,
+          .result-card {
+            padding: 9px;
           }
 
-          .tip-hero {
-            padding: 16px;
+          .tip-result {
+            padding: 9px;
           }
 
-          .tip-hero strong {
-            font-size: 31px;
-          }
-        }
-
-        @media (max-width: 400px) {
-          .currency-group {
-            transform: scale(0.9);
-            transform-origin: right center;
+          .tip-result strong {
+            font-size: 22px;
           }
 
-          .section-top h2 {
-            font-size: 16px;
+          .rows > div {
+            padding: 4px 0;
           }
 
-          .quick-btn {
-            padding: 6px 2px;
+          .per-person {
+            padding: 6px 8px;
+          }
+
+          footer {
+            display: none;
           }
         }
       `}</style>
