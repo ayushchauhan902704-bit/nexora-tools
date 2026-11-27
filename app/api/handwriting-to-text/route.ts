@@ -4,7 +4,6 @@ export const runtime = "nodejs";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Gemini inline image input should stay within a reasonable request size.
 const MAX_IMAGE_BASE64_LENGTH = 9 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = [
@@ -13,101 +12,166 @@ const ALLOWED_MIME_TYPES = [
   "image/webp",
 ];
 
-const TRANSCRIPTION_PROMPT = `
+const PROMPT = `
 You are a multilingual handwriting recognition and document transcription system.
 
-Your task is to TRANSCRIBE the uploaded handwritten document into editable digital text.
+TRANSCRIBE the entire handwritten image into editable text.
 
-The handwritten content can be in ANY language or combination of languages that you can recognize.
+LANGUAGE RULES:
+- English must remain English.
+- Hindi written in Devanagari must remain Hindi/Devanagari.
+- Hinglish must remain Hinglish.
+- Hindi + English mixed writing must remain mixed.
+- Preserve all other recognizable languages and scripts.
+- Never translate.
+- Never convert Hindi to English.
+- Never convert English to Hindi.
+- Never convert Hinglish to Hindi or English.
 
-LANGUAGE AND SCRIPT RULES:
-
-1. English handwriting must remain English.
-2. Hindi handwriting written in Devanagari must remain Hindi / Devanagari.
-3. Hinglish written using Latin letters must remain Hinglish.
-4. Hindi + English mixed handwriting must remain mixed Hindi + English.
-5. Do not translate any language into another language.
-6. Do not convert Hindi into English.
-7. Do not convert English into Hindi.
-8. Do not convert Hinglish into Hindi.
-9. Do not convert Hinglish into English.
-10. Preserve other recognizable languages and scripts in their original form.
-11. Preserve Unicode characters when applicable.
-
-TRANSCRIPTION RULES:
-
-- Transcribe what is actually visible.
+ACCURACY RULES:
+- Read the ENTIRE image.
+- Inspect every visible line.
 - Preserve the original wording.
 - Do not correct spelling.
 - Do not correct grammar.
-- Do not rewrite sentences.
-- Do not improve the writing.
+- Do not rewrite.
 - Do not summarize.
-- Do not explain the content.
+- Do not explain.
 - Do not add information.
-- Do not invent missing words.
-- Preserve names exactly as visible.
-- Preserve places exactly as visible.
-- Preserve numbers exactly as visible.
-- Preserve dates exactly as visible.
-- Preserve mathematical symbols when recognizable.
+- Do not invent words.
+- Preserve names.
+- Preserve numbers.
+- Preserve dates.
 - Preserve punctuation.
-- Preserve repeated words.
-- Preserve informal language and slang.
+- Preserve symbols.
 - Preserve abbreviations.
+- Preserve repeated words.
 
-STRUCTURE RULES:
-
-- Read the ENTIRE image carefully.
+STRUCTURE:
 - Preserve meaningful line breaks.
 - Preserve paragraphs.
 - Preserve headings.
 - Preserve numbered lists.
-- Preserve bullet-style lists when clearly visible.
-- Preserve the original reading order.
-- If a table is visible, preserve rows and columns as closely as possible using text.
-- Do not merge the entire page into one paragraph.
-- Do not create Markdown unless the original document clearly represents a list or heading.
-- Do not add a title if the handwritten document does not contain one.
+- Preserve bullet-style lists.
+- Preserve original reading order.
+- Preserve tables as closely as possible using text.
+- Do not merge everything into one paragraph.
 
-IMPORTANT FOR HANDWRITING:
+If a small part is genuinely impossible to read, write [unclear].
+Do not guess.
 
-- Pay close attention to small handwritten text.
-- Inspect every visible line before producing the answer.
-- Do not stop after reading only the easiest or largest text.
-- Use the surrounding handwriting only to understand letter shapes, not to invent words.
-- If a word is genuinely unreadable, use [unclear].
-- Do not replace unclear handwriting with a likely word.
-
-This is TRANSCRIPTION, NOT translation.
-This is TRANSCRIPTION, NOT proofreading.
-This is TRANSCRIPTION, NOT rewriting.
+This is transcription, NOT translation.
+This is transcription, NOT proofreading.
+This is transcription, NOT rewriting.
 
 Return ONLY the transcription.
-Do not describe the image.
-Do not explain your answer.
-Do not add introductory text.
 `;
+
+async function callGemini(
+  model: string,
+  mimeType: string,
+  base64Data: string
+) {
+  const endpoint =
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 60000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY!,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: PROMPT,
+              },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 8192,
+        },
+      }),
+      signal: controller.signal,
+    });
+
+    const data = await response.json();
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+    };
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      return {
+        ok: false,
+        status: 504,
+        data: {
+          error: {
+            message: "Gemini request timed out.",
+          },
+        },
+      };
+    }
+
+    return {
+      ok: false,
+      status: 502,
+      data: {
+        error: {
+          message: "Could not connect to Gemini.",
+        },
+      },
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function extractText(data: any): string {
+  const parts = data?.candidates?.[0]?.content?.parts;
+
+  if (!Array.isArray(parts)) {
+    return "";
+  }
+
+  return parts
+    .map((part: any) =>
+      typeof part?.text === "string" ? part.text : ""
+    )
+    .join("")
+    .trim();
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // --------------------------------------------------
-    // 1. Check API key
-    // --------------------------------------------------
-
     if (!GEMINI_API_KEY) {
       return NextResponse.json(
         {
           error:
-            "Gemini API is not configured. Please check the GEMINI_API_KEY environment variable.",
+            "Gemini API key is not configured on the server.",
         },
         { status: 500 }
       );
     }
-
-    // --------------------------------------------------
-    // 2. Read request
-    // --------------------------------------------------
 
     let body: any;
 
@@ -133,30 +197,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --------------------------------------------------
-    // 3. Validate image size
-    // --------------------------------------------------
-
     if (image.length > MAX_IMAGE_BASE64_LENGTH) {
       return NextResponse.json(
         {
           error:
-            "The image is too large to process. Please use a smaller image.",
+            "The image is too large. Please use a smaller image.",
         },
         { status: 413 }
-      );
-    }
-
-    // --------------------------------------------------
-    // 4. Validate data URL
-    // --------------------------------------------------
-
-    if (!image.startsWith("data:image/")) {
-      return NextResponse.json(
-        {
-          error: "Invalid image data.",
-        },
-        { status: 400 }
       );
     }
 
@@ -181,17 +228,13 @@ export async function POST(request: NextRequest) {
     if (!mimeMatch) {
       return NextResponse.json(
         {
-          error: "Invalid image encoding.",
+          error: "Invalid image format.",
         },
         { status: 400 }
       );
     }
 
     const mimeType = mimeMatch[1].toLowerCase();
-
-    // --------------------------------------------------
-    // 5. Validate MIME type
-    // --------------------------------------------------
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
@@ -206,297 +249,121 @@ export async function POST(request: NextRequest) {
     if (!base64Data || base64Data.length < 100) {
       return NextResponse.json(
         {
-          error:
-            "The uploaded image appears to be empty or invalid.",
+          error: "The image appears to be empty or invalid.",
         },
         { status: 400 }
       );
     }
 
-    // --------------------------------------------------
-    // 6. Gemini endpoint
-    // --------------------------------------------------
+    /*
+     * Try the newest lightweight model first.
+     * If it is unavailable or temporarily unavailable,
+     * try the 3.1 Flash-Lite model.
+     */
+    const models = [
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+    ];
 
-    const endpoint =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent";
+    let lastError = "Gemini could not process the image.";
 
-    // --------------------------------------------------
-    // 7. Timeout
-    // --------------------------------------------------
+    for (const model of models) {
+      const result = await callGemini(
+        model,
+        mimeType,
+        base64Data
+      );
 
-    const controller = new AbortController();
+      if (result.ok) {
+        const text = extractText(result.data);
 
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 60000);
-
-    let response: Response;
-
-    try {
-      response = await fetch(endpoint, {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_API_KEY,
-        },
-
-        body: JSON.stringify({
-          contents: [
+        if (text) {
+          return NextResponse.json(
             {
-              role: "user",
-
-              parts: [
-                {
-                  text: TRANSCRIPTION_PROMPT,
-                },
-
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data,
-                  },
-                },
-              ],
+              text,
+              model,
             },
-          ],
+            {
+              status: 200,
+              headers: {
+                "Cache-Control": "no-store",
+              },
+            }
+          );
+        }
 
-          // Do not send custom temperature/topP values here.
-          // This keeps the request compatible with Gemini 3.5 Flash-Lite.
-          generationConfig: {
-            maxOutputTokens: 8192,
-          },
-        }),
-
-        signal: controller.signal,
-      });
-    } catch (error: any) {
-      clearTimeout(timeout);
-
-      if (error?.name === "AbortError") {
-        return NextResponse.json(
-          {
-            error:
-              "The handwriting request timed out. Please try again.",
-          },
-          { status: 504 }
-        );
+        lastError =
+          "Gemini returned an empty transcription.";
+        continue;
       }
-
-      console.error("Gemini connection error:", error);
-
-      return NextResponse.json(
-        {
-          error:
-            "Could not connect to the handwriting recognition service. Please try again.",
-        },
-        { status: 502 }
-      );
-    }
-
-    clearTimeout(timeout);
-
-    // --------------------------------------------------
-    // 8. Read Gemini response
-    // --------------------------------------------------
-
-    let data: any;
-
-    try {
-      data = await response.json();
-    } catch {
-      console.error(
-        "Gemini returned a non-JSON response:",
-        response.status
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "The handwriting service returned an invalid response.",
-        },
-        { status: 502 }
-      );
-    }
-
-    // --------------------------------------------------
-    // 9. Handle Gemini API errors
-    // --------------------------------------------------
-
-    if (!response.ok) {
-      console.error("Gemini API error:", {
-        status: response.status,
-        data,
-      });
 
       const apiMessage =
-        data?.error?.message ||
-        "The Gemini API could not process this image.";
+        result.data?.error?.message ||
+        "Unknown Gemini API error.";
 
-      if (response.status === 400) {
-        return NextResponse.json(
-          {
-            error:
-              "Gemini rejected the image request. Please try a clear JPG, PNG or WebP image.",
-            details: apiMessage,
-          },
-          { status: 400 }
-        );
+      lastError = `${model}: ${apiMessage}`;
+
+      console.error("Gemini model failed:", {
+        model,
+        status: result.status,
+        error: result.data,
+      });
+
+      /*
+       * Continue to the fallback model for model-access,
+       * temporary server, and rate-limit errors.
+       */
+      if (
+        result.status === 404 ||
+        result.status === 429 ||
+        result.status >= 500
+      ) {
+        continue;
       }
 
-      if (response.status === 401 || response.status === 403) {
+      /*
+       * Authentication/permission errors are unlikely
+       * to be fixed by changing models.
+       */
+      if (
+        result.status === 401 ||
+        result.status === 403
+      ) {
         return NextResponse.json(
           {
             error:
-              "Gemini API authentication failed. Please check the GEMINI_API_KEY configuration.",
+              "Gemini API authentication or permission failed.",
+            details: apiMessage,
           },
           { status: 500 }
         );
       }
 
-      if (response.status === 404) {
+      /*
+       * Invalid image/request.
+       */
+      if (result.status === 400) {
         return NextResponse.json(
           {
             error:
-              "The selected Gemini model is unavailable for this API key or project.",
+              "Gemini rejected the image request.",
             details: apiMessage,
           },
-          { status: 502 }
+          { status: 400 }
         );
       }
-
-      if (response.status === 429) {
-        return NextResponse.json(
-          {
-            error:
-              "The handwriting service is temporarily busy. Please wait a moment and try again.",
-          },
-          { status: 429 }
-        );
-      }
-
-      if (response.status >= 500) {
-        return NextResponse.json(
-          {
-            error:
-              "The handwriting service is temporarily unavailable. Please try again.",
-          },
-          { status: 502 }
-        );
-      }
-
-      return NextResponse.json(
-        {
-          error: apiMessage,
-        },
-        { status: response.status }
-      );
     }
-
-    // --------------------------------------------------
-    // 10. Extract candidates
-    // --------------------------------------------------
-
-    const candidates = data?.candidates;
-
-    if (!Array.isArray(candidates) || candidates.length === 0) {
-      console.error(
-        "Gemini returned no candidates:",
-        data
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Gemini could not generate a transcription from this image.",
-        },
-        { status: 422 }
-      );
-    }
-
-    const candidate = candidates[0];
-
-    // --------------------------------------------------
-    // 11. Handle blocked response
-    // --------------------------------------------------
-
-    if (
-      candidate?.finishReason === "SAFETY" ||
-      candidate?.finishReason === "BLOCKLIST"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "The image could not be processed by the AI service.",
-        },
-        { status: 422 }
-      );
-    }
-
-    // --------------------------------------------------
-    // 12. Extract text
-    // --------------------------------------------------
-
-    const parts = candidate?.content?.parts;
-
-    if (!Array.isArray(parts)) {
-      console.error(
-        "Gemini returned an unexpected response:",
-        data
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "The handwriting service returned an unexpected response.",
-        },
-        { status: 502 }
-      );
-    }
-
-    const result = parts
-      .map((part: any) => {
-        return typeof part?.text === "string"
-          ? part.text
-          : "";
-      })
-      .join("")
-      .trim();
-
-    // --------------------------------------------------
-    // 13. Empty result
-    // --------------------------------------------------
-
-    if (!result) {
-      return NextResponse.json(
-        {
-          error:
-            "No readable handwriting was detected. Please try the image again.",
-        },
-        { status: 422 }
-      );
-    }
-
-    // --------------------------------------------------
-    // 14. Success
-    // --------------------------------------------------
 
     return NextResponse.json(
       {
-        text: result,
+        error:
+          "The handwriting service could not process this image.",
+        details: lastError,
       },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
+      { status: 502 }
     );
   } catch (error) {
-    console.error(
-      "Handwriting API unexpected error:",
-      error
-    );
+    console.error("Handwriting API error:", error);
 
     return NextResponse.json(
       {
