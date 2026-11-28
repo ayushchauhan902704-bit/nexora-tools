@@ -7,20 +7,38 @@ const PLAYER_COLORS = ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#
 type View = "home" | "coin" | "dice";
 type CoinSide = "H" | "T";
 
-function RealDice({ value, color, rolling }: { value: number; color: string; rolling: boolean }) {
-  const pips: Record<number, number[]> = {
+function DiceFace({ value, pos, color }: { value: number; pos: string; color: string }) {
+  const pipsMap: Record<number, number[]> = {
     1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9],
   };
   return (
-    <div className={`real-dice ${rolling ? "dice-fly" : ""}`}
-      style={{ "--dice-color": color, background: `linear-gradient(145deg, ${color} 0%, ${color}dd 42%, ${color}99 100%)` } as React.CSSProperties}>
-      <div className="dice-edge" />
-      <div className="dice-top-glow" />
+    <div className={`cube-face face-${pos}`} style={{ background: `linear-gradient(145deg, ${color}, ${color}cc)` }}>
       {Array.from({ length: 9 }, (_, i) => (
-        <span key={i} className={`pip ${pips[value]?.includes(i + 1) ? "show" : ""}`} />
+        <span key={i} className={`pip ${pipsMap[value]?.includes(i + 1) ? "show" : ""}`} />
       ))}
-      <span className="dice-shine" />
-      <span className="dice-reflection" />
+    </div>
+  );
+}
+
+function RealDice3D({ value, color, rolling, land }: { value: number; color: string; rolling: boolean; land: { x: number; y: number; r: number } }) {
+  const finalRot: Record<number, string> = {
+    1: "rotateX(0deg) rotateY(0deg)",
+    2: "rotateX(0deg) rotateY(-90deg)",
+    3: "rotateX(-90deg) rotateY(0deg)",
+    4: "rotateX(90deg) rotateY(0deg)",
+    5: "rotateX(0deg) rotateY(90deg)",
+    6: "rotateX(0deg) rotateY(180deg)",
+  };
+  return (
+    <div className="dice-3d-scene" style={{ "--land-x": `${land.x}px`, "--land-r": `${land.r}deg` } as React.CSSProperties}>
+      <div className={`dice-cube ${rolling ? "cube-tumbling" : "cube-settled"}`} style={{ "--final-rot": finalRot[value] } as React.CSSProperties}>
+        <DiceFace value={1} pos="front" color={color} />
+        <DiceFace value={6} pos="back" color={color} />
+        <DiceFace value={3} pos="right" color={color} />
+        <DiceFace value={4} pos="left" color={color} />
+        <DiceFace value={2} pos="top" color={color} />
+        <DiceFace value={5} pos="bottom" color={color} />
+      </div>
     </div>
   );
 }
@@ -35,7 +53,6 @@ export default function CoinFlipClient() {
   const [showHand, setShowHand] = useState(false);
   const [headsCount, setHeadsCount] = useState(0);
   const [tailsCount, setTailsCount] = useState(0);
-
   const [howMany, setHowMany] = useState("1");
   const [playerNames, setPlayerNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"]);
   const [diceVal, setDiceVal] = useState(6);
@@ -47,7 +64,6 @@ export default function CoinFlipClient() {
   const diceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const coinHistoryRef = useRef<Array<CoinSide>>([]);
   const coinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const playerCount = Math.max(1, Math.min(6, parseInt(howMany) || 1));
 
   useEffect(() => {
@@ -58,15 +74,13 @@ export default function CoinFlipClient() {
     };
   }, []);
 
-  // ============ COIN - REAL TV TOSS 2.5s + NO 5x SAME ============
   const flipCoin = () => {
     if (flipping) return;
     setFlipping(true);
     setCoinResult(null);
     setFlyKey((k) => k + 1);
     setShowHand(true);
-    setTimeout(() => setShowHand(false), 600);
-
+    setTimeout(() => setShowHand(false), 500);
     let isHead = Math.random() > 0.5;
     const last = coinHistoryRef.current;
     if (last.length >= 4) {
@@ -74,9 +88,7 @@ export default function CoinFlipClient() {
       if (last4.every((v) => v === "H")) isHead = false;
       if (last4.every((v) => v === "T")) isHead = true;
     }
-
     try { navigator.vibrate?.([45, 35, 45, 35, 80]); } catch {}
-
     coinTimeoutRef.current = setTimeout(() => {
       const res: CoinSide = isHead ? "H" : "T";
       coinHistoryRef.current = [...coinHistoryRef.current, res].slice(-5);
@@ -86,36 +98,29 @@ export default function CoinFlipClient() {
       else setTailsCount((t) => t + 1);
       confetti({ particleCount: 120, spread: 90, startVelocity: 28, origin: { y: 0.55 }, colors: ["#e2e8f0", "#94a3b8", "#64748b", "#facc15", "#22c55e"] });
       try { navigator.vibrate?.([80, 40, 100]); } catch {}
-    }, 2500);
+    }, 2400);
   };
 
-  // ============ DICE - REAL FLY 1.5s ============
   const rollDice = () => {
     if (rolling) return;
     setRolling(true);
     let playerIdx = 0;
     const doOnePlayer = () => {
       setCurrentPlayer(playerIdx);
-      setDiceLand({ x: Math.floor(Math.random() * 60) - 30, y: Math.floor(Math.random() * 20) - 10, r: Math.floor(Math.random() * 360) });
+      setDiceLand({ x: Math.floor(Math.random() * 50) - 25, y: 0, r: Math.floor(Math.random() * 40) - 20 });
       let count = 0;
       diceIntervalRef.current = setInterval(() => {
         setDiceVal(Math.floor(Math.random() * 6) + 1);
         count++;
-        if (count >= 12) {
+        if (count >= 14) {
           if (diceIntervalRef.current) clearInterval(diceIntervalRef.current);
           setDiceVal(Math.floor(Math.random() * 6) + 1);
           try { navigator.vibrate?.([35, 25, 50]); } catch {}
           playerIdx++;
-          if (playerIdx < playerCount) {
-            diceTimeoutRef.current = setTimeout(doOnePlayer, 650);
-          } else {
-            diceTimeoutRef.current = setTimeout(() => {
-              setRolling(false);
-              try { navigator.vibrate?.([70, 30, 90]); } catch {}
-            }, 300);
-          }
+          if (playerIdx < playerCount) diceTimeoutRef.current = setTimeout(doOnePlayer, 600);
+          else diceTimeoutRef.current = setTimeout(() => { setRolling(false); try { navigator.vibrate?.([70, 30, 90]); } catch {} }, 250);
         }
-      }, 110);
+      }, 105);
     };
     doOnePlayer();
   };
@@ -154,19 +159,19 @@ export default function CoinFlipClient() {
             <input value={tailLabel} onChange={(e) => setTailLabel(e.target.value)} placeholder="Tails" maxLength={14} />
           </div>
           <div className="bigStage coinStage" onClick={flipCoin}>
-            <div className="coin-floor" />
             <div className="coinScene">
-              <div key={flyKey} className={`coinWrapper ${flipping ? "coin-flying" : ""}`}>
+              <div key={flyKey} className={`coinWrapper ${flipping ? "coin-flipping-video" : ""}`}>
                 <div className="coin3d">
                   <div className="coinSide coinFront"><div className="coinInner"><span className="coinLetter">{coinResult === "T" ? "T" : "H"}</span><small>{coinResult === "T" ? tailLabel : headLabel}</small><i /></div></div>
                   <div className="coinSide coinBack"><div className="coinInner"><span className="coinLetter">T</span><small>{tailLabel}</small><i /></div></div>
+                  <div className="coinEdge" />
                 </div>
               </div>
               {showHand && <div className="toss-hand">🤚</div>}
             </div>
-            <div className="coinShadow" />
+            <div className={`coinShadow ${flipping ? "shadow-flipping" : ""}`} />
             <p className="stageText">{flipping ? "Flipping..." : coinResult ? `🏆 ${coinResult === "H" ? headLabel : tailLabel} Wins!` : "Tap the coin to flip"}</p>
-            <small className="stageSub">{flipping ? "Watch the coin fly and spin" : "Tap anywhere on the coin"}</small>
+            <small className="stageSub">{flipping ? "Watch the coin spin in air" : "Tap anywhere on the coin"}</small>
           </div>
           <button className="bigBtn green" onClick={flipCoin} disabled={flipping}>{flipping ? "FLIPPING... 🪙" : "FLIP COIN 🚀"}</button>
           <div className="stats">
@@ -199,13 +204,11 @@ export default function CoinFlipClient() {
         )}
         <div className="bigStage diceStage" onClick={rollDice}>
           <div className="diceArena">
-            <div className={`diceHolder ${rolling ? "diceHolderRolling" : ""}`} style={{ "--land-x": `${diceLand.x}px`, "--land-y": `${diceLand.y}px`, "--land-r": `${diceLand.r}deg` } as React.CSSProperties}>
-              <RealDice value={diceVal} color={playerCount === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[currentPlayer]} rolling={rolling} />
-            </div>
+            <RealDice3D value={diceVal} color={playerCount === 1 ? PLAYER_COLORS[0] : PLAYER_COLORS[currentPlayer]} rolling={rolling} land={diceLand} />
           </div>
           <div className="diceGroundShadow" />
           <div className="diceTouchText">{rolling ? (playerCount > 1 ? `${playerNames[currentPlayer] || `Player ${currentPlayer + 1}`} is rolling...` : "Rolling...") : "Tap the dice to roll"}</div>
-          <small className="stageSub">{rolling ? "Watch it fly up and bounce down" : "Tap anywhere on the dice"}</small>
+          <small className="stageSub">{rolling ? "Watch it tumble like real dice" : "Tap anywhere on the dice"}</small>
         </div>
         <button className="bigBtn black" onClick={rollDice} disabled={rolling}>{rolling ? "ROLLING... 🎲" : "ROLL DICE 🎲"}</button>
       </div>
@@ -227,13 +230,13 @@ h1 { margin: 0; font-size: 27px; font-weight: 900; letter-spacing: -1px; }
 h1 span { color: #16a34a; }
 .sub { color: #64748b; font-size: 12px; margin: 6px auto 0; line-height: 1.6; }
 .homeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
-.homeCard { position: relative; background: linear-gradient(180deg, #ffffff, #fbfdff); border: 1px solid #e2e8f0; border-radius: 22px; padding: 20px 14px; text-align: center; cursor: pointer; box-shadow: 0 15px 45px rgba(15,23,42,0.07); }
+.homeCard { background: linear-gradient(180deg, #ffffff, #fbfdff); border: 1px solid #e2e8f0; border-radius: 22px; padding: 20px 14px; text-align: center; cursor: pointer; box-shadow: 0 15px 45px rgba(15,23,42,0.07); }
 .homeCard h2 { font-size: 18px; margin: 15px 0 5px; }
 .homeCard p { color: #64748b; font-size: 11px; line-height: 1.55; margin: 0; }
 .openBtn { margin-top: 15px; border: 0; background: #16a34a; color: #fff; border-radius: 999px; padding: 11px 18px; font-weight: 900; font-size: 12px; width: 100%; cursor: pointer; }
 .openBtn.dark { background: #0f172a; }
 .homeCoin { width: 130px; height: 130px; margin: 8px auto; position: relative; }
-.homeCoinFront, .homeCoinBack { position: absolute; inset: 0; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 5px solid; box-shadow: 0 18px 30px rgba(0,0,0,0.20), inset 0 -8px 15px rgba(0,0,0,0.20), inset 0 5px 10px rgba(255,255,255,0.35); }
+.homeCoinFront, .homeCoinBack { position: absolute; inset: 0; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 5px solid; box-shadow: 0 18px 30px rgba(0,0,0,0.20); }
 .homeCoinFront { z-index: 2; background: radial-gradient(circle at 30% 25%, #ffffff 0%, #e2e8f0 25%, #94a3b8 58%, #475569 100%); border-color: #64748b; }
 .homeCoinBack { transform: translateX(17px) scale(0.91); background: radial-gradient(circle at 30% 25%, #f8fafc 0%, #cbd5e1 35%, #64748b 75%, #334155 100%); border-color: #475569; }
 .homeCoin span { font-size: 48px; line-height: 1; font-weight: 950; color: #0f172a; }
@@ -255,52 +258,64 @@ h1 span { color: #16a34a; }
 .coinStage { perspective: 1200px; }
 .coinScene { position: relative; width: 250px; height: 250px; display: flex; align-items: center; justify-content: center; perspective: 1400px; z-index: 3; }
 .coinWrapper { width: 230px; height: 230px; position: relative; transform-style: preserve-3d; will-change: transform; }
-.coin3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; filter: drop-shadow(0 24px 20px rgba(15,23,42,0.25)); }
+.coin3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; }
 .coinSide { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
-.coinFront { background: radial-gradient(circle at 30% 22%, #ffffff 0%, #f1f5f9 20%, #cbd5e1 55%, #64748b 80%, #334155 100%); border: 8px solid #94a3b8; box-shadow: inset 0 7px 12px rgba(255,255,255,0.6), inset 0 -13px 20px rgba(15,23,42,0.28); }
-.coinBack { transform: rotateY(180deg); background: radial-gradient(circle at 30% 22%, #f8fafc 0%, #e2e8f0 25%, #94a3b8 65%, #475569 100%); border: 8px solid #64748b; box-shadow: inset 0 7px 12px rgba(255,255,255,0.5), inset 0 -13px 20px rgba(15,23,42,0.25); }
-.coinInner { position: absolute; inset: 15px; border: 2px dashed rgba(15,23,42,0.35); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.coinLetter { font-size: 96px; font-weight: 950; line-height: 0.9; color: #0f172a; text-shadow: 0 2px 0 rgba(255,255,255,0.6); }
+.coinFront { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #f8fafc 18%, #cbd5e1 48%, #94a3b8 78%, #64748b 100%); border: 7px solid #94a3b8; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.5), inset 0 -12px 22px rgba(15,23,42,0.35), inset 0 10px 16px rgba(255,255,255,0.6), 0 18px 28px rgba(15,23,42,0.22); }
+.coinBack { transform: rotateY(180deg); background: radial-gradient(circle at 32% 28%, #ffffff 0%, #e2e8f0 22%, #94a3b8 62%, #475569 100%); border: 7px solid #64748b; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.4), inset 0 -12px 22px rgba(15,23,42,0.3), inset 0 10px 16px rgba(255,255,255,0.5); }
+.coinInner { position: absolute; inset: 14px; border: 2px dashed rgba(15,23,42,0.32); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.coinLetter { font-size: 96px; font-weight: 950; line-height: 0.9; color: #0f172a; text-shadow: 0 2px 0 rgba(255,255,255,0.7), 0 -1px 0 rgba(0,0,0,0.15); font-family: Georgia, serif; }
 .coinInner small { margin-top: 7px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 950; letter-spacing: 1px; color: #334155; }
-.coinInner i { position: absolute; top: 10px; left: 20px; width: 55px; height: 18px; border-radius: 999px; background: rgba(255,255,255,0.55); filter: blur(5px); transform: rotate(-25deg); }
-.toss-hand { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); font-size: 88px; z-index: 10; animation: handToss 0.6s ease-out forwards; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2)); }
-@keyframes handToss { 0% { transform: translateX(-50%) translateY(60px) scale(0.9); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-50%) translateY(-40px) scale(1.05); opacity: 0; } }
-.coin-flying { animation: realisticCoinFlight 2.5s cubic-bezier(0.18,0.72,0.25,1) forwards; }
-@keyframes realisticCoinFlight {
-  0% { transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1); }
-  10% { transform: translate3d(0, -40px, 60px) rotateX(220deg) rotateY(180deg) scale(0.98); }
-  25% { transform: translate3d(8px, -130px, 150px) rotateX(620deg) rotateY(520deg) scale(0.90); }
-  45% { transform: translate3d(-6px, -190px, 210px) rotateX(1150deg) rotateY(900deg) scale(0.82); }
-  60% { transform: translate3d(6px, -175px, 190px) rotateX(1580deg) rotateY(1230deg) scale(0.85); }
-  75% { transform: translate3d(-4px, -110px, 120px) rotateX(1950deg) rotateY(1520deg) scale(0.92); }
-  88% { transform: translate3d(0, -30px, 40px) rotateX(2220deg) rotateY(1730deg) scale(0.98); }
-  95% { transform: translate3d(0, 8px, 0) rotateX(2300deg) rotateY(1790deg) scale(1.02); }
-  100% { transform: translate3d(0, 0, 0) rotateX(2340deg) rotateY(1800deg) scale(1); }
+.coinInner i { position: absolute; top: 12px; left: 24px; width: 52px; height: 16px; border-radius: 999px; background: rgba(255,255,255,0.55); filter: blur(5px); transform: rotate(-25deg); }
+.coinEdge { position: absolute; inset: 0; border-radius: 50%; background: #64748b; transform: translateZ(-6px); }
+.toss-hand { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); font-size: 84px; z-index: 10; animation: handToss 0.5s ease-out forwards; }
+@keyframes handToss { 0% { transform: translateX(-50%) translateY(60px) scale(0.9); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-50%) translateY(-30px) scale(1.05); opacity: 0; } }
+/* ===== VIDEO WALA COIN - EK JAGAH, TEZ SPIN, BLUR, BOUNCE ===== */
+.coin-flipping-video { animation: coinVideoFlip 2.4s cubic-bezier(0.25,0.7,0.3,1) forwards; }
+@keyframes coinVideoFlip {
+  0% { transform: translateY(0) rotateX(0deg) scale(1, 1); filter: blur(0); }
+  8% { transform: translateY(-55px) rotateX(320deg) scale(0.92, 0.95); filter: blur(0.3px); }
+  16% { transform: translateY(-115px) rotateX(720deg) scale(0.55, 0.92); filter: blur(1.2px); }
+  26% { transform: translateY(-165px) rotateX(1150deg) scale(0.28, 0.88); filter: blur(2.2px); }
+  36% { transform: translateY(-175px) rotateX(1550deg) scale(0.18, 0.85); filter: blur(2.8px); }
+  46% { transform: translateY(-155px) rotateX(1950deg) scale(0.32, 0.88); filter: blur(2.2px); }
+  56% { transform: translateY(-105px) rotateX(2300deg) scale(0.60, 0.92); filter: blur(1.2px); }
+  66% { transform: translateY(-45px) rotateX(2620deg) scale(0.88, 0.96); filter: blur(0.4px); }
+  75% { transform: translateY(0) rotateX(2880deg) scale(1, 1); filter: blur(0); }
+  82% { transform: translateY(-22px) rotateX(2970deg) scale(1, 0.96); filter: blur(0); }
+  88% { transform: translateY(0) rotateX(3040deg) scale(1, 1); filter: blur(0); }
+  93% { transform: translateY(-10px) rotateX(3080deg) scale(1, 0.98); }
+  97% { transform: translateY(0) rotateX(3100deg) scale(1, 1); }
+  100% { transform: translateY(0) rotateX(3240deg) scale(1, 1); filter: blur(0); }
 }
-.coinShadow { position: absolute; width: 185px; height: 34px; bottom: 128px; background: radial-gradient(ellipse, rgba(15,23,42,0.24), transparent 68%); filter: blur(6px); animation: coinShadowMove 2.5s ease-in-out forwards; pointer-events: none; }
-@keyframes coinShadowMove { 0% { transform: scale(1); opacity: 0.5; } 35% { transform: scale(0.48); opacity: 0.18; } 55% { transform: scale(0.4); opacity: 0.12; } 80% { transform: scale(0.75); opacity: 0.32; } 100% { transform: scale(1); opacity: 0.5; } }
+.coinShadow { position: absolute; width: 185px; height: 34px; bottom: 128px; background: radial-gradient(ellipse, rgba(15,23,42,0.24), transparent 68%); filter: blur(6px); pointer-events: none; }
+.shadow-flipping { animation: coinShadowVideo 2.4s ease-in-out forwards; }
+@keyframes coinShadowVideo { 0% { transform: scale(1); opacity: 0.5; } 30% { transform: scale(0.45); opacity: 0.15; } 50% { transform: scale(0.38); opacity: 0.1; } 75% { transform: scale(0.85); opacity: 0.35; } 82% { transform: scale(0.95); opacity: 0.45; } 100% { transform: scale(1); opacity: 0.5; } }
 .diceStage { min-height: 370px; }
 .diceArena { position: relative; width: 270px; height: 270px; display: flex; align-items: center; justify-content: center; perspective: 1100px; z-index: 3; }
-.diceHolder { width: 210px; height: 210px; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; will-change: transform; }
-.diceHolderRolling { animation: diceRealFly 1.5s cubic-bezier(0.2,0.75,0.25,1) forwards; }
-@keyframes diceRealFly {
-  0% { transform: translate3d(0, 0, 0) rotateZ(0deg) rotateX(0deg) scale(1); }
-  15% { transform: translate3d(-18px, -60px, 80px) rotateZ(-25deg) rotateX(40deg) scale(0.95); }
-  30% { transform: translate3d(22px, -150px, 160px) rotateZ(70deg) rotateX(120deg) scale(0.85); }
-  45% { transform: translate3d(var(--land-x, 0px), -185px, 200px) rotateZ(170deg) rotateX(220deg) scale(0.82); }
-  60% { transform: translate3d(var(--land-x, 0px), -120px, 130px) rotateZ(250deg) rotateX(300deg) scale(0.88); }
-  75% { transform: translate3d(var(--land-x, 0px), -45px, 50px) rotateZ(320deg) rotateX(350deg) scale(0.96); }
-  88% { transform: translate3d(var(--land-x, 0px), 12px, 0) rotateZ(355deg) scale(1.03); }
-  94% { transform: translate3d(var(--land-x, 0px), -10px, 0) rotateZ(360deg) scale(1.01); }
-  100% { transform: translate3d(var(--land-x, 0px), 0, 0) rotateZ(var(--land-r, 360deg)) scale(1); }
-}
-.real-dice { width: 210px; height: 210px; border-radius: 36px; position: relative; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 32px; gap: 2px; transform-style: preserve-3d; box-shadow: 0 30px 45px rgba(15,23,42,0.27), inset 0 -14px 22px rgba(0,0,0,0.25), inset 0 8px 13px rgba(255,255,255,0.28); }
-.dice-edge { position: absolute; inset: 5px; border-radius: 31px; border: 2px solid rgba(255,255,255,0.20); pointer-events: none; }
-.dice-top-glow { position: absolute; top: 12px; left: 25px; right: 25px; height: 42px; border-radius: 999px; background: rgba(255,255,255,0.28); filter: blur(8px); transform: rotate(-4deg); pointer-events: none; }
-.pip { width: 30px; height: 30px; background: radial-gradient(circle at 35% 30%, #ffffff, #f8fafc 55%, #cbd5e1); border-radius: 50%; opacity: 0; place-self: center; box-shadow: inset 0 3px 6px rgba(0,0,0,0.30); }
+.dice-3d-scene { width: 190px; height: 190px; perspective: 1000px; display: flex; align-items: center; justify-content: center; }
+.dice-cube { width: 150px; height: 150px; position: relative; transform-style: preserve-3d; will-change: transform; }
+.cube-face { position: absolute; width: 150px; height: 150px; border-radius: 24px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 22px; gap: 2px; box-shadow: inset 0 -10px 18px rgba(0,0,0,0.25), inset 0 6px 10px rgba(255,255,255,0.25), 0 20px 35px rgba(0,0,0,0.25); border: 2px solid rgba(255,255,255,0.25); }
+.face-front { transform: translateZ(75px); }
+.face-back { transform: rotateY(180deg) translateZ(75px); }
+.face-right { transform: rotateY(90deg) translateZ(75px); }
+.face-left { transform: rotateY(-90deg) translateZ(75px); }
+.face-top { transform: rotateX(90deg) translateZ(75px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(75px); }
+.pip { width: 24px; height: 24px; background: radial-gradient(circle at 35% 30%, #ffffff, #e2e8f0 60%, #94a3b8); border-radius: 50%; opacity: 0; place-self: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }
 .pip.show { opacity: 1; }
-.dice-shine { position: absolute; top: 22px; left: 31px; width: 70px; height: 18px; background: rgba(255,255,255,0.42); border-radius: 999px; filter: blur(6px); transform: rotate(-25deg); pointer-events: none; }
-.dice-reflection { position: absolute; right: 19px; bottom: 20px; width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.10); filter: blur(7px); pointer-events: none; }
+.cube-tumbling { animation: diceTumbleVideo 1.5s cubic-bezier(0.2,0.75,0.25,1) forwards; }
+@keyframes diceTumbleVideo {
+  0% { transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+  15% { transform: translate3d(-22px, -70px, 80px) rotateX(220deg) rotateY(180deg) rotateZ(-18deg) scale(0.92); }
+  30% { transform: translate3d(20px, -150px, 150px) rotateX(480deg) rotateY(420deg) rotateZ(25deg) scale(0.84); }
+  48% { transform: translate3d(var(--land-x, 0px), -185px, 190px) rotateX(760deg) rotateY(680deg) rotateZ(-12deg) scale(0.82); }
+  65% { transform: translate3d(var(--land-x, 0px), -110px, 110px) rotateX(1020deg) rotateY(920deg) rotateZ(15deg) scale(0.90); }
+  80% { transform: translate3d(var(--land-x, 0px), -30px, 40px) rotateX(1240deg) rotateY(1100deg) rotateZ(-5deg) scale(0.97); }
+  90% { transform: translate3d(var(--land-x, 0px), 10px, 0) rotateX(1350deg) rotateY(1200deg) scale(1.03); }
+  95% { transform: translate3d(var(--land-x, 0px), -8px, 0) rotateX(1400deg) rotateY(1250deg) scale(1.01); }
+  100% { transform: translate3d(var(--land-x, 0px), 0, 0) rotateX(1440deg) rotateY(1440deg) rotateZ(var(--land-r, 0deg)) scale(1); }
+}
+.cube-settled { transform: var(--final-rot); transition: transform 0.35s ease; }
 .diceGroundShadow { position: absolute; width: 190px; height: 38px; bottom: 102px; border-radius: 50%; background: radial-gradient(ellipse, rgba(15,23,42,0.28), transparent 70%); filter: blur(7px); z-index: 1; pointer-events: none; }
 .diceTouchText { position: relative; z-index: 5; font-size: 17px; font-weight: 900; margin-top: 2px; }
 .howManyBox { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, #f8fafc, #ffffff); border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 10px 16px; margin-bottom: 10px; }
@@ -317,6 +332,5 @@ h1 span { color: #16a34a; }
 .stat { flex: 1; background: linear-gradient(180deg, #f8fafc, #ffffff); border: 1px solid #e2e8f0; border-radius: 13px; padding: 8px; text-align: center; font-size: 10px; font-weight: 800; }
 .stat b { display: block; font-size: 16px; margin-top: 2px; }
 .winnerLine { margin-top: 10px; background: linear-gradient(180deg, #f0fdf4, #ffffff); border: 1.5px solid #16a34a; border-radius: 13px; padding: 10px; text-align: center; font-weight: 900; font-size: 13px; }
-@media (max-width: 650px) { .page { padding: 9px 10px 35px; } .homeGrid { grid-template-columns: 1fr; } .bigStage { min-height: 380px; } .coinScene { width: 230px; height: 230px; } .coinWrapper { width: 205px; height: 205px; } .coinLetter { font-size: 82px; } .real-dice { width: 185px; height: 185px; padding: 28px; border-radius: 31px; } .pip { width: 27px; height: 27px; } .diceArena { width: 245px; height: 245px; } .diceHolder { width: 185px; height: 185px; } }
-@media (prefers-reduced-motion: reduce) { .coin-flying, .diceHolderRolling { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+@media (max-width: 650px) { .page { padding: 9px 10px 35px; } .homeGrid { grid-template-columns: 1fr; } .bigStage { min-height: 380px; } .coinScene { width: 230px; height: 230px; } .coinWrapper { width: 205px; height: 205px; } .coinLetter { font-size: 82px; } .dice-cube { width: 130px; height: 130px; } .cube-face { width: 130px; height: 130px; padding: 18px; } .face-front { transform: translateZ(65px); } .face-back { transform: rotateY(180deg) translateZ(65px); } .face-right { transform: rotateY(90deg) translateZ(65px); } .face-left { transform: rotateY(-90deg) translateZ(65px); } .face-top { transform: rotateX(90deg) translateZ(65px); } .face-bottom { transform: rotateX(-90deg) translateZ(65px); } }
 `;
