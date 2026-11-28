@@ -1,114 +1,192 @@
-"use client";
-import { useState, useEffect } from "react";
+import type { Metadata } from "next";
+import LoanEMIClient from "./LoanEMIClient";
+
+const SITE_URL = "https://thenexoratools.com";
+const PAGE_URL = `${SITE_URL}/loan-emi-calculator`;
+
+const faqItems = [
+  {
+    question: "What is an EMI?",
+    answer:
+      "EMI stands for Equated Monthly Instalment. It is the regular payment made toward a loan over a selected repayment period.",
+  },
+  {
+    question: "How is EMI calculated?",
+    answer:
+      "EMI is calculated using the standard reducing-balance formula based on the principal amount, monthly interest rate and number of monthly payments.",
+  },
+  {
+    question:
+      "Can I use this calculator for home, car or personal loans?",
+    answer:
+      "Yes. The calculator can be used for different types of loans when you know the loan amount, interest rate and repayment period.",
+  },
+  {
+    question: "What happens when the interest rate is 0%?",
+    answer:
+      "At 0% interest, the principal is divided equally across the selected number of monthly payments.",
+  },
+  {
+    question:
+      "Can I calculate the maximum loan amount from my EMI?",
+    answer:
+      "Yes. Use the EMI Calculator mode, enter the monthly EMI you can afford, interest rate and repayment tenure, and the calculator estimates the corresponding maximum loan amount.",
+  },
+  {
+    question: "Does a longer loan tenure reduce EMI?",
+    answer:
+      "Usually, yes. A longer repayment period generally lowers the monthly EMI but can increase the total interest paid over the life of the loan.",
+  },
+  {
+    question: "Can I estimate loan prepayment savings?",
+    answer:
+      "Yes. Loan Calculator mode includes an optional monthly prepayment estimate that can show potential interest savings and the estimated reduction in repayment time.",
+  },
+  {
+    question: "Are the calculator results guaranteed by a lender?",
+    answer:
+      "No. The results are mathematical estimates for planning purposes. Actual lender calculations may differ because of fees, taxes, insurance, rate changes, rounding and lender-specific terms.",
+  },
+];
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+
+  title:
+    "Loan & EMI Calculator Online – Monthly Payment, Interest & Loan Amount | NEXORA",
+
+  description:
+    "Free online Loan and EMI Calculator. Calculate monthly EMI, total interest, total repayment, or estimate the maximum loan amount from your affordable EMI. Supports multiple currencies and flexible loan tenures.",
+
+  keywords: [
+    "loan calculator",
+    "emi calculator",
+    "loan emi calculator",
+    "emi calculator online",
+    "monthly emi calculator",
+    "loan payment calculator",
+    "home loan calculator",
+    "car loan calculator",
+    "personal loan calculator",
+    "maximum loan calculator",
+    "loan interest calculator",
+    "emi payment calculator",
+  ],
+
+  alternates: {
+    canonical: PAGE_URL,
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+
+  openGraph: {
+    type: "website",
+    url: PAGE_URL,
+    title:
+      "Loan & EMI Calculator Online – Monthly Payment & Interest | NEXORA",
+    description:
+      "Calculate monthly EMI, total interest, total repayment, or estimate the maximum loan amount from your affordable EMI with NEXORA.",
+    siteName: "NEXORA",
+    locale: "en_US",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title:
+      "Loan & EMI Calculator Online | NEXORA",
+    description:
+      "Free Loan and EMI Calculator for monthly payments, total interest, total repayment and maximum loan estimates.",
+  },
+
+  category: "Finance",
+};
+
+const webApplicationSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "NEXORA Loan & EMI Calculator",
+  url: PAGE_URL,
+  description:
+    "Free online Loan and EMI Calculator for calculating monthly EMI, total interest, total repayment and estimated maximum loan amount.",
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Any",
+  browserRequirements:
+    "Requires a modern web browser with JavaScript enabled.",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  isAccessibleForFree: true,
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "NEXORA",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Loan & EMI Calculator",
+      item: PAGE_URL,
+    },
+  ],
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqItems.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+};
 
 export default function Page() {
-  const [p, setP] = useState("");
-  const [r, setR] = useState("");
-  const [n, setN] = useState("");
-  const [res, setRes] = useState<{ emi: number; total: number; interest: number } | null>(null);
-
-  useEffect(() => {
-    document.title = "Loan EMI Calculator - Home, Car, Personal Loan EMI | NEXORA";
-  }, []);
-
-  const calcEMI = () => {
-    const P = parseFloat(p);
-    const R = parseFloat(r) / 12 / 100;
-    const N = parseFloat(n) * 12;
-    if (!P || !R || !N) { alert("Fill all - Loan Amount, Rate, Tenure"); return; }
-    const emi = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1);
-    const total = emi * N;
-    const interest = total - P;
-    setRes({ emi, total, interest });
-  };
-
-  const card: any = { background: "#fff", border: "1px solid #e8e8ef", borderRadius: 20, padding: 20, margin: "18px 0", boxShadow: "0 4px 24px rgba(0,0,0,.04)", overflow: "hidden" };
-  const h2: any = { fontSize: 17, fontWeight: 900, marginBottom: 8, color: "#171725" };
-  const pStyle: any = { fontSize: 12.5, color: "#4a4a5a", lineHeight: 1.7, marginBottom: 10 };
-  const label: any = { fontWeight: 800, fontSize: 13, marginTop: 14, display: "block" };
-  const input: any = { width: "100%", padding: 14, border: "1px solid #dedee8", borderRadius: 12, fontSize: 15, marginTop: 6, background: "#fff", color: "#171725", boxSizing: "border-box" };
-  const btn: any = { width: "100%", padding: 14, background: "linear-gradient(135deg,#6c5ce7,#a66bff)", color: "#fff", fontWeight: 700, border: 0, borderRadius: 12, fontSize: 15, marginTop: 12, cursor: "pointer" };
-
   return (
-    <div style={{ fontFamily: "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif", background: "#f7f8fc", color: "#171725", lineHeight: 1.6, minHeight: "100vh" }}>
-      {/* HEADER FIXED - Mobile pe chipkega nahi */}
-      <header style={{ position: "sticky", top: 0, background: "rgba(255,255,255,.95)", borderBottom: "1px solid #e8e8ef", zIndex: 10 }}>
-        <div style={{ width: "min(900px,calc(100% - 24px))", margin: "auto", minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "10px 0", flexWrap: "wrap" }}>
-          <a href="/" style={{ fontSize: 22, fontWeight: 900, color: "#171725", textDecoration: "none", whiteSpace: "nowrap" }}>NEX<span style={{ color: "#6c5ce7" }}>ORA</span></a>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", background: "#e8f5e9", color: "#2e7d32", padding: "5px 10px", borderRadius: 999, fontSize: 10, fontWeight: 800, border: "1px solid #c8e6c9", whiteSpace: "nowrap" }}>● BANK GRADE</span>
-            <a href="/" style={{ fontWeight: 700, fontSize: 12, color: "#6c5ce7", textDecoration: "none", whiteSpace: "nowrap" }}>← All Tools</a>
-          </div>
-        </div>
-      </header>
+    <>
+      <LoanEMIClient />
 
-      <main style={{ width: "min(900px,calc(100% - 24px))", margin: "auto" }}>
-        <div style={card}>
-          <span style={{ display: "inline-block", background: "#e8f5e9", color: "#2e7d32", padding: "6px 12px", borderRadius: 999, fontSize: 11, fontWeight: 800, marginBottom: 12, border: "1px solid #c8e6c9" }}>🏦 Bank Grade Accuracy • No Watermark</span>
-          <h1 style={{ fontSize: 24, letterSpacing: -0.5, lineHeight: 1.2, fontWeight: 900 }}>Loan EMI Calculator</h1>
-          <p style={{ color: "#676778", margin: "8px 0 4px", fontSize: 13 }}>Home Loan, Car Loan, Personal Loan • Monthly EMI, Total Interest, Total Payment in 1 sec — Private, Free.</p>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(webApplicationSchema),
+        }}
+      />
 
-          {/* STAT BOX FIXED - Ab katega nahi */}
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <div style={{ background: "#f9f9ff", border: "1px solid #efedff", borderRadius: 12, padding: "10px 6px", flex: 1, minWidth: 0, textAlign: "center", fontSize: 11, lineHeight: 1.4 }}><b style={{ display: "block", fontSize: 12, color: "#171725" }}>No Signup</b>100% Private</div>
-            <div style={{ background: "#f9f9ff", border: "1px solid #efedff", borderRadius: 12, padding: "10px 6px", flex: 1, minWidth: 0, textAlign: "center", fontSize: 11, lineHeight: 1.4 }}><b style={{ display: "block", fontSize: 12, color: "#171725" }}>Bank Formula</b>HD Accuracy</div>
-            <div style={{ background: "#f9f9ff", border: "1px solid #efedff", borderRadius: 12, padding: "10px 6px", flex: 1, minWidth: 0, textAlign: "center", fontSize: 11, lineHeight: 1.4 }}><b style={{ display: "block", fontSize: 12, color: "#171725" }}>Free Forever</b>No Watermark</div>
-          </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema),
+        }}
+      />
 
-          <label style={label}>Loan Amount (₹)</label>
-          <input value={p} onChange={e => setP(e.target.value)} type="number" placeholder="500000" style={input} />
-          <label style={label}>Interest Rate (% yearly)</label>
-          <input value={r} onChange={e => setR(e.target.value)} type="number" placeholder="9.5" style={input} />
-          <label style={label}>Tenure (Years)</label>
-          <input value={n} onChange={e => setN(e.target.value)} type="number" placeholder="5" style={input} />
-          <button onClick={calcEMI} style={btn}>Calculate EMI →</button>
-
-          {res && (
-            <div style={{ background: "linear-gradient(135deg,#f0efff,#e6e3ff)", border: "1px solid #d9d6ff", borderRadius: 14, padding: 18, marginTop: 14, fontWeight: 800, textAlign: "center", fontSize: 18 }}>
-              EMI: ₹{Math.round(res.emi).toLocaleString("en-IN")} /month
-              <br /><span style={{ fontWeight: 500, fontSize: 13, color: "#4a4a5a" }}>Total Payment: ₹{Math.round(res.total).toLocaleString("en-IN")} • Interest: ₹{Math.round(res.interest).toLocaleString("en-IN")}</span>
-            </div>
-          )}
-        </div>
-
-        <div style={card}>
-          <h2 style={h2}>Why NEXORA Loan EMI Calculator?</h2>
-          <p style={pStyle}>NEXORA Loan EMI Calculator uses bank formula EMI = P×R×(1+R)^N / ((1+R)^N−1). Works for Home Loan 20 years, Car Loan 5 years, Personal Loan 3 years. Shows EMI, total interest, total payment together. Unlike bank sites that ask phone number for spam calls, NEXORA calculates instantly without spam, no signup, 100% private — browser-based. Example: ₹5 Lakh, 9.5%, 5 years = EMI ₹10,501, Total Payment ₹6,30,056, Interest ₹1,30,056. Best for India — Home Loan SBI HDFC ICICI, Car Loan, Personal Loan planning.</p>
-          <h3 style={{ fontSize: 13, fontWeight: 900, margin: "20px 0 8px", color: "#6c5ce7" }}>How to Calculate Loan EMI - 3 Easy Steps</h3>
-          <p style={pStyle}><b>Step 1:</b> Enter Loan Amount — e.g. ₹5,00,000<br /><b>Step 2:</b> Enter Interest Rate yearly and Tenure years — e.g. 9.5% and 5 years<br /><b>Step 3:</b> Click Calculate — Instantly see EMI per month, total payment, total interest.</p>
-          <h3 style={{ fontSize: 13, fontWeight: 900, margin: "20px 0 8px", color: "#6c5ce7" }}>Features</h3>
-          <ul style={{ paddingLeft: 18, ...pStyle }}><li>✅ Bank Grade Formula — Exact EMI as Bank</li><li>✅ EMI + Total Interest + Total Payment Together</li><li>✅ No Phone Spam — No Signup, 100% Private</li><li>✅ Home Loan, Car Loan, Personal Loan — All</li><li>✅ Free Forever, No Watermark</li><li>✅ Works on iPhone, Android, Laptop</li></ul>
-        </div>
-
-        <div style={card}>
-          <h2 style={h2}>NEXORA vs Others - Comparison</h2>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, marginTop: 10 }}><tbody>
-            <tr><th style={{ border: "1px solid #e5e7eb", padding: 8, background: "#f5f3ff", textAlign: "left" }}>Feature</th><th style={{ border: "1px solid #e5e7eb", padding: 8, background: "#f5f3ff" }}>NEXORA ✅</th><th style={{ border: "1px solid #e5e7eb", padding: 8, background: "#f5f3ff" }}>Others ❌</th></tr>
-            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Formula</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Bank Grade Exact ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Approximate</td></tr>
-            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Shows</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>EMI+Interest+Total ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Only EMI</td></tr>
-            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Spam</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>No Phone Spam ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Calls Spam</td></tr>
-            <tr><td style={{ border: "1px solid #e5e7eb", padding: 8 }}>Price</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Free Forever ✅</td><td style={{ border: "1px solid #e5e7eb", padding: 8, textAlign: "center" }}>Lead Gen</td></tr>
-          </tbody></table>
-        </div>
-
-        <div style={card}>
-          <h2 style={h2}>FAQ - Loan EMI Calculator</h2>
-          <p style={pStyle}>
-            <b>Q: What is Loan EMI Calculator?</b><br />A: Calculates monthly EMI, total interest, total payment using bank formula.<br /><br />
-            <b>Q: How to calculate loan EMI?</b><br />A: Enter loan amount, interest rate, years — Example 5 lakh 9.5% 5 years = EMI 10501.<br /><br />
-            <b>Q: Is it free and private?</b><br />A: Yes, 100% free, private, no phone needed.<br /><br />
-            <b>Q: Loan EMI kaise calculate kare?</b><br />A: Loan amount, interest rate, saal daalo, Calculate dabao — EMI turant.<br /><br />
-            <b>Try Also:</b> <a href="/jpg-to-pdf" style={{ color: "#6c5ce7", fontWeight: 700 }}>JPG to PDF</a> | <a href="/internet-speed-test" style={{ color: "#6c5ce7", fontWeight: 700 }}>Internet Speed Test</a> | <a href="/" style={{ color: "#6c5ce7", fontWeight: 700 }}>All Tools</a>
-          </p>
-        </div>
-      </main>
-
-      <footer style={{ borderTop: "1px solid #e8e8ef", padding: "36px 0", background: "#fff", color: "#747486", fontSize: 13, marginTop: 40 }}>
-        <div style={{ width: "min(900px,calc(100% - 24px))", margin: "auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 28 }}>
-          <div><b style={{ color: "#171725", fontSize: 18 }}>NEXORA — Built by Ayush Chauhan</b><div style={{ marginTop: 10, lineHeight: 1.9 }}>📧 Email: <a href="mailto:ayushchauhan902704@gmail.com" style={{ color: "#6c5ce7", fontWeight: 700 }}>ayushchauhan902704@gmail.com</a><br />📍 Dehradun, Uttarakhand, India<br />🔗 <a href="https://www.linkedin.com/in/ayush-chauhan-0b0960444" target="_blank" style={{ color: "#0a66c2", fontWeight: 700 }}>Connect on LinkedIn</a></div><div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 12 }}><a href="/about" style={{ fontWeight: 600, color: "#171725" }}>About</a><a href="/contact" style={{ fontWeight: 600, color: "#171725" }}>Contact</a><a href="/privacy" style={{ fontWeight: 600, color: "#171725" }}>Privacy</a><a href="/terms" style={{ fontWeight: 600, color: "#171725" }}>Terms</a></div></div>
-          <div style={{ textAlign: "left" }}><div style={{ background: "#f6f7fb", border: "1px solid #e8e8ef", borderRadius: 12, padding: "12px 16px" }}><div style={{ fontWeight: 800, color: "#171725" }}>© 2026 NEXORA Tools</div><div>Made in India 🇮🇳 • Bank Grade</div><div style={{ marginTop: 6 }}><a href="/" style={{ color: "#6c5ce7", fontWeight: 700 }}>← Back to All Tools</a></div></div></div>
-        </div>
-      </footer>
-    </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
+    </>
   );
 }
