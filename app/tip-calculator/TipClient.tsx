@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 const CURRENCIES = ["$", "€", "£", "₹"];
-
 const TIP_PRESETS = [10, 15, 18, 20, 25];
 
 export default function TipClient() {
@@ -12,100 +11,146 @@ export default function TipClient() {
   const [currency, setCurrency] = useState("$");
   const [people, setPeople] = useState(1);
   const [tipPercent, setTipPercent] = useState(20);
+  const [copied, setCopied] = useState(false);
 
   const billNum = Number(bill) || 0;
   const paidNum = Number(paid) || 0;
 
   const calculations = useMemo(() => {
-    // Tip hamesha Bill x % se niklega, taaki % kabhi galat na dikhe
-    // Agar Paid bhara hai to Tip = Paid - Bill, aur % us hisab se
-    let tip = 0;
-    let tipRate = tipPercent;
-
-    if (billNum > 0 && paidNum > 0) {
-      tip = Math.max(0, paidNum - billNum);
-      tipRate = (tip / billNum) * 100;
-    } else if (billNum > 0) {
-      tip = (billNum * tipPercent) / 100;
-      tipRate = tipPercent;
-    }
-
+    const tip = billNum > 0 ? (billNum * tipPercent) / 100 : 0;
     const total = billNum + tip;
-    const change = Math.max(0, paidNum - total);
+
+    const hasPaidAmount = paid.trim() !== "";
+    const change =
+      hasPaidAmount && paidNum > total ? paidNum - total : 0;
+
+    const amountDue =
+      hasPaidAmount && paidNum < total ? total - paidNum : 0;
+
     const billPerPerson = people > 0 ? billNum / people : 0;
+    const tipPerPerson = people > 0 ? tip / people : 0;
+    const totalPerPerson = people > 0 ? total / people : 0;
 
     return {
       tip,
-      tipRate,
+      tipRate: tipPercent,
       total,
       change,
+      amountDue,
       billPerPerson,
-      perPerson: people > 0 ? total / people : 0,
-      tipPerPerson: people > 0 ? tip / people : 0,
+      tipPerPerson,
+      perPerson: totalPerPerson,
+      hasPaidAmount,
     };
-  }, [billNum, paidNum, people, tipPercent]);
+  }, [billNum, paidNum, paid, people, tipPercent]);
 
-  const money = (value: number) =>
-    `${currency}${value.toFixed(2)}`;
+  const money = (value: number) => `${currency}${value.toFixed(2)}`;
 
   const handleBill = (value: string) => {
     const clean = value.replace(/^0+(?=\d)/, "");
+
     setBill(clean);
-    // Bill badalne pe purana % hi rahe, Paid apne aap us hisab se badle
+
+    // Keep the default paid amount equal to the new total.
+    // This gives the user an immediate change calculation.
     const b = Number(clean) || 0;
+
     if (b > 0) {
-      setPaid((b + (b * tipPercent) / 100).toFixed(2));
+      const newTotal = b + (b * tipPercent) / 100;
+      setPaid(newTotal.toFixed(2));
+    } else {
+      setPaid("");
     }
   };
 
   const handlePaid = (value: string) => {
     const clean = value.replace(/^0+(?=\d)/, "");
     setPaid(clean);
-    // Paid haath se badla to % apne aap sahi ho jaye - 20% dabane pe 16.7% nahi dikhega
-    const p = Number(clean) || 0;
-    if (billNum > 0 && p >= billNum) {
-      const realRate = ((p - billNum) / billNum) * 100;
-      setTipPercent(Math.round(realRate * 10) / 10);
-    }
   };
 
   const setPresetTip = (percent: number) => {
     setTipPercent(percent);
 
+    // Update the default paid amount to the new total.
     if (billNum > 0) {
-      const calculatedPaid =
-        billNum + (billNum * percent) / 100;
+      const newTotal = billNum + (billNum * percent) / 100;
+      setPaid(newTotal.toFixed(2));
+    }
+  };
 
-      setPaid(calculatedPaid.toFixed(2));
+  const resetCalculator = () => {
+    setBill("");
+    setPaid("");
+    setCurrency("$");
+    setPeople(1);
+    setTipPercent(20);
+    setCopied(false);
+  };
+
+  const copySummary = async () => {
+    const lines = [
+      "Tip Calculator Result",
+      `Bill: ${money(billNum)}`,
+      `Tip: ${money(calculations.tip)} (${calculations.tipRate}%)`,
+      `Total: ${money(calculations.total)}`,
+    ];
+
+    if (calculations.hasPaidAmount) {
+      lines.push(`Paid: ${money(paidNum)}`);
+
+      if (calculations.change > 0) {
+        lines.push(`Change: ${money(calculations.change)}`);
+      }
+
+      if (calculations.amountDue > 0) {
+        lines.push(`Amount Due: ${money(calculations.amountDue)}`);
+      }
+    }
+
+    lines.push(
+      `People: ${people}`,
+      `Per person: ${money(calculations.perPerson)}`
+    );
+
+    const summary = lines.join("\n");
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 1600);
+    } catch {
+      setCopied(false);
     }
   };
 
   return (
     <main className="tip-page">
       <div className="tip-container">
-
-        {/* HEADER */}
-        <header className="header">
+        <div className="top-brand">
           <div className="brand">thenexoratools</div>
-          <div className="badge">
-            <span>✦</span> Smart Tip Calculator
-          </div>
 
+          <div className="badge">
+            <span>✦</span>
+            Smart Tip Calculator
+          </div>
+        </div>
+
+        <header className="header">
           <h1>
             Tip <span>Calculator</span>
           </h1>
 
           <p>
-            Enter the bill and payment to instantly calculate the tip.
+            Calculate tips, total bills, change and split payments instantly.
           </p>
         </header>
 
-        {/* MAIN */}
         <div className="main">
-
           {/* INPUT CARD */}
           <section className="card input-card">
-
             <div className="top-row">
               <div>
                 <span className="label">BILL AMOUNT</span>
@@ -116,8 +161,11 @@ export default function TipClient() {
                 {CURRENCIES.map((c) => (
                   <button
                     key={c}
+                    type="button"
                     className={currency === c ? "active" : ""}
                     onClick={() => setCurrency(c)}
+                    aria-label={`Use ${c} currency`}
+                    aria-pressed={currency === c}
                   >
                     {c}
                   </button>
@@ -125,32 +173,38 @@ export default function TipClient() {
               </div>
             </div>
 
-            {/* BILL */}
             <div className="big-input">
               <span>{currency}</span>
 
               <input
                 type="number"
                 min="0"
+                step="0.01"
                 value={bill}
                 placeholder="0"
+                inputMode="decimal"
+                aria-label="Bill amount"
                 onChange={(e) => handleBill(e.target.value)}
               />
             </div>
 
-            {/* PAID */}
+            {/* PAID + TIP */}
             <div className="paid-row">
               <div className="field">
-                <label>Customer paid</label>
+                <label htmlFor="paid">Customer paid</label>
 
                 <div className="small-input">
                   <span>{currency}</span>
 
                   <input
+                    id="paid"
                     type="number"
                     min="0"
+                    step="0.01"
                     value={paid}
                     placeholder="0"
+                    inputMode="decimal"
+                    aria-label="Amount paid"
                     onChange={(e) => handlePaid(e.target.value)}
                   />
                 </div>
@@ -158,9 +212,7 @@ export default function TipClient() {
 
               <div className="difference">
                 <span>Tip</span>
-                <strong>
-                  {money(calculations.tip)}
-                </strong>
+                <strong>{money(calculations.tip)}</strong>
               </div>
             </div>
 
@@ -168,15 +220,23 @@ export default function TipClient() {
             <div className="tip-section">
               <div className="tip-title">
                 <span>Quick tip</span>
-                <b>{calculations.tipRate % 1 === 0 ? calculations.tipRate.toFixed(0) : calculations.tipRate.toFixed(1)}%</b>
+
+                <b>
+                  {calculations.tipRate % 1 === 0
+                    ? calculations.tipRate.toFixed(0)
+                    : calculations.tipRate.toFixed(1)}
+                  %
+                </b>
               </div>
 
               <div className="tips">
                 {TIP_PRESETS.map((value) => (
                   <button
                     key={value}
+                    type="button"
                     className={tipPercent === value ? "selected" : ""}
                     onClick={() => setPresetTip(value)}
+                    aria-pressed={tipPercent === value}
                   >
                     {value}%
                   </button>
@@ -193,9 +253,10 @@ export default function TipClient() {
 
               <div className="counter">
                 <button
-                  onClick={() =>
-                    setPeople(Math.max(1, people - 1))
-                  }
+                  type="button"
+                  aria-label="Decrease number of people"
+                  disabled={people <= 1}
+                  onClick={() => setPeople(Math.max(1, people - 1))}
                 >
                   −
                 </button>
@@ -203,17 +264,38 @@ export default function TipClient() {
                 <strong>{people}</strong>
 
                 <button
-                  onClick={() => setPeople(people + 1)}
+                  type="button"
+                  aria-label="Increase number of people"
+                  disabled={people >= 100}
+                  onClick={() => setPeople(Math.min(100, people + 1))}
                 >
                   +
                 </button>
               </div>
             </div>
+
+            {/* ACTIONS */}
+            <div className="actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={resetCalculator}
+              >
+                Reset
+              </button>
+
+              <button
+                type="button"
+                className="copy-btn"
+                onClick={copySummary}
+              >
+                {copied ? "Copied ✓" : "Copy Result"}
+              </button>
+            </div>
           </section>
 
           {/* RESULT CARD */}
           <section className="card result-card">
-
             <div className="result-top">
               <div>
                 <span className="label">RESULT</span>
@@ -221,16 +303,15 @@ export default function TipClient() {
               </div>
 
               <div className="live">
-                <i></i> Live
+                <i></i>
+                Live
               </div>
             </div>
 
             <div className="tip-result">
               <span>Tip amount</span>
 
-              <strong>
-                {money(calculations.tip)}
-              </strong>
+              <strong>{money(calculations.tip)}</strong>
 
               <small>
                 {calculations.tipRate.toFixed(1)}% of bill
@@ -238,7 +319,6 @@ export default function TipClient() {
             </div>
 
             <div className="rows">
-
               <div>
                 <span>Bill</span>
                 <b>{money(billNum)}</b>
@@ -256,36 +336,227 @@ export default function TipClient() {
                 <b>{money(calculations.total)}</b>
               </div>
 
-              {calculations.change > 0 && (
-                <div>
-                  <span>Change</span>
-                  <b className="green">
-                    {money(calculations.change)}
-                  </b>
-                </div>
-              )}
+              {calculations.hasPaidAmount &&
+                calculations.change > 0 && (
+                  <div>
+                    <span>Change</span>
+                    <b className="green">
+                      {money(calculations.change)}
+                    </b>
+                  </div>
+                )}
+
+              {calculations.hasPaidAmount &&
+                calculations.amountDue > 0 && (
+                  <div>
+                    <span>Amount due</span>
+                    <b className="due">
+                      {money(calculations.amountDue)}
+                    </b>
+                  </div>
+                )}
             </div>
 
+            {/* PER PERSON */}
             <div className="per-person">
               <div>
                 <span>Per person</span>
+
                 <small>
-                  {people} {people === 1 ? "person" : "people"} • Bill {money(calculations.billPerPerson)} + Tip {money(calculations.tipPerPerson)}
+                  {people} {people === 1 ? "person" : "people"} • Bill{" "}
+                  {money(calculations.billPerPerson)} + Tip{" "}
+                  {money(calculations.tipPerPerson)}
                 </small>
               </div>
 
-              <strong>
-                {money(calculations.perPerson)}
-              </strong>
+              <strong>{money(calculations.perPerson)}</strong>
             </div>
 
             <div className="mini-note">
-              Har ek ko dena hai: Bill {money(calculations.billPerPerson)} + Tip {money(calculations.tipPerPerson)} = {money(calculations.perPerson)}
+              Bill {money(calculations.billPerPerson)} + Tip{" "}
+              {money(calculations.tipPerPerson)} ={" "}
+              {money(calculations.perPerson)} per person
             </div>
           </section>
         </div>
 
-        {/* FOOTER */}
+        {/* SEO CONTENT */}
+        <div className="seo-space"></div>
+
+        <section className="seo-content">
+          <article className="seo-block">
+            <h2>What Is a Tip Calculator?</h2>
+
+            <p>
+              A tip calculator helps you quickly calculate a tip, final bill,
+              change and the amount each person should pay. Enter your bill,
+              choose a tip percentage and split the total between multiple
+              people when needed.
+            </p>
+          </article>
+
+          <article className="seo-block">
+            <h2>How to Use This Tip Calculator</h2>
+
+            <p>
+              Enter the bill amount, select a currency and choose a tip
+              percentage. You can also enter the amount paid to calculate the
+              change or remaining amount due. Use the people controls to split
+              the bill instantly.
+            </p>
+          </article>
+
+          <article className="seo-block">
+            <h2>Tip Calculator Features</h2>
+
+            <ul>
+              <li>Calculate common tip percentages instantly.</li>
+              <li>Calculate the final bill including the tip.</li>
+              <li>Calculate change from the amount paid.</li>
+              <li>Show the remaining amount due when payment is insufficient.</li>
+              <li>Split the bill between multiple people.</li>
+              <li>Supports dollar, euro, pound and rupee symbols.</li>
+              <li>Works directly in your browser.</li>
+              <li>No account or sign-up required.</li>
+            </ul>
+          </article>
+
+          <article className="seo-block">
+            <h2>Restaurant Tip Calculator</h2>
+
+            <p>
+              Use this calculator when paying at a restaurant, cafe, hotel or
+              other service business. It makes it easy to calculate a
+              percentage-based tip and see the final amount before completing
+              the payment.
+            </p>
+          </article>
+
+          <article className="seo-block">
+            <h2>Split Bill Calculator</h2>
+
+            <p>
+              When a group shares a meal or service, enter the number of people
+              to calculate the amount per person. The result includes both the
+              bill and the tip, making group payments easier to manage.
+            </p>
+          </article>
+
+          <article className="seo-block">
+            <h2>Tip Percentage Guide</h2>
+
+            <p>
+              Common tip percentages include 10%, 15%, 18%, 20% and 25%. The
+              appropriate amount depends on the country, service and your
+              personal preference. This calculator lets you choose the
+              percentage that fits your situation.
+            </p>
+          </article>
+
+          {/* RELATED TOOLS */}
+          <section className="related-tools">
+            <h2>Related Calculators</h2>
+
+            <div className="related-grid">
+              <a href="/percentage-calculator">
+                Percentage Calculator
+              </a>
+
+              <a href="/emi-calculator">
+                EMI Calculator
+              </a>
+
+              <a href="/age-calculator">
+                Age Calculator
+              </a>
+
+              <a href="/bmi-calculator">
+                BMI Calculator
+              </a>
+            </div>
+          </section>
+
+          {/* FAQ */}
+          <section className="faq-section">
+            <h2>Tip Calculator FAQ</h2>
+
+            <details>
+              <summary>Is this tip calculator free?</summary>
+
+              <p>
+                Yes. The calculator is free to use and does not require
+                registration or a paid subscription.
+              </p>
+            </details>
+
+            <details>
+              <summary>How is the tip calculated?</summary>
+
+              <p>
+                The tip is calculated by multiplying the bill amount by the
+                selected tip percentage and dividing the result by 100.
+              </p>
+            </details>
+
+            <details>
+              <summary>Can I split the bill between people?</summary>
+
+              <p>
+                Yes. Increase the number of people and the calculator will show
+                the total amount each person should pay, including their share
+                of the tip.
+              </p>
+            </details>
+
+            <details>
+              <summary>Can I calculate change?</summary>
+
+              <p>
+                Yes. Enter the amount the customer paid. If the payment is
+                greater than the bill plus tip, the calculator shows the
+                remaining change.
+              </p>
+            </details>
+
+            <details>
+              <summary>Can I see how much is still owed?</summary>
+
+              <p>
+                Yes. If the amount paid is less than the bill plus tip, the
+                calculator shows the remaining amount due.
+              </p>
+            </details>
+
+            <details>
+              <summary>Does the calculator work on mobile?</summary>
+
+              <p>
+                Yes. The calculator is designed to work on phones, tablets and
+                desktop browsers.
+              </p>
+            </details>
+
+            <details>
+              <summary>Do I need to install an app?</summary>
+
+              <p>
+                No. The calculator works directly in a modern web browser.
+              </p>
+            </details>
+          </section>
+
+          {/* TRUST NOTE */}
+          <section className="trust-note">
+            <h2>Simple, Fast and Easy to Use</h2>
+
+            <p>
+              This calculator is designed to keep tip calculations simple.
+              Your calculation happens in the browser, so there is no need to
+              create an account just to calculate a tip.
+            </p>
+          </section>
+        </section>
+
         <footer>
           Free • No sign-up • Instant calculation • thenexoratools
         </footer>
@@ -311,11 +582,12 @@ export default function TipClient() {
           margin: auto;
         }
 
-        /* HEADER */
-
-        .header {
-          text-align: center;
-          margin-bottom: 14px;
+        .top-brand {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 8px;
         }
 
         .brand {
@@ -323,7 +595,6 @@ export default function TipClient() {
           font-weight: 900;
           letter-spacing: 0.5px;
           color: #171b28;
-          margin-bottom: 6px;
         }
 
         .badge {
@@ -343,8 +614,13 @@ export default function TipClient() {
           color: #665cf6;
         }
 
+        .header {
+          text-align: center;
+          margin-bottom: 14px;
+        }
+
         .header h1 {
-          margin: 8px 0 3px;
+          margin: 4px 0 5px;
           font-size: 30px;
           line-height: 1;
           letter-spacing: -0.045em;
@@ -358,15 +634,15 @@ export default function TipClient() {
         .header p {
           margin: 0;
           color: #858e9f;
-          font-size: 10px;
+          font-size: 12px;
+          line-height: 1.5;
         }
-
-        /* MAIN */
 
         .main {
           display: grid;
           grid-template-columns: 1fr 0.88fr;
           gap: 10px;
+          align-items: start;
         }
 
         .card {
@@ -380,8 +656,6 @@ export default function TipClient() {
         .result-card {
           padding: 15px;
         }
-
-        /* TOP */
 
         .top-row,
         .result-top,
@@ -413,8 +687,6 @@ export default function TipClient() {
           font-weight: 850;
         }
 
-        /* CURRENCY */
-
         .currencies {
           display: flex;
           gap: 2px;
@@ -441,7 +713,14 @@ export default function TipClient() {
           box-shadow: 0 2px 6px rgba(30, 40, 70, 0.08);
         }
 
-        /* BIG INPUT */
+        .currencies button:focus-visible,
+        .tips button:focus-visible,
+        .counter button:focus-visible,
+        .actions button:focus-visible,
+        .related-grid a:focus-visible {
+          outline: 3px solid rgba(102, 92, 246, 0.22);
+          outline-offset: 2px;
+        }
 
         .big-input {
           display: flex;
@@ -487,8 +766,6 @@ export default function TipClient() {
           -moz-appearance: textfield;
         }
 
-        /* PAID */
-
         .paid-row {
           display: grid;
           grid-template-columns: 1fr 0.55fr;
@@ -522,6 +799,7 @@ export default function TipClient() {
 
         .small-input input {
           width: 100%;
+          min-width: 0;
           border: 0;
           outline: 0;
           background: transparent;
@@ -550,8 +828,6 @@ export default function TipClient() {
           color: #159767;
           font-size: 15px;
         }
-
-        /* TIPS */
 
         .tip-section {
           margin-top: 9px;
@@ -594,8 +870,6 @@ export default function TipClient() {
           box-shadow: 0 4px 10px rgba(102, 92, 246, 0.18);
         }
 
-        /* PEOPLE */
-
         .people-row {
           margin-top: 10px;
           padding-top: 9px;
@@ -619,13 +893,43 @@ export default function TipClient() {
           cursor: pointer;
         }
 
+        .counter button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
         .counter strong {
           min-width: 16px;
           text-align: center;
           font-size: 12px;
         }
 
-        /* RESULT */
+        .actions {
+          display: flex;
+          gap: 6px;
+          margin-top: 9px;
+        }
+
+        .actions button {
+          flex: 1;
+          border-radius: 8px;
+          padding: 7px 8px;
+          font-size: 9px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .secondary-btn {
+          border: 1px solid #e2e6ed;
+          background: #fff;
+          color: #697286;
+        }
+
+        .copy-btn {
+          border: 1px solid #665cf6;
+          background: #665cf6;
+          color: #fff;
+        }
 
         .live {
           display: flex;
@@ -699,6 +1003,10 @@ export default function TipClient() {
           color: #159767;
         }
 
+        .rows .due {
+          color: #c87916;
+        }
+
         .rows .total span {
           color: #343b49;
           font-weight: 900;
@@ -709,12 +1017,11 @@ export default function TipClient() {
           font-weight: 900;
         }
 
-        /* PER PERSON */
-
         .per-person {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 10px;
           margin-top: 9px;
           padding: 10px 11px;
           border: 1px solid #e5e2ff;
@@ -734,11 +1041,13 @@ export default function TipClient() {
           color: #9ba2af;
           font-size: 8px;
           margin-top: 1px;
+          line-height: 1.5;
         }
 
         .per-person strong {
           color: #665cf6;
           font-size: 17px;
+          white-space: nowrap;
         }
 
         .mini-note {
@@ -746,26 +1055,120 @@ export default function TipClient() {
           color: #9aa1ad;
           font-size: 8px;
           margin-top: 5px;
+          line-height: 1.5;
         }
 
-        /* FOOTER */
+        .seo-space {
+          height: 82px;
+        }
+
+        .seo-content {
+          max-width: 820px;
+          margin: 0 auto;
+          color: #697285;
+        }
+
+        .seo-block,
+        .related-tools,
+        .faq-section,
+        .trust-note {
+          margin-bottom: 28px;
+        }
+
+        .seo-content h2 {
+          color: #252b38;
+          font-size: 20px;
+          line-height: 1.3;
+          margin: 0 0 9px;
+          font-weight: 900;
+        }
+
+        .seo-content p {
+          margin: 0;
+          font-size: 15px;
+          line-height: 1.75;
+        }
+
+        .seo-content ul {
+          margin: 7px 0 0;
+          padding-left: 21px;
+        }
+
+        .seo-content li {
+          font-size: 15px;
+          line-height: 1.75;
+          margin: 2px 0;
+        }
+
+        .related-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+        }
+
+        .related-grid a {
+          display: block;
+          padding: 11px 8px;
+          border: 1px solid #e5e8ee;
+          background: #fff;
+          border-radius: 9px;
+          color: #665cf6;
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 850;
+          text-align: center;
+          transition:
+            border-color 0.15s ease,
+            transform 0.15s ease;
+        }
+
+        .related-grid a:hover {
+          border-color: #665cf6;
+          transform: translateY(-1px);
+        }
+
+        .faq-section details {
+          border-bottom: 1px solid #e8ebf0;
+          padding: 11px 0;
+        }
+
+        .faq-section summary {
+          cursor: pointer;
+          color: #3e4655;
+          font-size: 14px;
+          font-weight: 850;
+          line-height: 1.5;
+        }
+
+        .faq-section details p {
+          padding-top: 7px;
+        }
+
+        .trust-note {
+          padding: 16px;
+          border: 1px solid #e6e8ee;
+          background: #fff;
+          border-radius: 11px;
+        }
 
         footer {
           text-align: center;
           color: #a1a8b4;
-          font-size: 8px;
+          font-size: 11px;
           margin-top: 10px;
         }
 
-        /* MOBILE */
-
         @media (max-width: 700px) {
           .tip-page {
-            padding: 10px 9px 15px;
+            padding: 10px 9px 18px;
           }
 
-          .header {
-            margin-bottom: 8px;
+          .top-brand {
+            margin-bottom: 6px;
+          }
+
+          .brand {
+            font-size: 10px;
           }
 
           .badge {
@@ -773,13 +1176,17 @@ export default function TipClient() {
             font-size: 8px;
           }
 
+          .header {
+            margin-bottom: 9px;
+          }
+
           .header h1 {
-            margin: 5px 0 2px;
+            margin: 4px 0 3px;
             font-size: 25px;
           }
 
           .header p {
-            font-size: 8px;
+            font-size: 10px;
           }
 
           .main {
@@ -853,6 +1260,15 @@ export default function TipClient() {
             padding-top: 7px;
           }
 
+          .actions {
+            margin-top: 7px;
+          }
+
+          .actions button {
+            padding: 7px 6px;
+            font-size: 8px;
+          }
+
           .result-top {
             margin-bottom: 0;
           }
@@ -872,7 +1288,7 @@ export default function TipClient() {
           }
 
           .rows > div {
-            padding: 5px 0;
+            padding: 6px 0;
           }
 
           .per-person {
@@ -884,12 +1300,42 @@ export default function TipClient() {
             font-size: 15px;
           }
 
+          .seo-space {
+            height: 60px;
+          }
+
+          .seo-content {
+            max-width: 100%;
+          }
+
+          .seo-content h2 {
+            font-size: 18px;
+          }
+
+          .seo-content p,
+          .seo-content li {
+            font-size: 14px;
+            line-height: 1.7;
+          }
+
+          .related-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .related-grid a {
+            font-size: 11px;
+            padding: 10px 5px;
+          }
+
+          .faq-section summary {
+            font-size: 13px;
+          }
+
           footer {
             margin-top: 7px;
+            font-size: 10px;
           }
         }
-
-        /* VERY SMALL PHONES */
 
         @media (max-height: 700px) and (max-width: 700px) {
           .tip-page {
@@ -929,8 +1375,8 @@ export default function TipClient() {
             padding: 6px 8px;
           }
 
-          footer {
-            display: none;
+          .seo-space {
+            height: 55px;
           }
         }
       `}</style>
