@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CSSProperties,
   KeyboardEvent,
   useEffect,
   useRef,
@@ -84,15 +85,103 @@ function getResult(percent: number): Result {
 }
 
 /**
- * Keeps letters and numbers from many writing systems.
- * This makes the calculator more globally friendly than an
- * English-only a-z regex.
+ * Normalizes names without using Unicode property regexes.
+ *
+ * This avoids the TypeScript/ES target build error caused by:
+ * /[^\p{L}\p{N}]/gu
+ *
+ * The function keeps letters and numbers from several common
+ * writing systems while removing spaces, punctuation and symbols.
  */
 function normalizeName(value: string): string {
-  return value
+  const normalized = value
     .normalize("NFKC")
-    .toLocaleLowerCase()
-    .replace(/[^\p{L}\p{N}]/gu, "");
+    .toLocaleLowerCase();
+
+  let result = "";
+
+  for (let i = 0; i < normalized.length; i++) {
+    const char = normalized[i];
+    const code = normalized.charCodeAt(i);
+
+    const isAsciiLetterOrNumber =
+      (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122);
+
+    const isLatinExtended =
+      (code >= 0x00c0 && code <= 0x024f);
+
+    const isGreek =
+      (code >= 0x0370 && code <= 0x03ff);
+
+    const isCyrillic =
+      (code >= 0x0400 && code <= 0x04ff);
+
+    const isArabic =
+      (code >= 0x0600 && code <= 0x06ff);
+
+    const isHebrew =
+      (code >= 0x0590 && code <= 0x05ff);
+
+    const isDevanagari =
+      (code >= 0x0900 && code <= 0x097f);
+
+    const isBengali =
+      (code >= 0x0980 && code <= 0x09ff);
+
+    const isGurmukhi =
+      (code >= 0x0a00 && code <= 0x0a7f);
+
+    const isGujarati =
+      (code >= 0x0a80 && code <= 0x0aff);
+
+    const isTamil =
+      (code >= 0x0b80 && code <= 0x0bff);
+
+    const isTelugu =
+      (code >= 0x0c00 && code <= 0x0c7f);
+
+    const isKannada =
+      (code >= 0x0c80 && code <= 0x0cff);
+
+    const isMalayalam =
+      (code >= 0x0d00 && code <= 0x0d7f);
+
+    const isThai =
+      (code >= 0x0e00 && code <= 0x0e7f);
+
+    const isCJK =
+      (code >= 0x3400 && code <= 0x4dbf) ||
+      (code >= 0x4e00 && code <= 0x9fff);
+
+    const isHangul =
+      (code >= 0xac00 && code <= 0xd7af);
+
+    if (
+      isAsciiLetterOrNumber ||
+      isLatinExtended ||
+      isGreek ||
+      isCyrillic ||
+      isArabic ||
+      isHebrew ||
+      isDevanagari ||
+      isBengali ||
+      isGurmukhi ||
+      isGujarati ||
+      isTamil ||
+      isTelugu ||
+      isKannada ||
+      isMalayalam ||
+      isThai ||
+      isCJK ||
+      isHangul
+    ) {
+      result += char;
+    }
+  }
+
+  return result;
 }
 
 function calculateLove(
@@ -104,9 +193,11 @@ function calculateLove(
   const a = normalizeName(name1);
   const b = normalizeName(name2);
 
-  if (!a || !b) return 0;
+  if (!a || !b) {
+    return 0;
+  }
 
-  // Same names always receive the maximum fun score.
+  // Same names receive the maximum fun score.
   if (a === b) {
     return 100;
   }
@@ -137,35 +228,64 @@ function calculateLove(
     score += 11;
   }
 
-  if ([...a][0] === [...b][0]) {
+  const firstA = [...a][0];
+  const firstB = [...b][0];
+
+  if (firstA && firstA === firstB) {
     score += 9;
   }
 
-  const lengthDifference = Math.abs(a.length - b.length);
+  const lengthDifference = Math.abs(
+    a.length - b.length
+  );
 
-  score -= Math.min(lengthDifference * 2, 14);
+  score -= Math.min(
+    lengthDifference * 2,
+    14
+  );
 
-  return Math.min(99, Math.max(1, 35 + (score % 65)));
+  return Math.min(
+    99,
+    Math.max(
+      1,
+      35 + (score % 65)
+    )
+  );
 }
 
 export default function LoveCalculatorClient() {
   const [name1, setName1] = useState("");
   const [name2, setName2] = useState("");
 
-  const [gender1, setGender1] = useState<Gender | "">("");
-  const [gender2, setGender2] = useState<Gender | "">("");
+  const [gender1, setGender1] =
+    useState<Gender | "">("");
 
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState("");
+  const [gender2, setGender2] =
+    useState<Gender | "">("");
 
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [shareStatus, setShareStatus] = useState("");
+  const [loading, setLoading] =
+    useState(false);
 
-  const resultRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [result, setResult] =
+    useState<Result | null>(null);
 
-  // Clean up any pending calculation when the component unmounts.
+  const [error, setError] =
+    useState("");
+
+  const [particles, setParticles] =
+    useState<Particle[]>([]);
+
+  const [shareStatus, setShareStatus] =
+    useState("");
+
+  const resultRef =
+    useRef<HTMLDivElement>(null);
+
+  const timerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -174,44 +294,56 @@ export default function LoveCalculatorClient() {
     };
   }, []);
 
-  // Generate celebration particles only once per result.
-  // This prevents Math.random() from changing positions on re-render.
   useEffect(() => {
     if (!result) {
       setParticles([]);
       return;
     }
 
-    const symbols = ["🎉", "💖", "✨", "💕", "💗", "🎊"];
+    const symbols = [
+      "🎉",
+      "💖",
+      "✨",
+      "💕",
+      "💗",
+      "🎊",
+    ];
 
-    const generated: Particle[] = Array.from(
-      { length: 32 },
-      (_, i) => ({
-        id: i,
-        left: 8 + Math.random() * 84,
-        delay: Math.random() * 0.55,
-        size: 13 + Math.random() * 18,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        rotation: -180 + Math.random() * 360,
-        symbol: symbols[i % symbols.length],
-      })
-    );
+    const generated: Particle[] =
+      Array.from(
+        { length: 32 },
+        (_, i) => ({
+          id: i,
+          left: 8 + Math.random() * 84,
+          delay: Math.random() * 0.55,
+          size: 13 + Math.random() * 18,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          rotation:
+            -180 + Math.random() * 360,
+          symbol:
+            symbols[i % symbols.length],
+        })
+      );
 
     setParticles(generated);
 
-    const scrollTimer = setTimeout(() => {
-      resultRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 100);
+    const scrollTimer =
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
 
-    return () => clearTimeout(scrollTimer);
+    return () =>
+      clearTimeout(scrollTimer);
   }, [result]);
 
   const calculate = () => {
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     setError("");
     setShareStatus("");
@@ -220,12 +352,16 @@ export default function LoveCalculatorClient() {
     const second = name2.trim();
 
     if (!first || !second) {
-      setError("Please enter both names.");
+      setError(
+        "Please enter both names."
+      );
       return;
     }
 
     if (!gender1 || !gender2) {
-      setError("Please select the gender for both names.");
+      setError(
+        "Please select the gender for both names."
+      );
       return;
     }
 
@@ -236,21 +372,24 @@ export default function LoveCalculatorClient() {
     setResult(null);
     setLoading(true);
 
-    const finalPercent = calculateLove(
-      first,
-      second,
-      gender1,
-      gender2
-    );
+    const finalPercent =
+      calculateLove(
+        first,
+        second,
+        gender1,
+        gender2
+      );
 
-    const finalResult = getResult(finalPercent);
+    const finalResult =
+      getResult(finalPercent);
 
-    // Premium short heartbeat/loading experience.
-    timerRef.current = setTimeout(() => {
-      setLoading(false);
-      setResult(finalResult);
-      timerRef.current = null;
-    }, 1800);
+    // Short premium heartbeat experience.
+    timerRef.current =
+      setTimeout(() => {
+        setLoading(false);
+        setResult(finalResult);
+        timerRef.current = null;
+      }, 1800);
   };
 
   const handleKeyDown = (
@@ -280,7 +419,9 @@ export default function LoveCalculatorClient() {
   };
 
   const shareResult = async () => {
-    if (!result) return;
+    if (!result) {
+      return;
+    }
 
     const shareText =
       `${name1.trim()} ❤️ ${name2.trim()} — Love Match ${result.percent}%\n\n` +
@@ -298,7 +439,10 @@ export default function LoveCalculatorClient() {
           url: window.location.href,
         });
 
-        setShareStatus("Shared successfully.");
+        setShareStatus(
+          "Shared successfully."
+        );
+
         return;
       }
 
@@ -306,14 +450,22 @@ export default function LoveCalculatorClient() {
         typeof navigator !== "undefined" &&
         navigator.clipboard
       ) {
-        await navigator.clipboard.writeText(shareText);
-        setShareStatus("Result copied to clipboard.");
+        await navigator.clipboard.writeText(
+          shareText
+        );
+
+        setShareStatus(
+          "Result copied to clipboard."
+        );
+
         return;
       }
 
-      setShareStatus("Sharing is not available on this device.");
+      setShareStatus(
+        "Sharing is not available on this device."
+      );
     } catch {
-      // User cancelled native sharing.
+      // The user cancelled native sharing.
     }
   };
 
@@ -365,10 +517,16 @@ export default function LoveCalculatorClient() {
           align-items: center;
           justify-content: space-between;
           padding: 0 18px;
-          background: rgba(255, 255, 255, 0.84);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.84
+          );
           backdrop-filter: blur(18px);
           -webkit-backdrop-filter: blur(18px);
-          border-bottom: 1px solid rgba(244, 114, 182, 0.15);
+          border-bottom: 1px solid
+            rgba(244, 114, 182, 0.15);
         }
 
         .brand {
@@ -394,7 +552,10 @@ export default function LoveCalculatorClient() {
         }
 
         .container {
-          width: min(760px, calc(100% - 28px));
+          width: min(
+            760px,
+            calc(100% - 28px)
+          );
           margin: 0 auto;
           padding: 25px 0 50px;
         }
@@ -410,17 +571,28 @@ export default function LoveCalculatorClient() {
           gap: 6px;
           padding: 6px 11px;
           border-radius: 999px;
-          background: rgba(255, 240, 247, 0.9);
+          background: rgba(
+            255,
+            240,
+            247,
+            0.9
+          );
           border: 1px solid #fbcfe8;
           color: #9d174d;
           font-size: 9.5px;
           font-weight: 900;
-          box-shadow: 0 6px 20px rgba(236, 72, 153, 0.06);
+          box-shadow:
+            0 6px 20px
+              rgba(236, 72, 153, 0.06);
         }
 
         .hero h1 {
           margin: 11px 0 7px;
-          font-size: clamp(28px, 7vw, 43px);
+          font-size: clamp(
+            28px,
+            7vw,
+            43px
+          );
           line-height: 1.03;
           letter-spacing: -1.5px;
           font-weight: 950;
@@ -428,7 +600,8 @@ export default function LoveCalculatorClient() {
 
         .hero h1 span {
           display: inline-block;
-          animation: tinyBeat 1.5s infinite;
+          animation: tinyBeat 1.5s
+            infinite;
         }
 
         .hero p {
@@ -457,13 +630,20 @@ export default function LoveCalculatorClient() {
         .card {
           position: relative;
           overflow: hidden;
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.95
+          );
           border: 1px solid #fce7f3;
           border-radius: 25px;
           padding: 20px;
           box-shadow:
-            0 25px 80px rgba(236, 72, 153, 0.10),
-            0 5px 18px rgba(30, 10, 20, 0.04);
+            0 25px 80px
+              rgba(236, 72, 153, 0.10),
+            0 5px 18px
+              rgba(30, 10, 20, 0.04);
         }
 
         .card::before {
@@ -473,12 +653,18 @@ export default function LoveCalculatorClient() {
           left: 15%;
           right: 15%;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(236, 72, 153, 0.45),
-            transparent
-          );
+          background:
+            linear-gradient(
+              90deg,
+              transparent,
+              rgba(
+                236,
+                72,
+                153,
+                0.45
+              ),
+              transparent
+            );
         }
 
         .section-title {
@@ -525,8 +711,10 @@ export default function LoveCalculatorClient() {
         .input:focus {
           border-color: #ec4899;
           box-shadow:
-            0 0 0 4px rgba(236, 72, 153, 0.08),
-            0 6px 20px rgba(236, 72, 153, 0.06);
+            0 0 0 4px
+              rgba(236, 72, 153, 0.08),
+            0 6px 20px
+              rgba(236, 72, 153, 0.06);
         }
 
         .gender-row {
@@ -559,15 +747,18 @@ export default function LoveCalculatorClient() {
 
         .gender-btn.active {
           border-color: #ec4899;
-          background: linear-gradient(
-            180deg,
-            #fff4f9,
-            #fff0f7
-          );
+          background:
+            linear-gradient(
+              180deg,
+              #fff4f9,
+              #fff0f7
+            );
           color: #9d174d;
           box-shadow:
-            inset 0 0 0 1px rgba(236, 72, 153, 0.1),
-            0 5px 16px rgba(236, 72, 153, 0.07);
+            inset 0 0 0 1px
+              rgba(236, 72, 153, 0.1),
+            0 5px 16px
+              rgba(236, 72, 153, 0.07);
         }
 
         .calculate-btn {
@@ -585,8 +776,10 @@ export default function LoveCalculatorClient() {
               #be185d 100%
             );
           box-shadow:
-            0 12px 28px rgba(236, 72, 153, 0.23),
-            inset 0 1px rgba(255, 255, 255, 0.2);
+            0 12px 28px
+              rgba(236, 72, 153, 0.23),
+            inset 0 1px
+              rgba(255, 255, 255, 0.2);
           font-size: 12px;
           font-weight: 950;
           cursor: pointer;
@@ -598,8 +791,10 @@ export default function LoveCalculatorClient() {
         .calculate-btn:hover {
           transform: translateY(-1px);
           box-shadow:
-            0 15px 34px rgba(236, 72, 153, 0.29),
-            inset 0 1px rgba(255, 255, 255, 0.2);
+            0 15px 34px
+              rgba(236, 72, 153, 0.29),
+            inset 0 1px
+              rgba(255, 255, 255, 0.2);
         }
 
         .calculate-btn:active {
@@ -647,8 +842,11 @@ export default function LoveCalculatorClient() {
           position: absolute;
           inset: 0;
           border-radius: 50%;
-          border: 1px solid rgba(236, 72, 153, 0.2);
-          animation: pulseRing 1.35s infinite ease-out;
+          border: 1px solid
+            rgba(236, 72, 153, 0.2);
+          animation:
+            pulseRing 1.35s
+            infinite ease-out;
         }
 
         .heart-loader::after {
@@ -660,9 +858,14 @@ export default function LoveCalculatorClient() {
           z-index: 2;
           font-size: 65px;
           line-height: 1;
-          animation: heartbeat 0.82s infinite;
+          animation:
+            heartbeat 0.82s
+            infinite;
           filter:
-            drop-shadow(0 10px 20px rgba(236, 72, 153, 0.24));
+            drop-shadow(
+              0 10px 20px
+                rgba(236, 72, 153, 0.24)
+            );
         }
 
         .loading-text {
@@ -733,7 +936,9 @@ export default function LoveCalculatorClient() {
           position: absolute;
           top: 47%;
           opacity: 0;
-          animation: burst 1.75s ease-out forwards;
+          animation:
+            burst 1.75s
+            ease-out forwards;
         }
 
         @keyframes burst {
@@ -753,8 +958,14 @@ export default function LoveCalculatorClient() {
             opacity: 0;
             transform:
               translate(
-                calc((var(--x) - 50) * 2.4px),
-                calc((var(--y) - 50) * 3.2px)
+                calc(
+                  (var(--x) - 50) *
+                    2.4px
+                ),
+                calc(
+                  (var(--y) - 50) *
+                    3.2px
+                )
               )
               scale(1.18)
               rotate(var(--rotation));
@@ -771,9 +982,19 @@ export default function LoveCalculatorClient() {
           font-size: 48px;
           line-height: 1;
           margin-bottom: 7px;
-          animation: pop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+          animation:
+            pop 0.55s
+            cubic-bezier(
+              0.2,
+              0.8,
+              0.2,
+              1
+            );
           filter:
-            drop-shadow(0 8px 20px rgba(236, 72, 153, 0.16));
+            drop-shadow(
+              0 8px 20px
+                rgba(236, 72, 153, 0.16)
+            );
         }
 
         @keyframes pop {
@@ -801,13 +1022,18 @@ export default function LoveCalculatorClient() {
 
         .percentage {
           margin: 0;
-          font-size: clamp(68px, 18vw, 108px);
+          font-size: clamp(
+            68px,
+            18vw,
+            108px
+          );
           line-height: 0.95;
           letter-spacing: -5px;
           font-weight: 1000;
           color: #ec4899;
           text-shadow:
-            0 8px 30px rgba(236, 72, 153, 0.18);
+            0 8px 30px
+              rgba(236, 72, 153, 0.18);
         }
 
         .match-label {
@@ -855,7 +1081,9 @@ export default function LoveCalculatorClient() {
         .share {
           color: white;
           background: #18121a;
-          box-shadow: 0 8px 20px rgba(24, 18, 26, 0.12);
+          box-shadow:
+            0 8px 20px
+              rgba(24, 18, 26, 0.12);
         }
 
         .again {
@@ -874,11 +1102,18 @@ export default function LoveCalculatorClient() {
 
         .info-card {
           margin-top: 12px;
-          background: rgba(255, 255, 255, 0.8);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.8
+          );
           border: 1px solid #fce7f3;
           border-radius: 18px;
           padding: 16px;
-          box-shadow: 0 10px 35px rgba(236, 72, 153, 0.04);
+          box-shadow:
+            0 10px 35px
+              rgba(236, 72, 153, 0.04);
         }
 
         .info-card h2 {
@@ -896,7 +1131,10 @@ export default function LoveCalculatorClient() {
 
         .steps {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(
+            3,
+            1fr
+          );
           gap: 7px;
           margin-top: 11px;
         }
@@ -941,7 +1179,10 @@ export default function LoveCalculatorClient() {
 
         @media (max-width: 520px) {
           .container {
-            width: min(100% - 20px, 760px);
+            width: min(
+              100% - 20px,
+              760px
+            );
             padding-top: 17px;
           }
 
@@ -999,7 +1240,10 @@ export default function LoveCalculatorClient() {
           thenexora<span>tools</span>
         </a>
 
-        <a href="/" className="back">
+        <a
+          href="/"
+          className="back"
+        >
           ← All Tools
         </a>
       </header>
@@ -1011,11 +1255,13 @@ export default function LoveCalculatorClient() {
           </div>
 
           <h1>
-            Love Calculator <span>❤️</span>
+            Love Calculator{" "}
+            <span>❤️</span>
           </h1>
 
           <p>
-            Enter two names and discover your fun love match percentage.
+            Enter two names and discover
+            your fun love match percentage.
           </p>
         </section>
 
@@ -1040,9 +1286,13 @@ export default function LoveCalculatorClient() {
                   type="text"
                   value={name1}
                   onChange={(e) =>
-                    setName1(e.target.value)
+                    setName1(
+                      e.target.value
+                    )
                   }
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={
+                    handleKeyDown
+                  }
                   placeholder="Enter your name"
                   autoComplete="name"
                   maxLength={60}
@@ -1070,15 +1320,19 @@ export default function LoveCalculatorClient() {
                   <button
                     type="button"
                     className={`gender-btn ${
-                      gender1 === "female"
+                      gender1 ===
+                      "female"
                         ? "active"
                         : ""
                     }`}
                     onClick={() =>
-                      setGender1("female")
+                      setGender1(
+                        "female"
+                      )
                     }
                     aria-pressed={
-                      gender1 === "female"
+                      gender1 ===
+                      "female"
                     }
                   >
                     👩 Female
@@ -1100,9 +1354,13 @@ export default function LoveCalculatorClient() {
                   type="text"
                   value={name2}
                   onChange={(e) =>
-                    setName2(e.target.value)
+                    setName2(
+                      e.target.value
+                    )
                   }
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={
+                    handleKeyDown
+                  }
                   placeholder="Enter their name"
                   autoComplete="off"
                   maxLength={60}
@@ -1130,15 +1388,19 @@ export default function LoveCalculatorClient() {
                   <button
                     type="button"
                     className={`gender-btn ${
-                      gender2 === "female"
+                      gender2 ===
+                      "female"
                         ? "active"
                         : ""
                     }`}
                     onClick={() =>
-                      setGender2("female")
+                      setGender2(
+                        "female"
+                      )
                     }
                     aria-pressed={
-                      gender2 === "female"
+                      gender2 ===
+                      "female"
                     }
                   >
                     👩 Female
@@ -1198,24 +1460,30 @@ export default function LoveCalculatorClient() {
               className="result"
             >
               <div className="celebration">
-                {particles.map((particle) => (
-                  <span
-                    key={particle.id}
-                    className="particle"
-                    style={
+                {particles.map(
+                  (particle) => (
+                    <span
+                      key={
+                        particle.id
+                      }
+                      className="particle"
+                      style={
+                        {
+                          left: `${particle.left}%`,
+                          fontSize: `${particle.size}px`,
+                          animationDelay: `${particle.delay}s`,
+                          "--x": `${particle.x}`,
+                          "--y": `${particle.y}`,
+                          "--rotation": `${particle.rotation}deg`,
+                        } as CSSProperties
+                      }
+                    >
                       {
-                        left: `${particle.left}%`,
-                        fontSize: `${particle.size}px`,
-                        animationDelay: `${particle.delay}s`,
-                        "--x": `${particle.x}`,
-                        "--y": `${particle.y}`,
-                        "--rotation": `${particle.rotation}deg`,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {particle.symbol}
-                  </span>
-                ))}
+                        particle.symbol
+                      }
+                    </span>
+                  )
+                )}
               </div>
 
               <div className="result-content">
@@ -1224,7 +1492,8 @@ export default function LoveCalculatorClient() {
                 </div>
 
                 <div className="names">
-                  {name1.trim()} ❤️ {name2.trim()}
+                  {name1.trim()} ❤️{" "}
+                  {name2.trim()}
                 </div>
 
                 <div
@@ -1246,7 +1515,9 @@ export default function LoveCalculatorClient() {
                   <button
                     type="button"
                     className="action share"
-                    onClick={shareResult}
+                    onClick={
+                      shareResult
+                    }
                   >
                     📤 Share Result
                   </button>
@@ -1272,17 +1543,23 @@ export default function LoveCalculatorClient() {
         </section>
 
         <section className="info-card">
-          <h2>How it works</h2>
+          <h2>
+            How it works
+          </h2>
 
           <p>
-            Enter both names, choose the gender for each
-            person, and start the fun love match. The result
-            is generated instantly in your browser.
+            Enter both names, choose the
+            gender for each person, and
+            start the fun love match. The
+            result is generated instantly
+            in your browser.
           </p>
 
           <div className="steps">
             <div className="step">
-              <div className="step-icon">✍️</div>
+              <div className="step-icon">
+                ✍️
+              </div>
 
               <div>
                 <div className="step-title">
@@ -1296,7 +1573,9 @@ export default function LoveCalculatorClient() {
             </div>
 
             <div className="step">
-              <div className="step-icon">❤️</div>
+              <div className="step-icon">
+                ❤️
+              </div>
 
               <div>
                 <div className="step-title">
@@ -1304,13 +1583,16 @@ export default function LoveCalculatorClient() {
                 </div>
 
                 <div className="step-text">
-                  Watch the short heartbeat animation.
+                  Watch the short
+                  heartbeat animation.
                 </div>
               </div>
             </div>
 
             <div className="step">
-              <div className="step-icon">💖</div>
+              <div className="step-icon">
+                💖
+              </div>
 
               <div>
                 <div className="step-title">
@@ -1318,22 +1600,28 @@ export default function LoveCalculatorClient() {
                 </div>
 
                 <div className="step-text">
-                  Get your fun percentage.
+                  Get your fun
+                  percentage.
                 </div>
               </div>
             </div>
           </div>
 
           <p className="disclaimer">
-            This Love Calculator is designed for
-            entertainment. A percentage cannot scientifically
-            measure real-world love or compatibility.
+            This Love Calculator is
+            designed for entertainment.
+            A percentage cannot
+            scientifically measure
+            real-world love or
+            compatibility.
           </p>
         </section>
 
         <div className="footer">
-          © {new Date().getFullYear()} thenexoratools •
-          Free online tools
+          ©{" "}
+          {new Date().getFullYear()}{" "}
+          thenexoratools • Free
+          online tools
         </div>
       </div>
     </main>
