@@ -5,6 +5,10 @@ import { useMemo, useState } from "react";
 const CURRENCIES = ["$", "€", "£", "₹"];
 const TIP_PRESETS = [10, 15, 18, 20, 25];
 
+function cleanNumber(value: string) {
+  return value.replace(/^0+(?=\d)/, "");
+}
+
 export default function TipClient() {
   const [bill, setBill] = useState("");
   const [paid, setPaid] = useState("");
@@ -17,23 +21,76 @@ export default function TipClient() {
   const paidNum = Number(paid) || 0;
 
   const calculations = useMemo(() => {
-    const tip = billNum > 0 ? (billNum * tipPercent) / 100 : 0;
-    const total = billNum + tip;
+    /*
+      NORMAL TIP:
+      Example:
+      Bill = 500
+      Tip = 20%
+      Suggested tip = 100
+      Suggested total = 600
+    */
+    const suggestedTip =
+      billNum > 0 ? (billNum * tipPercent) / 100 : 0;
+
+    const suggestedTotal = billNum + suggestedTip;
 
     const hasPaidAmount = paid.trim() !== "";
-    const change =
-      hasPaidAmount && paidNum > total ? paidNum - total : 0;
 
-    const amountDue =
-      hasPaidAmount && paidNum < total ? total - paidNum : 0;
+    /*
+      SMART PAYMENT LOGIC
 
-    const billPerPerson = people > 0 ? billNum / people : 0;
-    const tipPerPerson = people > 0 ? tip / people : 0;
-    const totalPerPerson = people > 0 ? total / people : 0;
+      If customer has paid enough to cover the bill:
+      actual tip = paid - bill
+
+      Example:
+      Bill = 500
+      Paid = 1000
+      Actual tip = 500
+      Total = 1000
+      Change = 0
+
+      If customer has not paid enough:
+      use selected percentage as the expected tip.
+    */
+
+    let actualTip = suggestedTip;
+    let total = suggestedTotal;
+    let change = 0;
+    let amountDue = 0;
+    let paymentTip = false;
+
+    if (hasPaidAmount) {
+      if (paidNum >= billNum && billNum > 0) {
+        const extraPaid = paidNum - billNum;
+
+        actualTip = extraPaid;
+        total = paidNum;
+        paymentTip = true;
+
+        change = 0;
+        amountDue = 0;
+      } else if (paidNum < suggestedTotal) {
+        actualTip = suggestedTip;
+        total = suggestedTotal;
+
+        amountDue = suggestedTotal - paidNum;
+        change = 0;
+      }
+    }
+
+    const billPerPerson =
+      people > 0 ? billNum / people : 0;
+
+    const tipPerPerson =
+      people > 0 ? actualTip / people : 0;
+
+    const totalPerPerson =
+      people > 0 ? total / people : 0;
 
     return {
-      tip,
-      tipRate: tipPercent,
+      suggestedTip,
+      suggestedTotal,
+      actualTip,
       total,
       change,
       amountDue,
@@ -41,41 +98,32 @@ export default function TipClient() {
       tipPerPerson,
       perPerson: totalPerPerson,
       hasPaidAmount,
+      paymentTip,
     };
   }, [billNum, paidNum, paid, people, tipPercent]);
 
-  const money = (value: number) => `${currency}${value.toFixed(2)}`;
+  const money = (value: number) => {
+    return `${currency}${value.toFixed(2)}`;
+  };
 
   const handleBill = (value: string) => {
-    const clean = value.replace(/^0+(?=\d)/, "");
-
+    const clean = cleanNumber(value);
     setBill(clean);
 
-    // Keep the default paid amount equal to the new total.
-    // This gives the user an immediate change calculation.
-    const b = Number(clean) || 0;
-
-    if (b > 0) {
-      const newTotal = b + (b * tipPercent) / 100;
-      setPaid(newTotal.toFixed(2));
-    } else {
-      setPaid("");
-    }
+    /*
+      Do not automatically overwrite customer payment.
+      This prevents the user's manually entered payment
+      from being destroyed when they edit the bill.
+    */
   };
 
   const handlePaid = (value: string) => {
-    const clean = value.replace(/^0+(?=\d)/, "");
+    const clean = cleanNumber(value);
     setPaid(clean);
   };
 
   const setPresetTip = (percent: number) => {
     setTipPercent(percent);
-
-    // Update the default paid amount to the new total.
-    if (billNum > 0) {
-      const newTotal = billNum + (billNum * percent) / 100;
-      setPaid(newTotal.toFixed(2));
-    }
   };
 
   const resetCalculator = () => {
@@ -91,7 +139,12 @@ export default function TipClient() {
     const lines = [
       "Tip Calculator Result",
       `Bill: ${money(billNum)}`,
-      `Tip: ${money(calculations.tip)} (${calculations.tipRate}%)`,
+      `Tip: ${money(calculations.actualTip)}`,
+      `Tip percentage: ${
+        billNum > 0
+          ? ((calculations.actualTip / billNum) * 100).toFixed(1)
+          : "0.0"
+      }%`,
       `Total: ${money(calculations.total)}`,
     ];
 
@@ -116,6 +169,7 @@ export default function TipClient() {
 
     try {
       await navigator.clipboard.writeText(summary);
+
       setCopied(true);
 
       window.setTimeout(() => {
@@ -126,9 +180,21 @@ export default function TipClient() {
     }
   };
 
+  const actualTipPercent =
+    billNum > 0
+      ? (calculations.actualTip / billNum) * 100
+      : 0;
+
+  const displayTipPercent =
+    calculations.paymentTip
+      ? actualTipPercent
+      : tipPercent;
+
   return (
     <main className="tip-page">
       <div className="tip-container">
+
+        {/* BRAND */}
         <div className="top-brand">
           <div className="brand">thenexoratools</div>
 
@@ -138,23 +204,30 @@ export default function TipClient() {
           </div>
         </div>
 
+        {/* HEADER */}
         <header className="header">
           <h1>
             Tip <span>Calculator</span>
           </h1>
 
           <p>
-            Calculate tips, total bills, change and split payments instantly.
+            Calculate tips, total bills, payment, change and split payments instantly.
           </p>
         </header>
 
+        {/* MAIN CALCULATOR */}
         <div className="main">
+
           {/* INPUT CARD */}
           <section className="card input-card">
+
             <div className="top-row">
               <div>
                 <span className="label">BILL AMOUNT</span>
-                <h2>How much was the bill?</h2>
+
+                <h2>
+                  How much was the bill?
+                </h2>
               </div>
 
               <div className="currencies">
@@ -173,6 +246,7 @@ export default function TipClient() {
               </div>
             </div>
 
+            {/* BILL */}
             <div className="big-input">
               <span>{currency}</span>
 
@@ -188,10 +262,13 @@ export default function TipClient() {
               />
             </div>
 
-            {/* PAID + TIP */}
+            {/* CUSTOMER PAID */}
             <div className="paid-row">
+
               <div className="field">
-                <label htmlFor="paid">Customer paid</label>
+                <label htmlFor="paid">
+                  Customer paid
+                </label>
 
                 <div className="small-input">
                   <span>{currency}</span>
@@ -202,80 +279,153 @@ export default function TipClient() {
                     min="0"
                     step="0.01"
                     value={paid}
-                    placeholder="0"
+                    placeholder="Optional"
                     inputMode="decimal"
-                    aria-label="Amount paid"
-                    onChange={(e) => handlePaid(e.target.value)}
+                    aria-label="Customer paid amount"
+                    onChange={(e) =>
+                      handlePaid(e.target.value)
+                    }
                   />
                 </div>
               </div>
 
               <div className="difference">
-                <span>Tip</span>
-                <strong>{money(calculations.tip)}</strong>
+
+                <span>
+                  {calculations.paymentTip
+                    ? "Actual tip"
+                    : "Suggested tip"}
+                </span>
+
+                <strong>
+                  {money(calculations.actualTip)}
+                </strong>
+
               </div>
             </div>
 
-            {/* TIP PRESETS */}
+            {/* TIP PERCENTAGE */}
             <div className="tip-section">
+
               <div className="tip-title">
-                <span>Quick tip</span>
+                <span>
+                  {calculations.paymentTip
+                    ? "Actual tip"
+                    : "Quick tip"}
+                </span>
 
                 <b>
-                  {calculations.tipRate % 1 === 0
-                    ? calculations.tipRate.toFixed(0)
-                    : calculations.tipRate.toFixed(1)}
-                  %
+                  {displayTipPercent.toFixed(1)}%
                 </b>
               </div>
 
               <div className="tips">
+
                 {TIP_PRESETS.map((value) => (
                   <button
                     key={value}
                     type="button"
-                    className={tipPercent === value ? "selected" : ""}
-                    onClick={() => setPresetTip(value)}
-                    aria-pressed={tipPercent === value}
+                    className={
+                      tipPercent === value
+                        ? "selected"
+                        : ""
+                    }
+                    onClick={() =>
+                      setPresetTip(value)
+                    }
+                    aria-pressed={
+                      tipPercent === value
+                    }
                   >
                     {value}%
                   </button>
                 ))}
+
               </div>
             </div>
 
-            {/* PEOPLE */}
+            {/* PAYMENT INFO */}
+            <div className="payment-note">
+
+              {calculations.paymentTip ? (
+                <>
+                  <span>Payment calculation</span>
+
+                  <p>
+                    {money(paidNum)} paid −{" "}
+                    {money(billNum)} bill ={" "}
+                    <strong>
+                      {money(calculations.actualTip)}
+                    </strong>{" "}
+                    tip
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span>Tip calculation</span>
+
+                  <p>
+                    {money(billNum)} ×{" "}
+                    {tipPercent}% ={" "}
+                    <strong>
+                      {money(calculations.suggestedTip)}
+                    </strong>{" "}
+                    tip
+                  </p>
+                </>
+              )}
+
+            </div>
+
+            {/* SPLIT BILL */}
             <div className="people-row">
+
               <div>
-                <span className="label">SPLIT BILL</span>
+                <span className="label">
+                  SPLIT BILL
+                </span>
+
                 <h3>People</h3>
               </div>
 
               <div className="counter">
+
                 <button
                   type="button"
                   aria-label="Decrease number of people"
                   disabled={people <= 1}
-                  onClick={() => setPeople(Math.max(1, people - 1))}
+                  onClick={() =>
+                    setPeople(
+                      Math.max(1, people - 1)
+                    )
+                  }
                 >
                   −
                 </button>
 
-                <strong>{people}</strong>
+                <strong>
+                  {people}
+                </strong>
 
                 <button
                   type="button"
                   aria-label="Increase number of people"
                   disabled={people >= 100}
-                  onClick={() => setPeople(Math.min(100, people + 1))}
+                  onClick={() =>
+                    setPeople(
+                      Math.min(100, people + 1)
+                    )
+                  }
                 >
                   +
                 </button>
+
               </div>
             </div>
 
             {/* ACTIONS */}
             <div className="actions">
+
               <button
                 type="button"
                 className="secondary-btn"
@@ -289,57 +439,109 @@ export default function TipClient() {
                 className="copy-btn"
                 onClick={copySummary}
               >
-                {copied ? "Copied ✓" : "Copy Result"}
+                {copied
+                  ? "Copied ✓"
+                  : "Copy Result"}
               </button>
+
             </div>
+
           </section>
 
           {/* RESULT CARD */}
           <section className="card result-card">
+
             <div className="result-top">
+
               <div>
-                <span className="label">RESULT</span>
-                <h2>Your tip</h2>
+                <span className="label">
+                  RESULT
+                </span>
+
+                <h2>
+                  Your tip
+                </h2>
               </div>
 
               <div className="live">
                 <i></i>
                 Live
               </div>
+
             </div>
 
+            {/* BIG TIP */}
             <div className="tip-result">
-              <span>Tip amount</span>
 
-              <strong>{money(calculations.tip)}</strong>
+              <span>
+                {calculations.paymentTip
+                  ? "Actual tip"
+                  : "Tip amount"}
+              </span>
+
+              <strong>
+                {money(calculations.actualTip)}
+              </strong>
 
               <small>
-                {calculations.tipRate.toFixed(1)}% of bill
+                {displayTipPercent.toFixed(1)}% of bill
               </small>
+
             </div>
 
+            {/* RESULT ROWS */}
             <div className="rows">
+
               <div>
-                <span>Bill</span>
-                <b>{money(billNum)}</b>
+                <span>
+                  Bill
+                </span>
+
+                <b>
+                  {money(billNum)}
+                </b>
               </div>
 
               <div>
-                <span>Tip</span>
+                <span>
+                  Tip
+                </span>
+
                 <b className="green">
-                  {money(calculations.tip)}
+                  {money(calculations.actualTip)}
                 </b>
               </div>
 
               <div className="total">
-                <span>Total</span>
-                <b>{money(calculations.total)}</b>
+                <span>
+                  Total
+                </span>
+
+                <b>
+                  {money(calculations.total)}
+                </b>
               </div>
+
+              {calculations.hasPaidAmount &&
+                calculations.paymentTip && (
+                  <div>
+                    <span>
+                      Paid
+                    </span>
+
+                    <b>
+                      {money(paidNum)}
+                    </b>
+                  </div>
+                )}
 
               {calculations.hasPaidAmount &&
                 calculations.change > 0 && (
                   <div>
-                    <span>Change</span>
+                    <span>
+                      Change
+                    </span>
+
                     <b className="green">
                       {money(calculations.change)}
                     </b>
@@ -349,115 +551,225 @@ export default function TipClient() {
               {calculations.hasPaidAmount &&
                 calculations.amountDue > 0 && (
                   <div>
-                    <span>Amount due</span>
+                    <span>
+                      Amount due
+                    </span>
+
                     <b className="due">
                       {money(calculations.amountDue)}
                     </b>
                   </div>
                 )}
+
             </div>
 
             {/* PER PERSON */}
             <div className="per-person">
+
               <div>
-                <span>Per person</span>
+
+                <span>
+                  Per person
+                </span>
 
                 <small>
-                  {people} {people === 1 ? "person" : "people"} • Bill{" "}
-                  {money(calculations.billPerPerson)} + Tip{" "}
-                  {money(calculations.tipPerPerson)}
+                  {people}{" "}
+                  {people === 1
+                    ? "person"
+                    : "people"}{" "}
+                  • Bill{" "}
+                  {money(
+                    calculations.billPerPerson
+                  )}{" "}
+                  + Tip{" "}
+                  {money(
+                    calculations.tipPerPerson
+                  )}
                 </small>
+
               </div>
 
-              <strong>{money(calculations.perPerson)}</strong>
+              <strong>
+                {money(
+                  calculations.perPerson
+                )}
+              </strong>
+
             </div>
 
             <div className="mini-note">
-              Bill {money(calculations.billPerPerson)} + Tip{" "}
-              {money(calculations.tipPerPerson)} ={" "}
-              {money(calculations.perPerson)} per person
+              Bill{" "}
+              {money(
+                calculations.billPerPerson
+              )}{" "}
+              + Tip{" "}
+              {money(
+                calculations.tipPerPerson
+              )}{" "}
+              ={" "}
+              {money(
+                calculations.perPerson
+              )}{" "}
+              per person
             </div>
+
           </section>
+
         </div>
 
-        {/* SEO CONTENT */}
+        {/* SPACE */}
         <div className="seo-space"></div>
 
+        {/* SEO CONTENT */}
         <section className="seo-content">
+
           <article className="seo-block">
-            <h2>What Is a Tip Calculator?</h2>
+
+            <h2>
+              What Is a Tip Calculator?
+            </h2>
 
             <p>
-              A tip calculator helps you quickly calculate a tip, final bill,
-              change and the amount each person should pay. Enter your bill,
-              choose a tip percentage and split the total between multiple
-              people when needed.
+              A tip calculator helps you calculate a tip,
+              final bill, payment amount, change and the
+              amount each person should pay. Enter your bill,
+              choose a tip percentage and optionally enter
+              the amount paid by the customer.
             </p>
+
           </article>
 
           <article className="seo-block">
-            <h2>How to Use This Tip Calculator</h2>
+
+            <h2>
+              How to Use This Tip Calculator
+            </h2>
 
             <p>
-              Enter the bill amount, select a currency and choose a tip
-              percentage. You can also enter the amount paid to calculate the
-              change or remaining amount due. Use the people controls to split
-              the bill instantly.
+              Enter the bill amount and select a tip
+              percentage. If you know how much the customer
+              actually paid, enter that amount too. The
+              calculator can then determine the actual tip,
+              total payment, change or remaining amount due.
             </p>
+
           </article>
 
           <article className="seo-block">
-            <h2>Tip Calculator Features</h2>
+
+            <h2>
+              Calculate Tip From Customer Payment
+            </h2>
+
+            <p>
+              This calculator can also work backwards from
+              the amount paid. For example, if the bill is
+              $500 and the customer pays $1,000, the extra
+              $500 is calculated as the tip and the total
+              payment is $1,000.
+            </p>
+
+          </article>
+
+          <article className="seo-block">
+
+            <h2>
+              Tip Calculator Features
+            </h2>
 
             <ul>
-              <li>Calculate common tip percentages instantly.</li>
-              <li>Calculate the final bill including the tip.</li>
-              <li>Calculate change from the amount paid.</li>
-              <li>Show the remaining amount due when payment is insufficient.</li>
-              <li>Split the bill between multiple people.</li>
-              <li>Supports dollar, euro, pound and rupee symbols.</li>
-              <li>Works directly in your browser.</li>
-              <li>No account or sign-up required.</li>
+              <li>
+                Calculate percentage-based tips instantly.
+              </li>
+
+              <li>
+                Calculate the actual tip from customer payment.
+              </li>
+
+              <li>
+                Calculate the final bill including tip.
+              </li>
+
+              <li>
+                Calculate change from customer payment.
+              </li>
+
+              <li>
+                Calculate the remaining amount due.
+              </li>
+
+              <li>
+                Split the bill between multiple people.
+              </li>
+
+              <li>
+                Supports dollar, euro, pound and rupee symbols.
+              </li>
+
+              <li>
+                Works directly in your browser.
+              </li>
+
+              <li>
+                No account or sign-up required.
+              </li>
             </ul>
+
           </article>
 
           <article className="seo-block">
-            <h2>Restaurant Tip Calculator</h2>
+
+            <h2>
+              Restaurant Tip Calculator
+            </h2>
 
             <p>
-              Use this calculator when paying at a restaurant, cafe, hotel or
-              other service business. It makes it easy to calculate a
-              percentage-based tip and see the final amount before completing
-              the payment.
+              Use this calculator for restaurants, cafes,
+              hotels and other services. You can calculate
+              a standard percentage tip or determine the
+              actual tip when the customer's payment amount
+              is known.
             </p>
+
           </article>
 
           <article className="seo-block">
-            <h2>Split Bill Calculator</h2>
+
+            <h2>
+              Split Bill Calculator
+            </h2>
 
             <p>
-              When a group shares a meal or service, enter the number of people
-              to calculate the amount per person. The result includes both the
-              bill and the tip, making group payments easier to manage.
+              When several people share a bill, select the
+              number of people to instantly calculate each
+              person's share of the bill and tip.
             </p>
+
           </article>
 
           <article className="seo-block">
-            <h2>Tip Percentage Guide</h2>
+
+            <h2>
+              Tip Percentage Guide
+            </h2>
 
             <p>
-              Common tip percentages include 10%, 15%, 18%, 20% and 25%. The
-              appropriate amount depends on the country, service and your
-              personal preference. This calculator lets you choose the
-              percentage that fits your situation.
+              Common tip percentages include 10%, 15%, 18%,
+              20% and 25%. The appropriate percentage depends
+              on the country, service and personal preference.
             </p>
+
           </article>
 
-          {/* RELATED TOOLS */}
+          {/* RELATED */}
           <section className="related-tools">
-            <h2>Related Calculators</h2>
+
+            <h2>
+              Related Calculators
+            </h2>
 
             <div className="related-grid">
+
               <a href="/percentage-calculator">
                 Percentage Calculator
               </a>
@@ -473,96 +785,145 @@ export default function TipClient() {
               <a href="/bmi-calculator">
                 BMI Calculator
               </a>
+
             </div>
+
           </section>
 
           {/* FAQ */}
           <section className="faq-section">
-            <h2>Tip Calculator FAQ</h2>
+
+            <h2>
+              Tip Calculator FAQ
+            </h2>
 
             <details>
-              <summary>Is this tip calculator free?</summary>
+              <summary>
+                Is this tip calculator free?
+              </summary>
 
               <p>
-                Yes. The calculator is free to use and does not require
-                registration or a paid subscription.
+                Yes. The calculator is free to use and
+                does not require registration or a paid
+                subscription.
               </p>
             </details>
 
             <details>
-              <summary>How is the tip calculated?</summary>
+              <summary>
+                How is the tip calculated?
+              </summary>
 
               <p>
-                The tip is calculated by multiplying the bill amount by the
-                selected tip percentage and dividing the result by 100.
+                When no customer payment is entered,
+                the tip is calculated by multiplying
+                the bill by the selected percentage.
+                When a sufficient customer payment is
+                entered, the calculator can determine
+                the actual tip from the extra amount paid.
               </p>
             </details>
 
             <details>
-              <summary>Can I split the bill between people?</summary>
+              <summary>
+                If the bill is $500 and the customer pays
+                $1,000, what is the tip?
+              </summary>
 
               <p>
-                Yes. Increase the number of people and the calculator will show
-                the total amount each person should pay, including their share
-                of the tip.
+                The extra $500 is treated as the actual
+                tip. The total payment is $1,000 and
+                there is no change.
               </p>
             </details>
 
             <details>
-              <summary>Can I calculate change?</summary>
+              <summary>
+                Can I split the bill between people?
+              </summary>
 
               <p>
-                Yes. Enter the amount the customer paid. If the payment is
-                greater than the bill plus tip, the calculator shows the
-                remaining change.
+                Yes. Increase the number of people and
+                the calculator will show each person's
+                share of the bill and tip.
               </p>
             </details>
 
             <details>
-              <summary>Can I see how much is still owed?</summary>
+              <summary>
+                Can I calculate change?
+              </summary>
 
               <p>
-                Yes. If the amount paid is less than the bill plus tip, the
-                calculator shows the remaining amount due.
+                Yes. If the payment amount is greater
+                than the calculated total, the calculator
+                can show the remaining change.
               </p>
             </details>
 
             <details>
-              <summary>Does the calculator work on mobile?</summary>
+              <summary>
+                Can I see how much is still owed?
+              </summary>
 
               <p>
-                Yes. The calculator is designed to work on phones, tablets and
-                desktop browsers.
+                Yes. If the amount paid is not enough
+                to cover the expected bill and tip,
+                the remaining amount due is displayed.
               </p>
             </details>
 
             <details>
-              <summary>Do I need to install an app?</summary>
+              <summary>
+                Does the calculator work on mobile?
+              </summary>
 
               <p>
-                No. The calculator works directly in a modern web browser.
+                Yes. It is designed for phones, tablets
+                and desktop browsers.
               </p>
             </details>
+
+            <details>
+              <summary>
+                Do I need to install an app?
+              </summary>
+
+              <p>
+                No. The calculator works directly in
+                a modern web browser.
+              </p>
+            </details>
+
           </section>
 
-          {/* TRUST NOTE */}
+          {/* TRUST */}
           <section className="trust-note">
-            <h2>Simple, Fast and Easy to Use</h2>
+
+            <h2>
+              Simple, Fast and Easy to Use
+            </h2>
 
             <p>
-              This calculator is designed to keep tip calculations simple.
-              Your calculation happens in the browser, so there is no need to
-              create an account just to calculate a tip.
+              This calculator keeps tip and payment
+              calculations simple. Calculations are
+              performed directly in your browser, so
+              you do not need an account just to
+              calculate a tip.
             </p>
+
           </section>
+
         </section>
 
         <footer>
           Free • No sign-up • Instant calculation • thenexoratools
         </footer>
+
       </div>
 
       <style jsx>{`
+
         .tip-page {
           min-height: 100vh;
           background: #f4f6fa;
@@ -649,7 +1010,8 @@ export default function TipClient() {
           border: 1px solid #e3e6ed;
           background: #fff;
           border-radius: 17px;
-          box-shadow: 0 8px 28px rgba(30, 40, 70, 0.045);
+          box-shadow:
+            0 8px 28px rgba(30, 40, 70, 0.045);
         }
 
         .input-card,
@@ -710,16 +1072,8 @@ export default function TipClient() {
         .currencies button.active {
           background: #fff;
           color: #665cf6;
-          box-shadow: 0 2px 6px rgba(30, 40, 70, 0.08);
-        }
-
-        .currencies button:focus-visible,
-        .tips button:focus-visible,
-        .counter button:focus-visible,
-        .actions button:focus-visible,
-        .related-grid a:focus-visible {
-          outline: 3px solid rgba(102, 92, 246, 0.22);
-          outline-offset: 2px;
+          box-shadow:
+            0 2px 6px rgba(30, 40, 70, 0.08);
         }
 
         .big-input {
@@ -867,7 +1221,36 @@ export default function TipClient() {
           background: #665cf6;
           border-color: #665cf6;
           color: #fff;
-          box-shadow: 0 4px 10px rgba(102, 92, 246, 0.18);
+          box-shadow:
+            0 4px 10px rgba(102, 92, 246, 0.18);
+        }
+
+        .payment-note {
+          margin-top: 9px;
+          padding: 8px 10px;
+          border-radius: 9px;
+          background: #f7f7ff;
+          border: 1px solid #e7e5ff;
+        }
+
+        .payment-note span {
+          display: block;
+          color: #8d94a4;
+          font-size: 8px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+
+        .payment-note p {
+          margin: 3px 0 0;
+          color: #6f7788;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .payment-note strong {
+          color: #665cf6;
         }
 
         .people-row {
@@ -951,7 +1334,12 @@ export default function TipClient() {
           margin-top: 10px;
           padding: 14px;
           border-radius: 13px;
-          background: linear-gradient(135deg, #6259f5, #827bf8);
+          background:
+            linear-gradient(
+              135deg,
+              #6259f5,
+              #827bf8
+            );
           color: #fff;
         }
 
@@ -1117,14 +1505,6 @@ export default function TipClient() {
           font-size: 12px;
           font-weight: 850;
           text-align: center;
-          transition:
-            border-color 0.15s ease,
-            transform 0.15s ease;
-        }
-
-        .related-grid a:hover {
-          border-color: #665cf6;
-          transform: translateY(-1px);
         }
 
         .faq-section details {
@@ -1159,6 +1539,7 @@ export default function TipClient() {
         }
 
         @media (max-width: 700px) {
+
           .tip-page {
             padding: 10px 9px 18px;
           }
@@ -1255,6 +1636,15 @@ export default function TipClient() {
             font-size: 8px;
           }
 
+          .payment-note {
+            margin-top: 6px;
+            padding: 7px 8px;
+          }
+
+          .payment-note p {
+            font-size: 8px;
+          }
+
           .people-row {
             margin-top: 7px;
             padding-top: 7px;
@@ -1267,10 +1657,6 @@ export default function TipClient() {
           .actions button {
             padding: 7px 6px;
             font-size: 8px;
-          }
-
-          .result-top {
-            margin-bottom: 0;
           }
 
           .tip-result {
@@ -1304,10 +1690,6 @@ export default function TipClient() {
             height: 60px;
           }
 
-          .seo-content {
-            max-width: 100%;
-          }
-
           .seo-content h2 {
             font-size: 18px;
           }
@@ -1338,6 +1720,7 @@ export default function TipClient() {
         }
 
         @media (max-height: 700px) and (max-width: 700px) {
+
           .tip-page {
             padding-top: 7px;
           }
@@ -1379,6 +1762,7 @@ export default function TipClient() {
             height: 55px;
           }
         }
+
       `}</style>
     </main>
   );
