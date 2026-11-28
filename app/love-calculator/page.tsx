@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import LoveCalculatorClient from "./LoveCalculatorClient";
-
 const SITE_URL = "https://thenexoratools.com";
 const PAGE_URL = `${SITE_URL}/love-calculator`;
-
 const faqItems = [
   {
     question: "Is the Love Calculator free?",
@@ -13,34 +11,35 @@ const faqItems = [
   {
     question: "How does the Love Calculator calculate the percentage?",
     answer:
-      "The calculator uses the two entered names and selected gender inputs to generate a fun match percentage. It is an entertainment tool, not a scientific compatibility test.",
+      "The calculator uses the two entered names and selected gender inputs to generate a fun love match percentage. It is an entertainment tool, not a scientific compatibility test.",
   },
   {
     question: "Does the Love Calculator store my names?",
     answer:
-      "The calculation is performed in your browser. The tool does not require you to create an account or submit your names to use the calculator.",
+      "The calculation is performed in your browser. The tool does not require an account or require you to submit your names to use the calculator.",
   },
   {
     question: "Can I use the Love Calculator on my phone?",
     answer:
-      "Yes. The Love Calculator is designed to work on phones, tablets, and desktop browsers.",
+      "Yes. The Love Calculator works on smartphones, tablets, laptops, and desktop browsers.",
   },
   {
     question: "Is the love percentage scientifically accurate?",
     answer:
       "No. The percentage is generated for entertainment and should not be treated as a scientific measurement of love or relationship compatibility.",
   },
+  {
+    question: "Can I calculate a love match between any two names?",
+    answer:
+      "Yes. You can enter names from different languages and use the calculator to generate a fun match result.",
+  },
 ];
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-
   title:
     "Love Calculator by Name – Love Match Percentage | thenexoratools",
-
   description:
-    "Use the free Love Calculator to compare two names and get a fun love match percentage with a romantic result. No sign-up required.",
-
+    "Use the free Love Calculator to compare two names and get a fun love match percentage. Enter names, choose genders, and discover your romantic match instantly.",
   keywords: [
     "love calculator",
     "love calculator by name",
@@ -49,11 +48,9 @@ export const metadata: Metadata = {
     "love compatibility calculator",
     "name love calculator",
   ],
-
   alternates: {
     canonical: PAGE_URL,
   },
-
   robots: {
     index: true,
     follow: true,
@@ -65,7 +62,6 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-
   openGraph: {
     type: "website",
     url: PAGE_URL,
@@ -76,24 +72,18 @@ export const metadata: Metadata = {
     siteName: "thenexoratools",
     locale: "en_US",
   },
-
   twitter: {
     card: "summary_large_image",
     title:
       "Love Calculator by Name – Love Match Percentage | thenexoratools",
     description:
-      "Compare two names and discover your fun love match percentage.",
+      "Compare two names and discover your fun love match percentage with the free Love Calculator.",
   },
-
   applicationName: "thenexoratools",
-
   category: "entertainment",
-
   creator: "thenexoratools",
-
   publisher: "thenexoratools",
 };
-
 export default function LoveCalculatorPage() {
   const webApplicationSchema = {
     "@context": "https://schema.org",
@@ -114,7 +104,6 @@ export default function LoveCalculatorPage() {
       url: SITE_URL,
     },
   };
-
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -133,7 +122,6 @@ export default function LoveCalculatorPage() {
       },
     ],
   };
-
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -146,11 +134,10 @@ export default function LoveCalculatorPage() {
       },
     })),
   };
-
   return (
     <>
       <LoveCalculatorClient />
-
+      {/* SEO content */}
       <section
         style={{
           width: "min(760px, calc(100% - 28px))",
@@ -179,7 +166,6 @@ export default function LoveCalculatorPage() {
           >
             Love Calculator by Name
           </h2>
-
           <p
             style={{
               margin: "0",
@@ -193,7 +179,28 @@ export default function LoveCalculatorPage() {
             names, select the gender for each person, and
             calculate the result instantly in your browser.
           </p>
-
+          <h2
+            style={{
+              margin: "20px 0 8px",
+              color: "#24151d",
+              fontSize: "15px",
+              fontWeight: 900,
+            }}
+          >
+            How does the Love Calculator work?
+          </h2>
+          <p
+            style={{
+              margin: "0",
+              fontSize: "11px",
+              lineHeight: 1.7,
+            }}
+          >
+            Enter two names and select the gender for each
+            person. The calculator processes the entered names
+            in your browser and generates a percentage-based
+            match result for entertainment.
+          </p>
           <h2
             style={{
               margin: "20px 0 8px",
@@ -204,7 +211,6 @@ export default function LoveCalculatorPage() {
           >
             Is the Love Calculator accurate?
           </h2>
-
           <p
             style={{
               margin: "0",
@@ -217,7 +223,6 @@ export default function LoveCalculatorPage() {
             measure real-world love, relationship quality, or
             compatibility.
           </p>
-
           <h2
             style={{
               margin: "20px 0 8px",
@@ -228,7 +233,6 @@ export default function LoveCalculatorPage() {
           >
             Love Calculator FAQ
           </h2>
-
           <div
             style={{
               display: "grid",
@@ -255,7 +259,6 @@ export default function LoveCalculatorPage() {
                 >
                   {item.question}
                 </summary>
-
                 <p
                   style={{
                     margin: "8px 0 0",
@@ -271,21 +274,21 @@ export default function LoveCalculatorPage() {
           </div>
         </div>
       </section>
-
+      {/* WebApplication Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(webApplicationSchema),
         }}
       />
-
+      {/* Breadcrumb Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbSchema),
         }}
       />
-
+      {/* FAQ Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
