@@ -10,11 +10,10 @@ const purple = "#7c3aed";
 
 function formatNumber(value: number) {
   if (!Number.isFinite(value)) return "";
-  return Number.isInteger(value)
-    ? value.toLocaleString()
-    : value.toLocaleString(undefined, {
-        maximumFractionDigits: 8,
-      });
+  const rounded = parseFloat(value.toFixed(2));
+  return rounded.toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+  });
 }
 
 function cleanNumber(value: string) {
@@ -25,18 +24,18 @@ function cleanNumber(value: string) {
 export default function Page() {
   const [mode, setMode] = useState<Mode>("of");
 
-  const [percentage, setPercentage] = useState("10");
-  const [number, setNumber] = useState("470");
+  const [percentage, setPercentage] = useState("");
+  const [number, setNumber] = useState("");
 
-  const [part, setPart] = useState("40");
-  const [whole, setWhole] = useState("200");
+  const [part, setPart] = useState("");
+  const [whole, setWhole] = useState("");
 
-  const [knownValue, setKnownValue] = useState("40");
-  const [knownPercentage, setKnownPercentage] = useState("10");
-  const [targetPercentage, setTargetPercentage] = useState("90");
+  const [knownValue, setKnownValue] = useState("");
+  const [knownPercentage, setKnownPercentage] = useState("");
+  const [targetPercentage, setTargetPercentage] = useState("");
 
-  const [base, setBase] = useState("150");
-  const [changePercentage, setChangePercentage] = useState("20");
+  const [base, setBase] = useState("");
+  const [changePercentage, setChangePercentage] = useState("");
   const [changeType, setChangeType] =
     useState<ChangeType>("increase");
 
@@ -141,15 +140,15 @@ export default function Page() {
   ]);
 
   const reset = () => {
-    setPercentage("10");
-    setNumber("470");
-    setPart("40");
-    setWhole("200");
-    setKnownValue("40");
-    setKnownPercentage("10");
-    setTargetPercentage("90");
-    setBase("150");
-    setChangePercentage("20");
+    setPercentage("");
+    setNumber("");
+    setPart("");
+    setWhole("");
+    setKnownValue("");
+    setKnownPercentage("");
+    setTargetPercentage("");
+    setBase("");
+    setChangePercentage("");
     setChangeType("increase");
   };
 
@@ -219,6 +218,11 @@ export default function Page() {
         button,
         input {
           font-family: inherit;
+        }
+
+        input::placeholder {
+          color: #b8b3bf;
+          font-weight: 500;
         }
 
         input:focus {
