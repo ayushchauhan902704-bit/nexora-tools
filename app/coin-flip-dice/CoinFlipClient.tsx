@@ -5,6 +5,7 @@ import confetti from "canvas-confetti";
 
 const PLAYER_COLORS = ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#f97316"];
 type View = "home" | "coin" | "dice";
+type CoinSide = "H" | "T";
 
 function RealDice({ value, color, rolling }: { value: number; color: string; rolling: boolean }) {
   const pips: Record<number, number[]> = {
@@ -28,7 +29,7 @@ export default function CoinFlipClient() {
   const [view, setView] = useState<View>("home");
   const [headLabel, setHeadLabel] = useState("Heads");
   const [tailLabel, setTailLabel] = useState("Tails");
-  const [coinResult, setCoinResult] = useState<"H" | "T" | null>(null);
+  const [coinResult, setCoinResult] = useState<CoinSide | null>(null);
   const [flipping, setFlipping] = useState(false);
   const [flyKey, setFlyKey] = useState(0);
   const [showHand, setShowHand] = useState(false);
@@ -44,7 +45,7 @@ export default function CoinFlipClient() {
 
   const diceIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const diceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const coinHistoryRef = useRef<("H" | "T")[]>([]);
+  const coinHistoryRef = useRef<Array<CoinSide>>([]);
   const coinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const playerCount = Math.max(1, Math.min(6, parseInt(howMany) || 1));
@@ -66,7 +67,6 @@ export default function CoinFlipClient() {
     setShowHand(true);
     setTimeout(() => setShowHand(false), 600);
 
-    // Anti-streak: 4 baar same aaya to 5th baar opposite force
     let isHead = Math.random() > 0.5;
     const last = coinHistoryRef.current;
     if (last.length >= 4) {
@@ -78,7 +78,7 @@ export default function CoinFlipClient() {
     try { navigator.vibrate?.([45, 35, 45, 35, 80]); } catch {}
 
     coinTimeoutRef.current = setTimeout(() => {
-      const res = isHead ? "H" : "T";
+      const res: CoinSide = isHead ? "H" : "T";
       coinHistoryRef.current = [...coinHistoryRef.current, res].slice(-5);
       setCoinResult(res);
       setFlipping(false);
@@ -96,7 +96,6 @@ export default function CoinFlipClient() {
     let playerIdx = 0;
     const doOnePlayer = () => {
       setCurrentPlayer(playerIdx);
-      // Har baar alag jagah girega - real jaisa
       setDiceLand({ x: Math.floor(Math.random() * 60) - 30, y: Math.floor(Math.random() * 20) - 10, r: Math.floor(Math.random() * 360) });
       let count = 0;
       diceIntervalRef.current = setInterval(() => {
@@ -116,7 +115,7 @@ export default function CoinFlipClient() {
             }, 300);
           }
         }
-      }, 110); // 12 * 110 = ~1.3s + bounce = 1.5s total real feel
+      }, 110);
     };
     doOnePlayer();
   };
