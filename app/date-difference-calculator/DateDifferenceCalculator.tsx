@@ -65,13 +65,9 @@ function dateToInputValue(date: Date) {
 
 function parseInputDate(value: string): Date | null {
   if (!value) return null;
-
   const [year, month, day] = value.split("-").map(Number);
-
   if (!year || !month || !day) return null;
-
   const date = new Date(year, month - 1, day);
-
   if (
     date.getFullYear() !== year ||
     date.getMonth() !== month - 1 ||
@@ -79,9 +75,7 @@ function parseInputDate(value: string): Date | null {
   ) {
     return null;
   }
-
   date.setHours(0, 0, 0, 0);
-
   return date;
 }
 
@@ -96,29 +90,20 @@ function diffCalendar(
   let years = end.getFullYear() - start.getFullYear();
   let months = end.getMonth() - start.getMonth();
   let days = end.getDate() - start.getDate();
-
   if (days < 0) {
     months -= 1;
-
     const previousMonthLastDay = new Date(
       end.getFullYear(),
       end.getMonth(),
       0
     ).getDate();
-
     days += previousMonthLastDay;
   }
-
   if (months < 0) {
     years -= 1;
     months += 12;
   }
-
-  return {
-    years,
-    months,
-    days,
-  };
+  return { years, months, days };
 }
 
 function getInclusiveWeekdayCounts(
@@ -134,17 +119,13 @@ function getInclusiveWeekdayCounts(
     Friday: 0,
     Saturday: 0,
   };
-
   const current = new Date(start);
   current.setHours(0, 0, 0, 0);
-
   while (current <= end) {
     const weekday = WEEKDAYS[current.getDay()];
     counts[weekday] += 1;
-
     current.setDate(current.getDate() + 1);
   }
-
   return counts;
 }
 
@@ -168,6 +149,27 @@ function plural(
   return `${formatNumber(value)} ${
     value === 1 ? singular : pluralWord || `${singular}s`
   }`;
+}
+
+function trackEvent(name: string) {
+  try {
+    const gtag = (
+      window as Window & {
+        gtag?: (
+          command: string,
+          eventName: string,
+          params?: Record<string, unknown>
+        ) => void;
+      }
+    ).gtag;
+    if (gtag) {
+      gtag("event", name, {
+        tool: "date_difference_calculator",
+      });
+    }
+  } catch {
+    // Analytics must never break the calculator.
+  }
 }
 
 export default function DateDifferenceCalculator() {
@@ -1423,50 +1425,4 @@ Calculated with NEXORA Date Difference Calculator.
       </footer>
     </div>
   );
-}
-
-function plural(
-  value: number,
-  singular: string,
-  pluralWord?: string
-) {
-  return `${formatNumber(value)} ${
-    value === 1
-      ? singular
-      : pluralWord || `${singular}s`
-  }`;
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
-}
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
-function trackEvent(name: string) {
-  try {
-    const gtag = (
-      window as Window & {
-        gtag?: (
-          command: string,
-          eventName: string,
-          params?: Record<string, unknown>
-        ) => void;
-      }
-    ).gtag;
-
-    if (gtag) {
-      gtag("event", name, {
-        tool: "date_difference_calculator",
-      });
-    }
-  } catch {
-    // Analytics must never break the calculator.
-  }
 }
