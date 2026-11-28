@@ -84,15 +84,6 @@ function getResult(percent: number): Result {
   };
 }
 
-/**
- * Normalizes names without using Unicode property regexes.
- *
- * This avoids the TypeScript/ES target build error caused by:
- * /[^\p{L}\p{N}]/gu
- *
- * The function keeps letters and numbers from several common
- * writing systems while removing spaces, punctuation and symbols.
- */
 function normalizeName(value: string): string {
   const normalized = value
     .normalize("NFKC")
@@ -197,7 +188,6 @@ function calculateLove(
     return 0;
   }
 
-  // Same names receive the maximum fun score.
   if (a === b) {
     return 100;
   }
@@ -218,8 +208,9 @@ function calculateLove(
     score += combined.charCodeAt(i);
   }
 
+  // FIXED: [...a] -> a.split("") for ES5 build
   const commonLetters = new Set(
-    [...a].filter((char) => b.includes(char))
+    a.split("").filter((char) => b.includes(char))
   );
 
   score += commonLetters.size * 7;
@@ -228,8 +219,9 @@ function calculateLove(
     score += 11;
   }
 
-  const firstA = [...a][0];
-  const firstB = [...b][0];
+  // FIXED: [...a][0] -> a.split("")[0] for ES5 build
+  const firstA = a.split("")[0];
+  const firstB = b.split("")[0];
 
   if (firstA && firstA === firstB) {
     score += 9;
@@ -383,7 +375,6 @@ export default function LoveCalculatorClient() {
     const finalResult =
       getResult(finalPercent);
 
-    // Short premium heartbeat experience.
     timerRef.current =
       setTimeout(() => {
         setLoading(false);
